@@ -1,0 +1,1896 @@
+<title>Aqsha</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#007a92">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700&display=swap">
+<style>
+/* Aqsha — «степь и золото». Одна колонка под телефон, нижняя панель вкладок, карточки только для объектов. */
+:root {
+  --bg: #f7f5ef; --surface: #ffffff; --text: #1e2a2e; --muted: #6b6f66; --border: #e7e1d3;
+  --accent: #007a92; --on-accent: #ffffff; --accent-soft: #e3f3f6;
+  --gold: #f2b705; --gold-text: #9a6e00; --gold-soft: #fdf4d9;
+  --income: #17805a; --expense: #c8462f; --danger-soft: #fbe9e5;
+  --shadow: 0 1px 2px rgba(30, 42, 46, .06);
+  --hero-sky1: #00738a; --hero-sky2: #005a6e; --hero-gold1: #f9cf4a; --hero-gold2: #f2b705;
+  --hero-ink: #ffffff; --hero-ink-soft: rgba(255, 255, 255, .93); --hero-dark: #1e2a2e; --hero-dark-soft: rgba(30, 42, 46, .86);
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --display: "Unbounded", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --num: ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1a1f; --surface: #15262d; --text: #eaf2f3; --muted: #93a7ad; --border: #23383f;
+    --accent: #3cc8e0; --on-accent: #0e1a1f; --accent-soft: #173a44;
+    --gold: #f5c542; --gold-text: #f5c542; --gold-soft: #2c2a1c;
+    --income: #3ccb8a; --expense: #f07a62; --danger-soft: #3a2420;
+    --hero-sky1: #0a6f85; --hero-sky2: #073f4d; --hero-gold1: #f2c33c; --hero-gold2: #d9a206;
+    --shadow: none; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1a1f; --surface: #15262d; --text: #eaf2f3; --muted: #93a7ad; --border: #23383f;
+  --accent: #3cc8e0; --on-accent: #0e1a1f; --accent-soft: #173a44;
+  --gold: #f5c542; --gold-text: #f5c542; --gold-soft: #2c2a1c;
+  --income: #3ccb8a; --expense: #f07a62; --danger-soft: #3a2420;
+  --hero-sky1: #0a6f85; --hero-sky2: #073f4d; --hero-gold1: #f2c33c; --hero-gold2: #d9a206;
+  --shadow: none; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font: 15px/1.45 var(--font); -webkit-text-size-adjust: 100%;
+  padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+.wrap { max-width: 720px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* шапка */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 3px solid var(--gold); }
+.top .wrap { display: flex; align-items: center; gap: 10px; padding-block: 10px; }
+.top h1 { font: 700 19px/1 var(--display); color: var(--accent); letter-spacing: -.01em; }
+.logo { width: 30px; height: 30px; border-radius: 8px; flex: none; }
+.sync { margin-left: auto; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.sync::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.sync[data-state="cloud"]::before { background: var(--income); }
+.sync[data-state="local"]::before { background: var(--gold); }
+.banner span { flex: 1 1 200px; }
+.sync[data-state="error"]::before { background: var(--expense); }
+
+main.wrap { padding-block: 16px; }
+.tab { display: none; flex-direction: column; gap: 14px; }
+.tab.active { display: flex; }
+.tab > .card, .tab > section { scroll-margin-top: 76px; }
+.section-title { font-size: 17px; }
+.hint { color: var(--muted); font-size: 13px; margin: 0; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; box-shadow: var(--shadow); min-width: 0; }
+.banner { margin-bottom: 14px; border-radius: 12px; padding: 10px 14px; font-size: 13px; background: var(--gold-soft); color: var(--text); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.banner b { color: var(--gold-text); }
+
+/* кнопки и поля */
+.btn { border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 9px 14px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+.btn.small { padding: 5px 10px; font-size: 13px; }
+.btn.ghost { background: none; border-color: transparent; color: var(--accent); font-weight: 600; padding-inline: 4px; }
+.btn:disabled { opacity: .55; cursor: default; }
+input[type=text], input[type=search], input[type=number], input[type=date], select {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; min-width: 0; font-size: 16px; }
+.chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-inline: -16px; padding-inline: 16px; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: 6px 12px; font-size: 14px; white-space: nowrap; }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+
+/* совет дня — главный акцент экрана: небо и холмы степи, иконка внутри солнца */
+.hero-tip { position: relative; overflow: hidden; isolation: isolate; border-radius: 22px; padding: 18px 18px 14px;
+  color: var(--hero-ink); background: linear-gradient(155deg, var(--hero-sky1) 0%, var(--hero-sky2) 100%);
+  box-shadow: 0 10px 28px -12px rgba(0, 90, 110, .55); display: flex; flex-direction: column; gap: 10px; touch-action: pan-y; }
+.hero-tip.personal { color: var(--hero-dark); background: linear-gradient(155deg, var(--hero-gold1) 0%, var(--hero-gold2) 100%);
+  box-shadow: 0 10px 28px -12px rgba(190, 140, 0, .6); }
+.hero-hills { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 46%; z-index: -1; pointer-events: none; }
+.hero-hills path:nth-child(1) { fill: rgba(255, 255, 255, .07); }
+.hero-hills path:nth-child(2) { fill: rgba(255, 255, 255, .10); }
+.hero-tip.personal .hero-hills path:nth-child(1) { fill: rgba(255, 255, 255, .22); }
+.hero-tip.personal .hero-hills path:nth-child(2) { fill: rgba(255, 255, 255, .30); }
+.hero-top { display: flex; align-items: center; gap: 14px; }
+.hero-sun { flex: none; width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; font-size: 30px; line-height: 1;
+  background: radial-gradient(circle at 35% 30%, #ffe27a, var(--gold) 70%);
+  box-shadow: 0 0 0 6px rgba(242, 183, 5, .28), 0 0 0 13px rgba(242, 183, 5, .12), 0 0 34px rgba(255, 210, 60, .55); }
+.hero-tip.personal .hero-sun { background: radial-gradient(circle at 35% 30%, #ffffff, #fff6d8 70%);
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, .45), 0 0 0 13px rgba(255, 255, 255, .2); }
+.hero-meta { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.hero-pill { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; padding: 4px 10px; border-radius: 999px;
+  background: rgba(255, 255, 255, .18); color: var(--hero-ink); }
+.hero-tip.personal .hero-pill { background: var(--hero-dark); color: var(--hero-gold1); }
+.hero-sub { font-size: 12px; color: var(--hero-ink-soft); }
+.hero-tip.personal .hero-sub { color: var(--hero-dark-soft); }
+.hero-title { font: 700 21px/1.22 var(--display); letter-spacing: -.01em; margin: 2px 0 0; }
+.hero-text { margin: 0; font-size: 15.5px; line-height: 1.5; color: var(--hero-ink-soft); max-width: 60ch; }
+.hero-tip.personal .hero-text { color: var(--hero-dark-soft); }
+.hero-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 4px; }
+.hero-dots { display: flex; gap: 5px; }
+.hero-dots i { width: 6px; height: 6px; border-radius: 3px; background: currentColor; opacity: .35; transition: width .25s, opacity .25s; }
+.hero-dots i.on { width: 18px; opacity: .95; }
+.hero-nav { display: flex; gap: 8px; }
+.hero-btn { border: none; border-radius: 999px; padding: 9px 16px; font-weight: 700; font-size: 14px; background: #ffffff; color: var(--hero-sky2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .15); }
+.hero-btn.round { width: 38px; padding: 9px 0; background: rgba(255, 255, 255, .18); color: var(--hero-ink); box-shadow: none; }
+.hero-tip.personal .hero-btn { background: var(--hero-dark); color: var(--hero-gold1); }
+.hero-tip.personal .hero-btn.round { background: rgba(30, 42, 46, .12); color: var(--hero-dark); }
+.hero-btn:disabled { opacity: .4; }
+.hero-tip :focus-visible { outline-color: currentColor; }
+.hero-swap { animation: hero-in .32s cubic-bezier(.2, .8, .2, 1); }
+.hero-swap.back { animation-name: hero-back; }
+@keyframes hero-in { from { opacity: 0; transform: translateX(26px); } to { opacity: 1; transform: none; } }
+@keyframes hero-back { from { opacity: 0; transform: translateX(-26px); } to { opacity: 1; transform: none; } }
+
+/* совет в списке */
+.tip { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; border-left: 4px solid var(--gold); }
+.tip.personal { border-left-color: var(--accent); }
+.tip-icon { font-size: 22px; line-height: 1; grid-row: span 3; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--gold-soft); }
+.tip.personal .tip-icon { background: var(--accent-soft); }
+.tip-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--gold-text); }
+.tip.personal .tip-label { color: var(--accent); }
+.tip-title { font-weight: 700; }
+.tip-text { color: var(--muted); margin: 0; }
+.tip-foot { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
+
+/* итоги */
+.totals { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.total { padding: 12px 14px; }
+.total span { display: block; color: var(--muted); font-size: 13px; }
+.total b { font: 700 22px/1.2 var(--num); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.total.net { grid-column: span 2; display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; }
+.pos { color: var(--income); } .neg { color: var(--expense); }
+.chart-box { position: relative; height: 230px; }
+.bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.bars li { display: grid; grid-template-columns: minmax(0, 1.2fr) 1fr auto; gap: 10px; align-items: center; font-size: 14px; }
+.bars .name { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.bars .name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.bar { height: 8px; border-radius: 4px; min-width: 3px; }
+.amt { font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+
+/* быстрый ввод и список операций */
+.quick { display: flex; gap: 8px; }
+.quick input { flex: 1; padding: 11px 14px; border-radius: 12px; }
+.quick .btn { width: 48px; font-size: 22px; line-height: 1; border-radius: 12px; padding: 0; }
+.filters { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.day { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin: 6px 2px -4px; display: flex; justify-content: space-between; }
+.txs { display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden; }
+.tx { display: grid; grid-template-columns: auto 1fr auto; gap: 1px 12px; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--border); }
+.tx .cat-ico { grid-row: span 2; }
+.tx:last-child { border-bottom: none; }
+.tx-desc { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.tx-amt { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tx-meta { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.cat-pick { position: relative; display: inline-flex; align-items: center; min-width: 0; color: var(--muted); font-size: 13px; }
+.cat-pick::after { content: "▾"; margin-left: 4px; font-size: 11px; }
+.cat-pick select { position: absolute; inset: 0; opacity: 0; width: 100%; font-size: 16px; cursor: pointer; }
+.cat-pick span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.badge { font-size: 11px; border-radius: 6px; padding: 1px 6px; background: var(--gold-soft); color: var(--gold-text); white-space: nowrap; }
+.del { border: none; background: none; color: var(--muted); padding: 2px 6px; border-radius: 8px; font-size: 12px; justify-self: end; }
+.del.armed { background: var(--danger-soft); color: var(--expense); font-weight: 600; font-size: 12px; }
+.empty { text-align: center; padding: 26px 16px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.empty .big { font-size: 34px; }
+
+/* выписка */
+.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.file { display: flex; flex-direction: column; gap: 10px; }
+.file input[type=file] { font-size: 14px; max-width: 100%; }
+.preview { display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.progress { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+.progress i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+
+/* советы и категории */
+.tips { display: flex; flex-direction: column; gap: 10px; }
+.cats { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.cats li { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+.cats li:last-child { border-bottom: none; }
+.cats li .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: 14px; }
+
+/* сводка месяца */
+.month { background: linear-gradient(160deg, var(--surface) 30%, var(--accent-soft)); padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.month-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; }
+.month-big { font: 700 32px/1.1 var(--display); font-variant-numeric: tabular-nums; letter-spacing: -.02em; white-space: nowrap; }
+.net-pill { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+.net-pill.pos { background: color-mix(in srgb, var(--income) 14%, transparent); }
+.net-pill.neg { background: color-mix(in srgb, var(--expense) 14%, transparent); }
+.budget-bar { height: 10px; border-radius: 5px; background: var(--border); overflow: hidden; }
+.budget-bar i { display: block; height: 100%; border-radius: 5px; background: var(--income); transition: width .4s; }
+.budget-bar.warn i { background: var(--gold); } .budget-bar.over i { background: var(--expense); }
+.month-row { display: flex; gap: 6px 18px; flex-wrap: wrap; font-size: 14px; color: var(--muted); }
+.month-row b { font-variant-numeric: tabular-nums; }
+.alerts { display: flex; flex-direction: column; gap: 8px; }
+.alert { display: flex; gap: 12px; align-items: center; border-radius: 14px; padding: 12px 14px; background: var(--gold-soft); font-size: 14px; }
+.alert.over { background: var(--danger-soft); }
+.alert .a-ico { font-size: 22px; flex: none; }
+.alert .a-text { flex: 1; min-width: 0; }
+.alert .a-text b { display: block; }
+.chart-box.donut { height: 210px; }
+.donut-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; }
+.donut-center span { font-size: 12px; color: var(--muted); }
+.donut-center b { font: 700 17px/1.2 var(--display); font-variant-numeric: tabular-nums; }
+.cat-ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 20px; line-height: 1; flex: none; }
+.cat-ico.sm { width: 28px; height: 28px; border-radius: 9px; font-size: 15px; }
+
+/* окно добавления */
+.sheet { position: fixed; inset: 0; z-index: 20; display: flex; align-items: flex-end; justify-content: center; background: rgba(10, 20, 24, .45); }
+.sheet-panel { width: 100%; max-width: 720px; background: var(--surface); border-radius: 22px 22px 0 0; display: flex; flex-direction: column; gap: 12px;
+  padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  animation: sheet-up .25s cubic-bezier(.2, .8, .2, 1); }
+.sheet-handle { width: 40px; height: 5px; border-radius: 3px; background: var(--border); align-self: center; }
+.sheet h2 { font: 700 18px/1.2 var(--display); }
+.examples { display: flex; gap: 6px; flex-wrap: wrap; }
+@keyframes sheet-up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* счета */
+.acc-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.acc-strip { display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none; margin: 10px -16px 0; padding: 2px 16px 4px; }
+.acc-strip::-webkit-scrollbar { display: none; }
+.acc { flex: 0 0 auto; min-width: 140px; max-width: 190px; text-align: left; border: 1px solid var(--border); background: var(--bg); border-radius: 14px;
+  padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.acc .acc-name { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.acc b { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.acc.total { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.acc.total .acc-name { color: var(--on-accent); opacity: .85; }
+.acc.add { justify-content: center; align-items: center; color: var(--accent); font-weight: 600; min-width: 96px; border-style: dashed; }
+/* форма в окне */
+.form { display: flex; flex-direction: column; gap: 10px; }
+.form label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+.form input, .form select { width: 100%; }
+.form .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 3px; }
+.seg button { border: none; background: none; border-radius: 9px; padding: 8px; font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed="true"].exp { background: var(--expense); color: #fff; }
+.seg button[aria-pressed="true"].inc { background: var(--income); color: #fff; }
+.amount-input { font: 700 26px/1.2 var(--display) !important; padding: 10px 12px !important; }
+.form-actions { display: flex; gap: 8px; }
+.form-actions .primary { flex: 1; }
+.btn.danger { color: var(--expense); border-color: var(--expense); }
+.icons { display: flex; gap: 6px; flex-wrap: wrap; }
+.icons button { width: 42px; height: 42px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); font-size: 20px; }
+.icons button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent); }
+.tx { cursor: pointer; }
+.tx:active { background: var(--bg); }
+.sheet-panel { max-height: 92vh; overflow-y: auto; }
+
+/* финансовая грамотность */
+.lit-banner { position: relative; overflow: hidden; border-radius: 20px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px;
+  color: #fff7df; background: linear-gradient(150deg, #213a41 0%, #10242a 100%); box-shadow: 0 10px 24px -14px rgba(10, 30, 36, .8); text-align: left; border: none; width: 100%; }
+.lit-banner .lit-kicker { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--hero-gold1); }
+.lit-banner .lit-title { font: 700 19px/1.25 var(--display); color: #ffffff; }
+.lit-banner .lit-text { font-size: 14px; color: rgba(255, 247, 223, .9); margin: 0; max-width: 52ch; }
+.lit-banner .lit-match { background: rgba(242, 183, 5, .16); border: 1px solid rgba(242, 183, 5, .45); border-radius: 12px; padding: 8px 10px; font-size: 14px; color: #fff7df; }
+.lit-banner .lit-match b { color: var(--hero-gold1); }
+.lit-banner .lit-go { align-self: flex-start; margin-top: 2px; background: var(--hero-gold1); color: #10242a; border-radius: 999px; padding: 8px 16px; font-weight: 700; font-size: 14px; }
+.seg.wide { margin-bottom: 2px; }
+.seg.wide button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.case { padding: 0; overflow: hidden; }
+.case summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: auto 1fr auto; gap: 4px 12px; align-items: center; padding: 14px 16px; }
+.case summary::-webkit-details-marker { display: none; }
+.case summary .c-ico { grid-row: span 2; width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; font-size: 24px; background: var(--gold-soft); }
+.case summary .c-title { font: 700 16px/1.25 var(--display); }
+.case summary .c-sub { font-size: 13px; color: var(--muted); grid-column: 2; }
+.case summary .c-progress { grid-row: span 2; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.case summary .c-progress.done { color: var(--income); font-weight: 700; }
+.case[open] summary { border-bottom: 1px solid var(--border); }
+.case.match summary .c-ico { background: var(--accent-soft); box-shadow: 0 0 0 2px var(--accent); }
+.case-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+.case-body h4 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--gold-text); }
+.case-body ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; font-size: 14px; }
+.story { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--bg); border-left: 3px solid var(--gold); font-size: 14.5px; line-height: 1.5; }
+.plan { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; counter-reset: step; }
+.plan label { display: grid; grid-template-columns: auto auto 1fr; gap: 10px; align-items: start; font-size: 14.5px; line-height: 1.45; cursor: pointer; }
+.plan label::before { counter-increment: step; content: counter(step); width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 12px; font-weight: 700; background: var(--accent-soft); color: var(--accent); margin-top: 1px; }
+.plan input { width: 18px; height: 18px; margin-top: 3px; accent-color: var(--income); }
+.plan input:checked + span { color: var(--muted); text-decoration: line-through; }
+.result { margin: 0; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--income) 12%, transparent); font-size: 14px; }
+.case-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.quiz { display: flex; flex-direction: column; gap: 10px; }
+.quiz-q { display: flex; justify-content: space-between; gap: 10px; align-items: center; font-size: 14.5px; }
+.quiz-q .yn { display: flex; gap: 6px; flex: none; }
+.quiz-q .yn .chip { padding: 5px 12px; }
+.quiz-result { border-radius: 12px; padding: 12px 14px; background: var(--accent-soft); font-size: 14px; }
+
+/* операции: сводка, вопрос, подробности */
+.ops-sum { display: flex; flex-direction: column; gap: 10px; }
+.ops-sum .sum-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.ops-sum .sum-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ops-sum .stat { background: var(--bg); border-radius: 12px; padding: 9px 11px; min-width: 0; }
+.ops-sum .stat span { display: block; font-size: 12px; color: var(--muted); }
+.ops-sum .stat b { font-variant-numeric: tabular-nums; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ops-sum .sum-line { font-size: 13.5px; color: var(--muted); }
+.ops-sum .sum-line b { color: var(--text); }
+.ask { border: 2px dashed var(--gold); background: var(--gold-soft); display: flex; flex-direction: column; gap: 10px; }
+.ask .ask-q { font: 700 16px/1.3 var(--display); }
+.ask .ask-tx { display: flex; gap: 10px; align-items: center; font-size: 14px; }
+.ask .ask-tx b { font-variant-numeric: tabular-nums; }
+.ask .ask-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.ask .ask-row .btn { flex: 1 1 auto; }
+.ask .skip { align-self: flex-end; font-size: 13px; color: var(--muted); background: none; border: none; padding: 2px 4px; }
+.tx-time { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.review-mark { font-size: 13px; }
+.detail-hero { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding-top: 4px; }
+.detail-hero .big-amt { font: 700 30px/1.1 var(--display); font-variant-numeric: tabular-nums; }
+.detail-hero .d-desc { font-size: 16px; font-weight: 600; }
+.facts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.facts li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+.facts li:last-child { border-bottom: none; }
+.facts li span:first-child { color: var(--muted); flex: none; }
+.facts li span:last-child { text-align: right; min-width: 0; }
+.insight { border-radius: 12px; padding: 10px 12px; background: var(--accent-soft); font-size: 14px; line-height: 1.45; }
+.insight.warn { background: var(--gold-soft); }
+.d-section h4 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--gold-text); }
+.review-row { display: flex; gap: 6px; flex-wrap: wrap; }
+#d-note { width: 100%; min-height: 64px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); padding: 10px; font: inherit; font-size: 15px; resize: vertical; }
+
+/* нижняя панель */
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--surface); border-top: 1px solid var(--border);
+  padding: 0 max(8px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(8px, env(safe-area-inset-left, 0px));
+  display: flex; justify-content: center; }
+.tabbar button { position: relative; flex: 0 1 120px; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 9px 2px 8px; border: none; background: none; color: var(--muted); font-size: 11px; }
+.tabbar svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tabbar span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tabbar [aria-current="page"] { color: var(--accent); font-weight: 600; }
+.tabbar .fab { flex: 0 0 76px; padding-top: 0; }
+.tabbar .fab b { width: 58px; height: 58px; margin-top: -22px; border-radius: 50%; display: grid; place-items: center; font-size: 32px; font-weight: 400; line-height: 1;
+  color: var(--hero-dark); background: radial-gradient(circle at 35% 30%, #ffe27a, var(--gold) 70%); border: 4px solid var(--surface);
+  box-shadow: 0 6px 16px -4px rgba(190, 140, 0, .6); }
+.tabbar [aria-current="page"]::before { content: ""; position: absolute; top: 0; left: 28%; right: 28%; height: 3px; border-radius: 0 0 3px 3px; background: var(--gold); }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); z-index: 9;
+  background: var(--text); color: var(--bg); border-radius: 12px; padding: 10px 14px; max-width: calc(100% - 32px);
+  display: flex; gap: 12px; align-items: center; font-size: 14px; box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+.toast button { border: none; background: none; color: var(--gold); font-weight: 700; padding: 2px 0; white-space: nowrap; }
+.toast.error { background: var(--expense); color: #fff; }
+.toast.error button { color: #fff; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+@media (min-width: 640px) { .totals { grid-template-columns: repeat(3, 1fr); } .total.net { grid-column: auto; display: block; } }
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <svg class="logo" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#f2b705"/>
+  <g>
+    <circle cx="350" cy="148" r="46" fill="#ffffff"/>
+    <path d="M256 104 L410 404 H334 L256 248 L178 404 H102 Z" fill="#007a92"/>
+    <path d="M88 334 Q172 304 256 326 T424 318" fill="none" stroke="#ffffff" stroke-width="22" stroke-linecap="round"/>
+  </g>
+</svg>
+    <h1>Aqsha</h1>
+    <span class="sync" id="sync" data-state="loading">Загрузка…</span>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="banner" class="banner" hidden></div>
+
+  <!-- Обзор -->
+  <section class="tab active" id="tab-overview" aria-label="Обзор">
+    <article class="hero-tip" id="tip" aria-roledescription="совет дня">
+      <svg class="hero-hills" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 62 Q90 22 190 52 T400 40 V120 H0Z"/><path d="M0 92 Q120 60 250 86 T400 78 V120 H0Z"/>
+      </svg>
+      <div class="hero-swap" id="tip-body" aria-live="polite">
+        <div class="hero-top">
+          <div class="hero-sun" aria-hidden="true"><span id="tip-icon">💰</span></div>
+          <div class="hero-meta">
+            <span class="hero-pill" id="tip-label">Совет дня</span>
+            <span class="hero-sub" id="tip-sub">Бюджет</span>
+          </div>
+        </div>
+        <h2 class="hero-title" id="tip-title">Сначала заплатите себе</h2>
+        <p class="hero-text" id="tip-text">В день зарплаты сразу переводите 10–20% на депозит — до того, как начнёте тратить.</p>
+      </div>
+      <div class="hero-foot">
+        <div class="hero-dots" id="tip-dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i></div>
+        <div class="hero-nav">
+          <button class="hero-btn round" id="tip-prev" aria-label="Предыдущий совет" disabled>‹</button>
+          <button class="hero-btn" id="tip-next">Ещё совет ›</button>
+        </div>
+      </div>
+    </article>
+
+    <button class="lit-banner" id="lit-banner" type="button" data-lit="">
+      <span class="lit-kicker">📚 Финансовая грамотность</span>
+      <span class="lit-title">10 жизненных ситуаций и как из них выйти</span>
+      <p class="lit-text">Рассрочки, долги, жизнь от зарплаты до зарплаты, подушка, квартира — с примерами в тенге и пошаговым планом.</p>
+      <span class="lit-match" id="lit-match" hidden></span>
+      <span class="lit-go">Разобрать →</span>
+    </button>
+
+    <div id="overview-empty" class="card empty" hidden>
+      <div class="big">🌾</div>
+      <b>Здесь появятся ваши доходы и расходы</b>
+      <p class="hint">Добавьте операцию на вкладке «Операции» или загрузите PDF-выписку Kaspi.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+        <button class="btn primary" data-goto="more" data-jump-after="sec-import">Загрузить выписку</button>
+        <button class="btn" data-action="demo">Показать на примере</button>
+      </div>
+    </div>
+
+    <div class="chips" role="group" aria-label="Период" id="periods">
+      <button class="chip" data-period="month" aria-pressed="true">Этот месяц</button>
+      <button class="chip" data-period="prev" aria-pressed="false">Прошлый месяц</button>
+      <button class="chip" data-period="3m" aria-pressed="false">3 месяца</button>
+      <button class="chip" data-period="year" aria-pressed="false">Год</button>
+      <button class="chip" data-period="all" aria-pressed="false">Всё время</button>
+    </div>
+
+    <section class="card month" id="totals" aria-label="Итоги периода">
+      <div class="month-head"><span id="m-label">Потрачено в этом месяце</span><span class="net-pill" id="t-net">0 ₸</span></div>
+      <b class="month-big" id="t-expense">0 ₸</b>
+      <div class="budget-bar" id="budget-bar" hidden><i></i></div>
+      <div class="month-row"><span>Доходы <b class="pos" id="t-income">0 ₸</b></span><span id="budget-line"></span></div>
+    </section>
+    <section class="card" id="acc-card" aria-label="Счета">
+      <div class="acc-head"><h2 class="section-title">Счета</h2><span class="hint">нажмите, чтобы изменить</span></div>
+      <div class="acc-strip" id="acc-strip"></div>
+    </section>
+    <div class="alerts" id="alerts"></div>
+    <div id="ask-ov"></div>
+
+
+    <div class="card" id="cat-card">
+      <h2 class="section-title">Куда уходят деньги</h2>
+      <div class="chart-box donut"><canvas id="chart-cats" aria-label="Расходы по категориям"></canvas>
+        <div class="donut-center"><span>Расходы</span><b id="donut-total">0 ₸</b></div></div>
+      <ul class="bars" id="top-cats"></ul>
+    </div>
+    <div class="card" id="month-card">
+      <h2 class="section-title">По месяцам</h2>
+      <div class="chart-box"><canvas id="chart-months" aria-label="Доходы и расходы по месяцам"></canvas></div>
+    </div>
+  </section>
+
+  <!-- Операции -->
+  <section class="tab" id="tab-transactions" aria-label="Операции">
+    <section class="card ops-sum" id="ops-sum" aria-label="Сводка операций" hidden></section>
+    <div id="ask-ops"></div>
+    <div class="filters">
+      <input type="search" id="search" placeholder="Поиск" aria-label="Поиск по описанию и заметкам">
+      <select id="filter-cat" aria-label="Категория"><option value="">Все категории</option></select>
+      <select id="filter-acc" aria-label="Счёт" style="grid-column:1/-1" hidden><option value="">Все счета</option></select>
+    </div>
+    <div id="tx-list"></div>
+  </section>
+
+  <!-- Советы -->
+  <section class="tab" id="tab-tips" aria-label="Знания">
+    <div class="seg wide" role="group" aria-label="Раздел">
+      <button type="button" data-know="lit" aria-pressed="true">📚 Финграмотность</button>
+      <button type="button" data-know="tips" aria-pressed="false">💡 Советы</button>
+    </div>
+    <div id="know-lit" class="tips">
+      <div class="card">
+        <h2 class="section-title">Финансовая грамотность</h2>
+        <p class="hint" style="margin-top:4px">Частые денежные ситуации: как понять, что это про вас, пример с реальными цифрами и пошаговый выход.
+          Отмечайте выполненные шаги — прогресс сохранится.</p>
+      </div>
+      <div class="card" id="lit-diag" hidden></div>
+      <details class="card case" id="quiz-card">
+        <summary><span class="c-ico">🧭</span><span class="c-title">Какая ситуация у вас?</span><span class="c-progress">7 вопросов</span>
+          <span class="c-sub">Ответьте «да» или «нет» — подскажем, с чего начать</span></summary>
+        <div class="case-body quiz" id="quiz"></div>
+      </details>
+      <div class="tips" id="cases"></div>
+    </div>
+    <div id="know-tips" class="tips" hidden>
+    <div id="personal-block" hidden>
+      <h2 class="section-title" style="margin-bottom:10px">По вашим расходам</h2>
+      <div class="tips" id="personal-tips"></div>
+    </div>
+    <h2 class="section-title">Полезные советы</h2>
+    <div class="chips" role="group" aria-label="Темы" id="topics"></div>
+    <div class="tips" id="general-tips"></div>
+    </div>
+  </section>
+
+  <!-- Ещё -->
+  <section class="tab" id="tab-more" aria-label="Ещё">
+    <div class="chips" role="group" aria-label="Разделы" id="more-nav">
+      <button class="chip" data-jump="sec-import">Выписка</button>
+      <button class="chip" data-jump="sec-budget">Бюджет</button>
+      <button class="chip" data-jump="sec-remind">Напоминания</button>
+      <button class="chip" data-jump="sec-cats">Категории</button>
+      <button class="chip" data-jump="sec-backup">Копия</button>
+    </div>
+    <div class="card" id="sec-import">
+      <h2 class="section-title">Выписка Kaspi</h2>
+      <ol class="steps">
+        <li>Приложение <b>Kaspi.kz</b> → <b>Kaspi Gold</b> → <b>Выписка</b>.</li>
+        <li>Выберите период и нажмите <b>Поделиться</b> → «Сохранить в Файлы».</li>
+        <li>Выберите этот PDF ниже — всё разберётся прямо на телефоне.</li>
+      </ol>
+    </div>
+    <div class="card file">
+      <label class="hint" for="import-acc">На какой счёт</label>
+      <select id="import-acc"></select>
+      <input type="file" id="pdf" accept="application/pdf,.pdf" aria-label="PDF-выписка Kaspi">
+      <div class="progress" id="progress" hidden><i></i></div>
+      <div class="preview" id="preview" hidden></div>
+      <button class="btn primary" id="do-import" hidden>Добавить операции</button>
+      <p class="hint">Можно загружать выписки с пересекающимися периодами: операции, которые уже есть, не задвоятся.
+        Файл не отправляется никуда — разбирается в браузере, сохраняются только операции.</p>
+    </div>
+
+    <div class="card" id="sec-budget">
+      <h2 class="section-title">Бюджет на месяц</h2>
+      <p class="hint">Aqsha предупредит, когда потрачено 80% и когда лимит превышен — на главной и сразу при добавлении траты.</p>
+      <div class="budget-form">
+        <label for="budget-total" class="hint" style="margin-top:10px;display:block">Все расходы за месяц, ₸</label>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <input type="number" id="budget-total" inputmode="numeric" min="0" step="1000" placeholder="например, 300000" style="flex:1">
+          <button class="btn primary" id="budget-total-save">Сохранить</button>
+        </div>
+      </div>
+      <details style="margin-top:12px"><summary>Лимиты по категориям</summary><ul class="cats" id="budget-cats"></ul></details>
+    </div>
+
+    <div class="card" id="sec-remind">
+      <h2 class="section-title">Напоминания</h2>
+      <p class="hint">Напоминание добавится в Календарь телефона и сработает, даже когда Aqsha закрыта.
+        Откройте ссылку → «Добавить» (на iPhone — «Добавить все»).</p>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span>🌙 Каждый вечер в</span>
+          <select id="remind-time" aria-label="Время напоминания">
+            <option value="1900">19:00</option><option value="2000">20:00</option>
+            <option value="2100" selected>21:00</option><option value="2200">22:00</option>
+          </select>
+          <a class="btn primary" id="remind-evening" target="_blank" rel="noopener" href="#">Добавить в Календарь</a>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span>📄 1-го числа: загрузить выписку и сохранить копию</span>
+          <a class="btn" id="remind-monthly" target="_blank" rel="noopener" href="#">Добавить</a>
+        </div>
+      </div>
+      <p class="hint" style="margin-top:8px">Убрать напоминание: Календарь → событие «Aqsha» → «Удалить событие» → «Все будущие».</p>
+    </div>
+
+
+    <div class="card" id="sec-cats">
+      <h2 class="section-title">Категории за этот месяц</h2>
+      <ul class="cats" id="cat-list"></ul>
+    </div>
+    <div class="card">
+      <h2 class="section-title">Ваши правила</h2>
+      <p class="hint">Когда вы меняете категорию операции и нажимаете «Запомнить», появляется правило — и похожие операции дальше раскладываются сами.</p>
+      <ul class="cats" id="rule-list"></ul>
+      <details style="margin-top:8px"><summary>Встроенные правила</summary><ul class="cats" id="builtin-list"></ul></details>
+    </div>
+    <div class="card" id="sec-backup">
+      <h2 class="section-title">Резервная копия</h2>
+      <p class="hint">Файл CSV со всеми операциями: открывается в Excel и Google Таблицах, из него же можно всё восстановить.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <button class="btn primary" id="backup-save">Сохранить копию</button>
+        <label class="btn" for="backup-file" style="display:inline-flex;align-items:center">Восстановить из копии</label>
+        <input type="file" id="backup-file" accept=".csv,text/csv" hidden>
+      </div>
+      <p class="hint" id="backup-note" hidden style="margin-top:8px"></p>
+      <textarea id="backup-text" readonly hidden rows="4" style="width:100%;margin-top:8px;font-size:12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);padding:8px"></textarea>
+      <details style="margin-top:10px"><summary>Восстановить из текста</summary>
+        <p class="hint" style="margin:6px 0">Если копия сохранена текстом (в Заметках или в чате) — вставьте её сюда.</p>
+        <textarea id="restore-text" rows="4" style="width:100%;font-size:12px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);padding:8px" aria-label="Текст резервной копии"></textarea>
+        <button class="btn" id="restore-go" style="margin-top:6px">Восстановить</button>
+      </details>
+    </div>
+    <div class="card" id="demo-card" hidden>
+      <h2 class="section-title">Пример</h2>
+      <p class="hint">Сейчас показаны примерные операции. Удалите их, когда начнёте вести свои.</p>
+      <button class="btn" data-action="undemo" style="margin-top:8px">Удалить пример</button>
+    </div>
+  </section>
+</main>
+
+<nav class="tabbar" aria-label="Разделы">
+  <button data-tab="overview" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.3A9 9 0 0 1 20.7 9H15z"/></svg><span>Обзор</span></button>
+  <button data-tab="transactions"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 20V4M7 20l-3-3M7 20l3-3"/><path d="M17 4v16M17 4l-3 3M17 4l3 3"/></svg><span>Операции</span></button>
+  <button class="fab" id="fab" aria-label="Добавить операцию"><b aria-hidden="true">+</b></button>
+  <button data-tab="tips"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c2 2 10 2 12 0v-5"/><path d="M22 9v6"/></svg><span>Знания</span></button>
+  <button data-tab="more"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span>Ещё</span></button>
+</nav>
+
+<div class="sheet" id="add-sheet" hidden>
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="add-title">
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <h2 id="add-title">Новая операция</h2>
+    <form class="quick" id="quick">
+      <input type="text" id="quick-text" placeholder="кофе 1500 · +450000 зарплата" autocomplete="off" enterkeyhint="done" aria-label="Сумма и что это">
+      <button class="btn primary" aria-label="Добавить">＋</button>
+    </form>
+    <p class="hint">Пишите как в заметках: что и сколько. Плюс перед суммой — доход. Категория подставится сама.</p>
+    <div class="examples" id="examples">
+      <button class="chip" type="button">кофе 1500</button><button class="chip" type="button">такси 2000</button>
+      <button class="chip" type="button">продукты 8000</button><button class="chip" type="button">+ зарплата</button>
+    </div>
+    <div class="chips" id="quick-accs" role="group" aria-label="Счёт"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" type="button" id="open-full">✏️ Подробнее: дата, счёт, категория</button>
+      <button class="btn" type="button" data-goto="more" data-jump-after="sec-import">📄 Выписка Kaspi</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="tx-sheet" hidden>
+  <form class="sheet-panel form" id="tx-form" role="dialog" aria-modal="true" aria-labelledby="tx-title">
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <h2 id="tx-title">Операция</h2>
+    <div class="seg" role="group" aria-label="Тип операции">
+      <button type="button" class="exp" data-kind="expense" aria-pressed="true">Расход</button>
+      <button type="button" class="inc" data-kind="income" aria-pressed="false">Доход</button>
+    </div>
+    <label>Сумма, ₸<input type="number" id="f-amount" class="amount-input" inputmode="decimal" min="0" step="any" required placeholder="0"></label>
+    <label>Описание<input type="text" id="f-desc" maxlength="200" placeholder="например, Magnum"></label>
+    <div class="row2">
+      <label>Категория<select id="f-cat"></select></label>
+      <label>Счёт<select id="f-acc"></select></label>
+    </div>
+    <div class="row2">
+      <label>Дата<input type="date" id="f-date" required></label>
+      <label>Время<input type="time" id="f-time"></label>
+    </div>
+    <label>Заметка<input type="text" id="f-note" maxlength="300" placeholder="необязательно: зачем, с кем, что купили"></label>
+    <div class="form-actions">
+      <button type="button" class="btn danger" id="f-delete" hidden>Удалить</button>
+      <button type="button" class="btn" data-close>Отмена</button>
+      <button class="btn primary">Сохранить</button>
+    </div>
+  </form>
+</div>
+
+<div class="sheet" id="detail-sheet" hidden>
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-label="Подробности операции" id="detail"></div>
+</div>
+
+<div class="sheet" id="acc-sheet" hidden>
+  <form class="sheet-panel form" id="acc-form" role="dialog" aria-modal="true" aria-labelledby="acc-title">
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <h2 id="acc-title">Счёт</h2>
+    <label>Название<input type="text" id="a-name" maxlength="40" required placeholder="например, Наличные"></label>
+    <div class="icons" id="a-icons" role="group" aria-label="Значок"></div>
+    <label>Сейчас на счёте, ₸<input type="number" id="a-balance" class="amount-input" inputmode="decimal" step="any" placeholder="0"></label>
+    <p class="hint">Укажите реальный остаток — Aqsha будет считать баланс дальше по вашим операциям.</p>
+    <div class="form-actions">
+      <button type="button" class="btn danger" id="a-delete" hidden>Удалить</button>
+      <button type="button" class="btn" data-close>Отмена</button>
+      <button class="btn primary">Сохранить</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast" role="status" hidden><span id="toast-text"></span><button id="toast-action" hidden></button></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+"use strict";
+// ─── Данные из основного приложения (собираются build.py) ───────────────────────────────
+const CATEGORIES = [{"name":"Зарплата","kind":"income","color":"#2e9e5b"},{"name":"Переводы входящие","kind":"income","color":"#5fb98a"},{"name":"Прочие доходы","kind":"income","color":"#9bd4b3"},{"name":"Продукты","kind":"expense","color":"#e0703b"},{"name":"Кафе и рестораны","kind":"expense","color":"#d94f70"},{"name":"Транспорт","kind":"expense","color":"#3b7be0"},{"name":"Жильё и ЖКХ","kind":"expense","color":"#8a5cd1"},{"name":"Связь и интернет","kind":"expense","color":"#3bb3c4"},{"name":"Здоровье","kind":"expense","color":"#c43b3b"},{"name":"Развлечения","kind":"expense","color":"#e0b03b"},{"name":"Покупки","kind":"expense","color":"#a0703b"},{"name":"Переводы исходящие","kind":"expense","color":"#7a7a7a"},{"name":"Прочие расходы","kind":"expense","color":"#b0b0b0"}];
+const BUILTIN_RULES = [["magnum","Продукты"],["small","Продукты"],["galmart","Продукты"],["анвар","Продукты"],["fix price","Продукты"],["arbuz","Продукты"],["airba fresh","Продукты"],["toimart","Продукты"],["пятёрочка","Продукты"],["пятерочка","Продукты"],["перекрёсток","Продукты"],["перекресток","Продукты"],["магнит","Продукты"],["лента","Продукты"],["ашан","Продукты"],["вкусвилл","Продукты"],["дикси","Продукты"],["metro","Продукты"],["spar","Продукты"],["supermarket","Продукты"],["grocery","Продукты"],["lidl","Продукты"],["aldi","Продукты"],["tesco","Продукты"],["glovo","Кафе и рестораны"],["wolt","Кафе и рестораны"],["chocofood","Кафе и рестораны"],["yandex eats","Кафе и рестораны"],["яндекс еда","Кафе и рестораны"],["кафе","Кафе и рестораны"],["ресторан","Кафе и рестораны"],["кофе","Кафе и рестораны"],["coffee","Кафе и рестораны"],["cafe","Кафе и рестораны"],["restaurant","Кафе и рестораны"],["burger","Кафе и рестораны"],["макдоналдс","Кафе и рестораны"],["kfc","Кафе и рестораны"],["вкусно и точка","Кафе и рестораны"],["starbucks","Кафе и рестораны"],["pizza","Кафе и рестораны"],["пицц","Кафе и рестораны"],["onay","Транспорт"],["онай","Транспорт"],["indriver","Транспорт"],["yandex.taxi","Транспорт"],["qazaq gaz","Транспорт"],["helios","Транспорт"],["sinooil","Транспорт"],["kmg","Транспорт"],["метро","Транспорт"],["яндекс go","Транспорт"],["yandex go","Транспорт"],["такси","Транспорт"],["taxi","Транспорт"],["uber","Транспорт"],["bolt","Транспорт"],["азс","Транспорт"],["лукойл","Транспорт"],["газпромнефть","Транспорт"],["роснефть","Транспорт"],["shell","Транспорт"],["ржд","Транспорт"],["аэрофлот","Транспорт"],["тройка","Транспорт"],["алсеко","Жильё и ЖКХ"],["alseco","Жильё и ЖКХ"],["ерц","Жильё и ЖКХ"],["коммунальные","Жильё и ЖКХ"],["жкх","Жильё и ЖКХ"],["аренда","Жильё и ЖКХ"],["квартплата","Жильё и ЖКХ"],["мосэнергосбыт","Жильё и ЖКХ"],["rent","Жильё и ЖКХ"],["electricity","Жильё и ЖКХ"],["kcell","Связь и интернет"],["activ","Связь и интернет"],["beeline","Связь и интернет"],["altel","Связь и интернет"],["tele2","Связь и интернет"],["казахтелеком","Связь и интернет"],["kazakhtelecom","Связь и интернет"],["мтс","Связь и интернет"],["билайн","Связь и интернет"],["мегафон","Связь и интернет"],["теле2","Связь и интернет"],["ростелеком","Связь и интернет"],["mobile","Связь и интернет"],["internet","Связь и интернет"],["europharma","Здоровье"],["sadykhan","Здоровье"],["биосфера","Здоровье"],["аптека","Здоровье"],["pharmacy","Здоровье"],["клиника","Здоровье"],["стоматолог","Здоровье"],["invitro","Здоровье"],["здоровье","Здоровье"],["kinopark","Развлечения"],["chaplin","Развлечения"],["kino.kz","Развлечения"],["ticketon","Развлечения"],["кино","Развлечения"],["netflix","Развлечения"],["spotify","Развлечения"],["кинопоиск","Развлечения"],["steam","Развлечения"],["театр","Развлечения"],["cinema","Развлечения"],["kaspi магазин","Покупки"],["kaspi.kz магазин","Покупки"],["technodom","Покупки"],["sulpak","Покупки"],["mechta","Покупки"],["zara","Покупки"],["h&m","Покупки"],["uniqlo","Покупки"],["wildberries","Покупки"],["ozon","Покупки"],["lamoda","Покупки"],["зарплата","Зарплата"],["заработная плата","Зарплата"],["salary","Зарплата"],["аванс","Зарплата"],["входящий перевод","Переводы входящие"],["пополнение","Переводы входящие"],["переводы:","Переводы входящие"],["перевод:","Переводы входящие"],["переводы:","Переводы исходящие"],["перевод:","Переводы исходящие"],["перевод по сбп","Переводы исходящие"],["перевод на карту","Переводы исходящие"],["исходящий перевод","Переводы исходящие"],["внешний перевод","Переводы исходящие"]];
+const LOW_PRIORITY = new Set(["входящий перевод","исходящий перевод","перевод:","переводы:","пополнение"]);
+const TOPICS = {"budget":"Бюджет","savings":"Накопления","debt":"Долги и кредиты","shopping":"Покупки","safety":"Безопасность","income":"Доход и работа","family":"Семья и дети","invest":"Инвестиции","habits":"Привычки","tax":"Налоги","mortgage":"Ипотека и жильё","car":"Автомобиль"};
+const TIPS = [["budget","📊","Правило 50/30/20","Попробуйте делить доход так: 50% — обязательные расходы (жильё, еда, транспорт), 30% — желания, 20% — накопления и погашение долгов."],["budget","👀","Раз в неделю — 5 минут","Короткий еженедельный просмотр расходов полезнее, чем подробный разбор раз в полгода: вы успеваете скорректировать месяц, пока он не закончился."],["budget","📅","Ежегодные траты","Страховка, техосмотр, подарки, налоги — их легко забыть. Посчитайте сумму за год, разделите на 12 и откладывайте её каждый месяц."],["budget","🗂️","Отдельные «конверты»","Заведите отдельные счета или депозиты под цели: «подушка», «отпуск», «ремонт». Так деньги на разные цели не смешиваются."],["budget","🧾","Бюджет на месяц вперёд","В начале месяца распишите, сколько пойдёт на жильё, еду, транспорт и развлечения. Даже приблизительный план лучше, чем никакого."],["budget","📝","Запишите все обязательные платежи","Составьте список всего, что списывается каждый месяц: аренда, кредиты, связь, интернет, подписки. Это ваш «минимум», ниже которого расходы не опустятся."],["budget","💵","Бюджет на развлечения — это нормально","Совсем без трат на радости бюджет долго не живёт. Выделите на них фиксированную сумму и тратьте без чувства вины."],["budget","🔢","Считайте в месяц, а не в день","500 ₸ в день кажутся мелочью, а 15 000 ₸ в месяц — уже заметная сумма. Пересчитывайте ежедневные привычки в месячные."],["budget","🧊","Заморозка трат","Попробуйте «месяц без лишних покупок»: только еда, жильё, транспорт и обязательное. Это хорошо показывает, куда обычно утекают деньги."],["budget","📉","Сначала сократите крупное","Экономия на жилье, машине или кредитах даёт больше, чем отказ от кофе. Начинайте пересмотр бюджета с самых больших статей."],["budget","🧮","Остаток к зарплате","Если к зарплате на карте регулярно ноль — это сигнал. Цель на первое время: чтобы перед зарплатой оставалось хотя бы 5–10% дохода."],["budget","📆","Планируйте нерегулярный доход","Если доход скачет, стройте бюджет по самому «плохому» месяцу за год, а всё, что сверху, отправляйте в накопления."],["savings","💰","Сначала заплатите себе","В день зарплаты сразу переводите 10–20% на депозит — до того, как начнёте тратить. Откладывать «то, что останется в конце месяца», почти никогда не работает."],["savings","🛟","Подушка безопасности","Цель — запас на 3–6 месяцев обычных расходов на отдельном счёте. Он спасает от кредитов, если потеряете работу или понадобится срочный ремонт."],["savings","🏦","Депозит вместо карты","Деньги на обычной карте теряют в цене из-за инфляции. Свободные средства держите на сберегательном депозите — даже краткосрочном."],["savings","🛡️","Гарантия депозитов","Вклады физлиц в Казахстане гарантирует KDIF в пределах установленного лимита. Если сбережения большие, проверьте лимит и при необходимости распределите их по разным банкам."],["savings","🎯","Цель с суммой и сроком","«Накопить на отпуск» не работает, а «450 000 ₸ к июлю = 75 000 ₸ в месяц» — работает. Разделите цель на ежемесячные суммы."],["savings","📈","Повышение — в накопления","Получили прибавку? Направьте хотя бы половину разницы в сбережения, пока вы не привыкли к новому уровню трат."],["savings","🐷","Начните с малого","Не получается откладывать 10%? Начните с 2–3%. Важна привычка, а процент можно поднимать каждые пару месяцев."],["savings","🪙","Округление покупок","Откладывайте «сдачу»: при покупке за 2 340 ₸ переводите 660 ₸ до 3 000 ₸ на накопительный счёт. Незаметно, но за год набирается прилично."],["savings","🎁","Неожиданные деньги — пополам","Премия, подарок, возврат налога: половину — на радости, половину — на цель. Так и приятно, и полезно."],["savings","⏰","Автоматизируйте","Настройте автоплатёж с карты на депозит в день зарплаты. То, что происходит само, не зависит от силы воли."],["savings","🔒","Подушку — подальше","Держите подушку безопасности в другом банке или на депозите без карты: чем сложнее её достать, тем реже она тратится на импульсивные покупки."],["savings","🧳","Копите на отпуск заранее","Отпуск в кредит обходится дороже и оставляет долг. Разделите стоимость поездки на число месяцев до неё и откладывайте каждый месяц."],["savings","🔄","Пополняйте подушку обратно","Взяли из подушки на срочное — первым делом восстановите её, прежде чем копить на что-то другое."],["debt","🧾","Рассрочка — тоже долг","Рассрочка 0-0-12 удобна, но несколько рассрочек сразу незаметно съедают бюджет на месяцы вперёд. Перед новой покупкой сложите все текущие ежемесячные платежи."],["debt","💳","Кредитка — не доход","Если пользуетесь кредитным лимитом, гасите его полностью в льготный период. Проценты по просрочке легко съедают весь кэшбэк за год."],["debt","📉","Сначала дорогие долги","Если кредитов несколько, направляйте лишние деньги в тот, у которого самая высокая ставка, а по остальным платите минимум. Так вы переплатите меньше всего."],["debt","❄️","Метод снежного кома","Если важнее мотивация, гасите сначала самый маленький долг: каждый закрытый кредит даёт силы и освобождает деньги для следующего."],["debt","📏","Правило 30%","Старайтесь, чтобы все платежи по кредитам и рассрочкам вместе не превышали 30% ежемесячного дохода. Выше — рискованно."],["debt","🔍","Смотрите на ГЭСВ","Сравнивайте кредиты по годовой эффективной ставке (ГЭСВ), а не по «ставке» в рекламе: в ГЭСВ уже учтены комиссии и страховки."],["debt","📄","Досрочное погашение","Перед досрочным погашением уточните, уменьшается ли срок или платёж. Сокращение срока обычно экономит больше процентов."],["debt","🚫","Не берите кредит, чтобы закрыть кредит","Новый заём для погашения старого почти всегда увеличивает долг. Если платить тяжело — обращайтесь в банк за реструктуризацией."],["debt","🤝","Деньги в долг","Давайте в долг только ту сумму, которую готовы не получить обратно. Это сбережёт и бюджет, и отношения."],["debt","🖊️","Поручительство","Становясь поручителем, вы фактически берёте кредит на себя: если заёмщик не платит, платить придётся вам. Соглашайтесь, только если готовы к этому."],["debt","📆","Платите вовремя","Даже одна просрочка портит кредитную историю на годы и делает будущие кредиты дороже. Настройте автоплатёж на день после зарплаты."],["debt","📊","Проверьте кредитную историю","Раз в год проверяйте свою кредитную историю в Первом кредитном бюро — так можно заметить чужой кредит, оформленный на ваше имя."],["shopping","⏳","Правило 72 часов","Хочется купить что-то дорогое и незапланированное? Добавьте в корзину и подождите три дня. Половина таких желаний за это время проходит сама."],["shopping","🛒","Список перед магазином","Покупки по заранее составленному списку обычно на 15–20% дешевле, чем «зайду и посмотрю, что нужно». И не ходите в магазин голодным."],["shopping","🏷️","Скидка — не экономия","«Купи 2 по цене 1» экономит деньги, только если вам действительно нужны две штуки. Иначе это просто дополнительная трата."],["shopping","🎁","Кэшбэк — не повод тратить","Кэшбэк приятен, но покупка ради бонусов — это всё равно трата. Используйте бонусы на то, что купили бы в любом случае."],["shopping","📆","Крупные покупки — на распродажах","Технику дешевле покупать на распродажах: заранее составьте список и купите, когда цена упадёт, а не когда старая вещь сломается."],["shopping","🧾","Чеки и гарантии","Сохраняйте фото чеков на дорогие покупки: по гарантии можно бесплатно починить или вернуть товар, а без чека это намного сложнее."],["shopping","⚖️","Цена за килограмм","Сравнивайте цену за кг или литр, а не за упаковку: «большая выгодная упаковка» иногда дороже маленькой."],["shopping","🧥","Цена за использование","Куртка за 60 000 ₸ на 5 лет дешевле, чем за 20 000 ₸ на один сезон. Делите цену вещи на то, сколько раз вы ей воспользуетесь."],["shopping","📦","Отписка от рассылок","Отпишитесь от рекламных рассылок и уведомлений магазинов. Меньше «горящих скидок» на глазах — меньше спонтанных покупок."],["shopping","🔁","Б/у тоже вариант","Детские вещи, спортинвентарь, инструменты часто можно купить б/у в отличном состоянии в 2–3 раза дешевле."],["shopping","🧹","Продайте ненужное","Вещи, которыми не пользовались год, можно продать на OLX или Kaspi Объявлениях и отправить деньги на цель."],["shopping","🍱","Готовьте на несколько дней","Приготовленная заранее еда на 2–3 дня спасает от дорогой доставки в вечер, когда «нет сил готовить»."],["shopping","🍳","Доставка vs готовка","Обед из доставки обычно стоит в 2–3 раза дороже, чем приготовленный дома. Даже 2–3 домашних обеда в неделю заметно экономят за месяц."],["shopping","🚕","Такси против транспорта","Поездка на такси часто стоит как 10–20 поездок на автобусе. Посмотрите, сколько поездок в месяц можно было бы заменить."],["shopping","📱","Тариф связи","Проверьте, сколько гигабайт и минут вы реально используете. Часто можно перейти на тариф дешевле без потери в удобстве."],["shopping","🔁","Проверьте подписки","Раз в квартал пересматривайте подписки: кино, музыка, облака, приложения. Часто мы платим за сервисы, которыми не пользовались месяцами."],["shopping","⚡","Коммунальные платежи","LED-лампы, выключенные из розетки зарядки и счётчики воды обычно окупаются за несколько месяцев и дальше экономят каждый месяц."],["safety","🔐","Код из SMS — только вам","Сотрудники банка никогда не спрашивают код из SMS, CVV и пароль. Если по телефону просят их назвать — это мошенники, кладите трубку."],["safety","📞","«Звонок из банка»","Если звонят «из службы безопасности банка» и торопят — положите трубку и сами перезвоните по номеру с обратной стороны карты или из приложения банка."],["safety","🔗","Ссылки в сообщениях","Не переходите по ссылкам из SMS и мессенджеров о «выигрыше», «блокировке карты» или «доставке посылки». Открывайте приложение банка или магазина напрямую."],["safety","🧑‍🤝‍🧑","Просьба друга о деньгах","Пишет друг и просит срочно перевести деньги? Сначала позвоните ему голосом: аккаунты в мессенджерах часто взламывают."],["safety","📲","Удалённый доступ","Никогда не устанавливайте по просьбе «сотрудника банка» программы удалённого доступа (AnyDesk, RustDesk и подобные) — так мошенники получают контроль над телефоном."],["safety","💳","Лимиты на карте","Установите в приложении банка дневной лимит на переводы и покупки в интернете. Если карту украдут, ущерб будет меньше."],["safety","🔔","Уведомления об операциях","Включите уведомления о каждой операции по карте: подозрительное списание вы заметите сразу, а не в конце месяца."],["safety","📈","«Гарантированный доход»","Обещают доходность 5–10% в месяц без риска? Это почти всегда финансовая пирамида. Высокая доходность всегда означает высокий риск."],["safety","🪪","Не передавайте документы","Не отправляйте фото удостоверения личности и не давайте ЭЦП посторонним — на них могут оформить кредит."],["safety","🛑","Срочность — признак обмана","«Решите прямо сейчас, иначе предложение сгорит» — классический приём мошенников. Любое финансовое решение можно отложить на день."],["income","🎓","Вложения в себя","Курсы и навыки, которые повышают доход, — одна из самых выгодных инвестиций. Но сначала подушка безопасности, потом всё остальное."],["income","💼","Знайте свою рыночную цену","Раз в год смотрите вакансии на свою должность: так вы поймёте, не пора ли просить повышения или менять работу."],["income","🗣️","Просите повышение с фактами","Идите к руководителю не с «мне не хватает», а со списком результатов за год и зарплатами на рынке."],["income","🧩","Второй источник дохода","Подработка, фриланс или сдача ненужной вещи в аренду снижают зависимость от одной зарплаты."],["income","⏱️","Стоимость часа","Разделите месячный доход на число рабочих часов. Это помогает решать, что выгоднее: сделать самому или заплатить за услугу."],["income","🧮","Стоимость в часах","Перед крупной покупкой переведите цену в часы работы: «эти кроссовки = 14 часов моей работы». Иногда это сразу отвечает на вопрос."],["income","🏛️","Пенсионные накопления","Проверяйте свои пенсионные накопления в ЕНПФ хотя бы раз в год: убедитесь, что работодатель перечисляет взносы."],["family","👨‍👩‍👧","Общие цели в семье","Обсудите с партнёром общие цели на год: отпуск, ремонт, подушка. Когда цель общая, копить проще и меньше споров о деньгах."],["family","🧒","Карманные деньги","Фиксированные карманные деньги учат ребёнка планировать: пусть сам решит, купить сейчас или накопить на что-то большее."],["family","🎂","Праздники — по бюджету","Заранее определите сумму на подарки и праздники и придерживайтесь её. Декабрь и дни рождения — частая причина долгов."],["family","🏥","Расходы на здоровье","Плановые осмотры и стоматолог раз в полгода дешевле, чем лечение запущенных проблем. Заложите их в бюджет заранее."],["family","📚","Учёба детей","Если впереди учёба ребёнка, начинайте откладывать заранее — даже небольшие суммы за несколько лет дают большой результат."],["family","📋","Финансовая «аптечка»","Пусть близкие знают, где лежат важные документы, какие есть счета и страховки. В сложной ситуации это очень поможет."],["invest","🧱","Порядок важен","Сначала — подушка безопасности и закрытие дорогих долгов, потом инвестиции. Инвестировать в кредит или без подушки — опасно."],["invest","🧺","Не все яйца в одну корзину","Распределяйте вложения между разными инструментами и валютами. Тогда неудача одного не разрушит всё."],["invest","⏳","Сложный процент","Деньги, вложенные под процент, со временем приносят проценты и на проценты. Поэтому начинать рано важнее, чем вкладывать много."],["invest","🔎","Понимайте, во что вкладываете","Не вкладывайте в то, что не можете объяснить другу за минуту. Если непонятно, откуда берётся доход, — лучше пройти мимо."],["invest","📜","Проверяйте лицензию","Перед вложением проверьте, есть ли у компании лицензия АРРФР. Без лицензии вы рискуете потерять всё без возможности вернуть."],["invest","😌","Не продавайте в панике","Рынок падает и растёт волнами. Долгосрочные вложения не стоит продавать из-за временного падения — так убытки становятся настоящими."],["invest","📐","Инфляция — тихий налог","Если деньги лежат без процентов, их покупательная способность каждый год снижается. Сравнивайте доходность вложений с инфляцией."],["habits","☕","Эффект латте","Кофе за 1 500 ₸ каждый рабочий день — это около 33 000 ₸ в месяц и почти 400 000 ₸ в год. Не нужно отказываться — просто знайте цену привычки."],["habits","🧠","Импульсивные покупки","Удалите сохранённые карты из приложений магазинов, которыми пользуетесь редко. Лишний шаг при оплате заметно сокращает спонтанные покупки."],["habits","😴","Не покупайте ночью","Поздно вечером контроль слабее, а спонтанных покупок больше. Оставьте корзину до утра."],["habits","🎉","Отмечайте успехи","Накопили первую 1/10 цели или закрыли кредит? Отметьте это небольшой радостью — так проще не бросить."],["habits","📵","Меньше соцсетей — меньше трат","Реклама и чужие покупки в ленте подталкивают тратить. Попробуйте неделю меньше листать — и посмотрите на расходы."],["habits","🚶","Пешком — это бесплатно","Короткие поездки пешком или на велосипеде экономят деньги на такси и заодно заменяют спортзал."],["habits","🥤","Своя бутылка воды","Вода и кофе с собой вместо покупки на ходу — небольшая, но ежедневная экономия."],["habits","🗓️","Финансовый день","Выберите один день в месяце для денежных дел: оплатить счета, проверить подписки, пополнить накопления. Так ничего не забудется."],["habits","🧘","Покупки от стресса","Если рука тянется купить что-то после тяжёлого дня — это эмоции, а не потребность. Прогулка или звонок другу помогут лучше и бесплатно."],["tax","🗓️","Налоги на имущество и машину","Налоги на квартиру, землю и автомобиль физлица платят раз в год, обычно до 1 октября. Отложите сумму заранее и проверьте начисления в eGov или приложении банка."],["tax","⚠️","Пеня копится каждый день","За просроченный налог начисляется пеня, а долг может помешать выезду за рубеж. Проверяйте задолженность хотя бы раз в год в кабинете налогоплательщика или в eGov."],["tax","🏠","Аренда — это доход","Если сдаёте квартиру, доход от аренды облагается налогом и его нужно декларировать. Заложите налог в расчёт выгоды от сдачи, чтобы не было сюрпризов."],["tax","💻","Фриланс и подработка","Доход не через работодателя (фриланс, заказы, продажи) нужно декларировать самому. При регулярной подработке посчитайте, не выгоднее ли оформить ИП со специальным режимом."],["tax","📑","Храните документы","Договоры купли-продажи, чеки и выписки по крупным сделкам храните несколько лет: они понадобятся, если налоговая задаст вопросы."],["tax","📚","Следите за изменениями","С 2026 года в Казахстане действует новый Налоговый кодекс. Если у вас есть ИП, аренда или доход из-за рубежа — уточните, что изменилось именно для вас."],["tax","🧾","Налог при продаже","Продажа квартиры или машины, которой вы владели недолго, может облагаться налогом с дохода. Перед сделкой уточните правила, чтобы правильно рассчитать выгоду."],["tax","🤝","Зарплата «в конверте»","Неофициальная зарплата — это нет пенсионных и социальных отчислений, больничных и шансов на ипотеку. «Белая» зарплата защищает вас в будущем."],["mortgage","🏦","Отбасы банк","Перед ипотекой проверьте программы Отбасы банка: жилстройсбережения и госпрограммы часто дают ставку ниже рыночной. Копить на депозите там нужно заранее."],["mortgage","🏛️","Пенсионные на жильё","Часть пенсионных накоплений сверх порога достаточности можно направить на жильё или первоначальный взнос. Проверьте доступную сумму на enpf.kz или в eGov."],["mortgage","💰","Больше взнос — меньше переплата","Каждый лишний миллион первоначального взноса экономит заметную сумму процентов за весь срок. Иногда выгоднее подкопить ещё полгода."],["mortgage","📏","Платёж — не больше трети дохода","Ежемесячный платёж по ипотеке лучше держать в пределах 30–35% дохода семьи. Иначе любая непредвиденная трата станет проблемой."],["mortgage","🧰","Расходы сверх цены","Кроме квартиры нужны деньги на оценку, страховку, нотариуса, ремонт и мебель. Заложите на это ещё 10–20% от стоимости жилья."],["mortgage","⚡","Досрочно — в первые годы","В начале ипотеки большая часть платежа — проценты. Досрочные погашения в первые годы сокращают переплату сильнее всего."],["mortgage","💱","Кредит в валюте дохода","Берите ипотеку в той валюте, в которой получаете зарплату. Кредит в долларах при доходе в тенге — большой риск при изменении курса."],["mortgage","🔍","Проверьте квартиру и застройщика","Перед покупкой проверьте, нет ли обременений и арестов, а при покупке в новостройке — разрешения застройщика и гарантию долевого строительства."],["mortgage","🛟","Подушка до ипотеки","Не отдавайте на первоначальный взнос все сбережения: оставьте подушку хотя бы на 3 месяца платежей и расходов."],["mortgage","🏘️","Аренда тоже нормально","Аренда — не «выброшенные деньги». Если ипотека съедает больше половины дохода, иногда выгоднее снимать и копить, чем жить без запаса."],["car","🧮","Полная стоимость машины","Кроме цены посчитайте страховку, налог, бензин, ТО, шины, парковку и мойку. Часто это 15–25% стоимости машины в год."],["car","📉","Новая машина дешевеет быстрее всего","В первые 2–3 года автомобиль теряет большую часть цены. Хорошая машина возрастом 2–3 года — обычно лучшее соотношение цены и состояния."],["car","🔎","Проверка перед покупкой","Перед покупкой б/у авто проверьте по VIN историю, залоги и аресты через eGov, а машину — на СТО. Пара тысяч тенге на проверку может сэкономить сотни тысяч."],["car","🛡️","ОГПО обязателен","Полис обязательного страхования ОГПО ВТС нужен всегда. Сравните цены у разных страховщиков — при той же защите стоимость может отличаться."],["car","🚕","Машина или такси?","Посчитайте: если вы ездите немного, такси и каршеринг могут выйти дешевле, чем содержание своей машины со всеми расходами."],["car","💳","Автокредит без лишнего","В автокредит часто «вшивают» КАСКО и дополнительные услуги. Сравнивайте предложения по ГЭСВ и спрашивайте, от чего можно отказаться."],["car","🔧","ТО по графику","Плановое ТО дешевле ремонта. Замена масла и фильтров вовремя продлевает жизнь двигателю и сохраняет цену машины при продаже."],["car","⛽","Стиль езды — это деньги","Плавные разгоны и торможения снижают расход топлива на 10–20%. Проверьте и давление в шинах: спущенные шины тоже увеличивают расход."]];
+const CASES = [{"id":"paycheck","icon":"📅","title":"Живу от зарплаты до зарплаты","signs":["К концу месяца на карте почти ноль","Непонятно, куда уходят деньги","Любая поломка или болезнь — сразу долг"],"story":"Айгерим, 27 лет, получает 350 000 ₸. Аренда — 120 000 ₸, продукты — 80 000 ₸, связь и транспорт — 25 000 ₸. Остальные 125 000 ₸ «растворяются»: доставка, кофе, маркетплейсы, переводы друзьям. К 25-му числу она занимает до зарплаты.","steps":["Месяц записывайте каждую трату — хотя бы быстрым вводом «кофе 1500». Без этого не видно, куда уходят деньги.","Разделите расходы на обязательные (аренда, еда, транспорт) и гибкие. У Айгерим гибкие — 125 000 ₸, больше трети дохода.","Поставьте лимит на 2–3 самые большие гибкие категории. Сокращение на 30% освобождает около 37 000 ₸ в месяц.","В день зарплаты сразу переводите 5% (17 500 ₸) на отдельный депозит. Через 3 месяца — 10% (35 000 ₸).","Первая цель — запас в размере одной зарплаты. Премии и подарки деньгами — пополам в запас."],"result":"Через полгода траты под контролем, в запасе около 150 000 ₸, и больше никаких займов до зарплаты.","actions":[["Записывать траты","add"],["Поставить лимиты","more#sec-budget"]]},{"id":"installments","icon":"🧾","title":"Рассрочки съедают зарплату","signs":["Несколько рассрочек 0-0-12 одновременно","Платежи забирают больше 30% дохода","Новую покупку снова берёте в рассрочку"],"story":"Данияр получает 400 000 ₸. За год накопилось 5 рассрочек: телефон, ноутбук, диван, холодильник и пылесос — вместе 150 000 ₸ в месяц, это 37,5% дохода. На жизнь не хватает, поэтому шестую покупку он тоже берёт в рассрочку.","steps":["Запишите все рассрочки: сумма платежа и месяц, когда она закончится.","Мораторий: ни одной новой рассрочки, пока платежи не опустятся ниже 20% дохода — 80 000 ₸.","Когда рассрочка закрывается, её платёж не тратьте: переводите на депозит или в досрочное погашение следующей.","Перед любой покупкой дороже 30 000 ₸ — правило 72 часов: подождите три дня.","Продайте то, чем не пользуетесь (Kaspi Объявления, OLX), и закройте самую маленькую рассрочку — сразу освободится платёж."],"result":"Через 6–8 месяцев большая часть рассрочек закроется, а освободившиеся деньги пойдут в накопления, а не в новые платежи.","actions":[["Записать платежи","add"],["Лимит на «Покупки»","more#sec-budget"]]},{"id":"overdue","icon":"⚠️","title":"Просрочки по кредитам","signs":["Пропустили один или несколько платежей","Звонят из банка или коллекторы","Новый кредит берёте, чтобы закрыть старый"],"story":"У Ерлана три кредита: потребительский — 1 200 000 ₸, кредитная карта — 400 000 ₸ и автокредит. После сокращения зарплаты он пропустил два платежа: растут пени, а кредитная история портится.","steps":["Не прячьтесь от банка. Сами подайте заявление об изменении условий: отсрочка, больший срок, меньший платёж. Банк обязан его рассмотреть.","Составьте список долгов: остаток, ставка (ГЭСВ), платёж, сколько дней просрочки.","По всем долгам платите минимум, а все лишние деньги — в долг с самой высокой ставкой (обычно это кредитная карта).","На 3–6 месяцев урежьте расходы до необходимого. Подработка и продажа ненужного — тоже в погашение.","Не берите новый кредит или микрозайм, чтобы закрыть старый: так долг только растёт.","Если выплатить совсем невозможно — изучите процедуры банкротства и восстановления платёжеспособности физлиц. Условия строгие, подробности — на egov.kz."],"result":"Реструктуризация снижает платёж, просрочка перестаёт расти, а долги закрываются один за другим.","actions":[["Урезать расходы","more#sec-budget"]]},{"id":"mfo","icon":"🌀","title":"Спираль микрозаймов","signs":["Займы в МФО «до зарплаты»","Один займ закрываете другим","Переплата уже больше самого долга"],"story":"Асель взяла 100 000 ₸ в МФО «до зарплаты». Вернуть вовремя не смогла и закрыла его займом в другой МФО, потом ещё раз. Через полгода у неё четыре займа на 380 000 ₸ при зарплате 280 000 ₸.","steps":["Стоп: ни одного нового займа, даже «на неделю». Иначе спираль не остановить.","Выпишите все займы: остаток, ставка, дата платежа. Начните с самого дорогого.","Подайте в каждую МФО заявление о реструктуризации или отсрочке.","Попросите помощи у близких без процентов — честно и с графиком возврата. Это дешевле любой МФО.","Осторожно с «помощью в закрытии долгов» за предоплату: это частый вид мошенничества.","После выхода соберите хотя бы 50 000 ₸ запаса, чтобы больше не занимать «до зарплаты»."],"result":"Долг перестаёт расти, займы закрываются за 6–12 месяцев, а небольшой запас не даёт вернуться в спираль.","actions":[["Записывать траты","add"]]},{"id":"cushion","icon":"🛟","title":"Нет подушки безопасности","signs":["Нет запаса денег на отдельном счёте","Неожиданная трата — сразу кредит","Страшно потерять работу"],"story":"Мадина получает 500 000 ₸, тратит 420 000 ₸. Свободные 80 000 ₸ каждый месяц незаметно уходят: отпуск, подарки, техника. Когда сломалась машина, ремонт на 250 000 ₸ пришлось взять в кредит.","steps":["Посчитайте цель — 3 месяца расходов. У Мадины это 3 × 420 000 = 1 260 000 ₸.","Откройте отдельный сберегательный депозит — подальше от карты, без быстрого доступа с телефона.","Автоплатёж в день зарплаты: 60 000 ₸ сразу на депозит, до того как начнёте тратить.","Премии, кэшбэк и подарки деньгами — половину туда же.","Взяли из подушки — сначала восстановите её, потом остальные цели."],"result":"Через 21 месяц подушка готова — а с премиями и кэшбэком ещё быстрее. Следующий ремонт оплачивается без кредита.","actions":[["Добавить счёт «Подушка»","acc:Подушка"]]},{"id":"overspend","icon":"📉","title":"Траты больше доходов","signs":["Каждый месяц в минусе","Разницу покрывает кредитка или рассрочка","Долг медленно растёт"],"story":"Семья Нурлана: доход 600 000 ₸, расходы 680 000 ₸. Каждый месяц 80 000 ₸ разницы уходят на кредитную карту, долг по ней уже 900 000 ₸.","steps":["Найдите 3 самые большие гибкие категории: Обзор → «Куда уходят деньги».","Урежьте каждую на 20–25%. У Нурлана еда вне дома, покупки и такси — вместе 320 000 ₸, сокращение на четверть даёт 80 000 ₸.","Пересмотрите обязательные: тариф связи, подписки, страховки — ещё 40 000 ₸.","Поставьте бюджет на месяц: 680 000 − 120 000 = 560 000 ₸. Aqsha предупредит, когда будет потрачено 80%.","Освободившиеся 40 000 ₸ в месяц (600 000 − 560 000) и любой дополнительный доход — на погашение кредитки."],"result":"Минус превращается в плюс уже в первый месяц, а долг по кредитке закрывается примерно за 2–2,5 года — быстрее с любым дополнительным доходом.","actions":[["Поставить бюджет","more#sec-budget"],["Куда уходят деньги","overview"]]},{"id":"jobloss","icon":"💼","title":"Потеря работы","signs":["Доход внезапно пропал","Остались обязательные платежи и кредиты","Непонятно, на сколько хватит денег"],"story":"Тимура сократили. Он тратил 300 000 ₸ в месяц, на счёте у него 400 000 ₸, ежемесячный платёж по кредиту — 45 000 ₸.","steps":["В первый же день посчитайте «бюджет выживания»: жильё, еда, транспорт, кредиты. У Тимура это 220 000 ₸.","Посчитайте, на сколько хватит денег: 400 000 / 220 000 ≈ 2 месяца. Это ваш срок.","Проверьте право на социальную выплату при потере работы из ГФСС — если работодатель платил соцотчисления. Заявление через eGov.","Сразу попросите банк об отсрочке — до просрочки, а не после.","Подработка на время поиска и поиск работы каждый день.","Не берите кредиты на жизнь: временная проблема превратится в долгую."],"result":"Без паники и новых долгов можно продержаться 2–3 месяца и найти работу.","actions":[["Бюджет выживания","more#sec-budget"]]},{"id":"irregular","icon":"🎢","title":"Нерегулярный доход","signs":["Фриланс, ИП, такси, продажи","Один месяц густо, другой пусто","В «хорошие» месяцы всё тратится"],"story":"Самат — фотограф. За год он заработал 4 800 000 ₸, но по месяцам доход от 150 000 до 900 000 ₸. В сезон он покупает технику, а зимой занимает.","steps":["Посчитайте средний доход за год — 400 000 ₸ в месяц, а планируйте расходы по худшему месяцу.","Заведите «буферный» счёт: весь доход идёт туда, а себе — фиксированная «зарплата» 300 000 ₸ раз в месяц.","Налоги и взносы откладывайте сразу с каждого поступления на отдельный счёт.","Подушка — 6 месяцев расходов, а не 3.","Крупные покупки — только из излишка в буфере, а не в первый удачный месяц."],"result":"Доход по-прежнему скачет, а жизнь — нет: каждый месяц одинаковая сумма и никаких займов.","actions":[["Добавить счёт «Буфер»","acc:Буфер"]]},{"id":"home","icon":"🏠","title":"Коплю на квартиру","signs":["Хочется своё жильё","Неясно, сколько и как долго копить","Деньги лежат на карте"],"story":"Алия и Руслан хотят квартиру за 25 000 000 ₸. Нужен первоначальный взнос 20% — 5 000 000 ₸. Сейчас у них 800 000 ₸, и вместе они могут откладывать 150 000 ₸ в месяц.","steps":["Цель и срок: (5 000 000 − 800 000) / 150 000 = 28 месяцев.","Проверьте программы Отбасы банка: жилстройсбережения и госпрограммы часто дают ставку ниже рыночной.","Узнайте на enpf.kz сумму пенсионных накоплений сверх порога достаточности — её можно направить на жильё.","Копите на депозите, а не на карте: проценты ускорят цель.","Не отдавайте на взнос всё: оставьте подушку на 3 месяца и 10–20% на ремонт и оформление.","Ежемесячный платёж по ипотеке — не больше трети общего дохода."],"result":"С пенсионными накоплениями и процентами по депозиту взнос можно собрать заметно быстрее 28 месяцев.","actions":[["Добавить счёт «На квартиру»","acc:На квартиру"]]},{"id":"invest","icon":"📈","title":"Хочу инвестировать, но страшно","signs":["Накопления лежат без дохода","Боитесь потерять деньги","Предлагают «гарантированные» 8–10% в месяц"],"story":"Бауыржану 32 года, у него 1 500 000 ₸ на карте. Друг зовёт в «проект» с доходом 8% в месяц, а сам он не знает, с чего начать.","steps":["Порядок важен: подушка на 3–6 месяцев → закрыть дорогие долги → только потом инвестиции.","«Гарантированные» 8% в месяц — признак финансовой пирамиды. Проверьте лицензию АРРФР у любой компании.","Начните с понятного: депозит, затем инструменты, которые можете объяснить другу за минуту.","Распределяйте вложения и не вкладывайте деньги, которые понадобятся в ближайшие 2–3 года.","Вкладывайте регулярно небольшие суммы: время и сложный процент важнее размера."],"result":"Деньги работают, а риск под контролем — без пирамид и паники при падениях рынка.","actions":[["Советы про инвестиции","tips:invest"]]}];
+const QUIZ = [["Есть просрочки по кредитам или рассрочкам?","yes","overdue"],["Брали займ в МФО за последние полгода?","yes","mfo"],["Платежи по кредитам и рассрочкам — больше трети дохода?","yes","installments"],["Бывает, что тратите больше, чем зарабатываете?","yes","overspend"],["К концу месяца на карте почти ничего не остаётся?","yes","paycheck"],["Есть запас денег хотя бы на 3 месяца расходов?","no","cushion"],["Доход сильно меняется от месяца к месяцу?","yes","irregular"]];
+
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => document.querySelectorAll(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const CAT = Object.fromEntries(CATEGORIES.map((c) => [c.name, c]));
+const CAT_ICON = { "Зарплата": "💼", "Переводы входящие": "📥", "Прочие доходы": "💰", "Продукты": "🛒", "Кафе и рестораны": "☕",
+  "Транспорт": "🚕", "Жильё и ЖКХ": "🏠", "Связь и интернет": "📱", "Здоровье": "💊", "Развлечения": "🎬", "Покупки": "🛍️",
+  "Одежда": "👕", "Переводы исходящие": "📤", "Прочие расходы": "🧾" };
+const catIco = (name, sm = false) => `<span class="cat-ico${sm ? " sm" : ""}" style="background:${esc((CAT[name]?.color || "#999999") + "26")}" aria-hidden="true">${CAT_ICON[name] || "•"}</span>`;
+const SITE = window.claude ? "https://remedyrae771.github.io/Remedy/" : "./"; // где лежат файлы напоминаний
+const money = (n) => new Intl.NumberFormat("ru-RU", { style: "currency", currency: "KZT", currencyDisplay: "narrowSymbol", maximumFractionDigits: 0 }).format(Math.round(n));
+const signed = (n) => (n > 0 ? "+" : "") + money(n);
+const isoDay = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const todayISO = () => isoDay(new Date());
+const nowHM = () => { const d = new Date(); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
+// время операции: сохранённое, иначе — момент ввода (для ручных); у выписки Kaspi времени нет
+function txTime(t) {
+  if (t.time) return t.time;
+  if ((t.src === "quick" || t.src === "manual") && t.at > 1e12) { const d = new Date(t.at); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; }
+  return "";
+}
+// «1 раз, 2 раза, 5 раз»
+const plural = (n, [one, few, many]) => { const m10 = n % 10, m100 = n % 100; return m10 === 1 && m100 !== 11 ? one : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? few : many; };
+const RAZ = ["раз", "раза", "раз"];
+const SRC_NAME = { quick: "Быстрый ввод", manual: "Вручную", kaspi: "Выписка Kaspi", demo: "Пример", backup: "Из копии" };
+const normDesc = (d) => (d || "").toLowerCase().replace(/^[^:]{2,20}:\s*/, "").trim();
+function hash(s) { // FNV-1a, два прохода — стабильный id операции из выписки
+  let h1 = 0x811c9dc5, h2 = 0x01000193;
+  for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); h1 = Math.imul(h1 ^ c, 16777619); h2 = Math.imul(h2 ^ c, 2246822519); }
+  return (h1 >>> 0).toString(36) + (h2 >>> 0).toString(36);
+}
+const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* нет хранилища */ } };
+
+// ─── Тост ──────────────────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(text, { error = false, action, onAction, ms = 4000 } = {}) {
+  $("#toast-text").textContent = text;
+  $("#toast").classList.toggle("error", error);
+  const b = $("#toast-action");
+  b.hidden = !action; b.textContent = action || "";
+  b.onclick = action ? () => { $("#toast").hidden = true; onAction(); } : null;
+  $("#toast").hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => ($("#toast").hidden = true), action ? Math.max(ms, 7000) : ms);
+}
+
+// ─── Хранилище: личный раздел на claude.ai, иначе — этот браузер ─────────────────────────
+const Store = {
+  mode: "loading", loaded: false, tx: new Map(), rules: new Map(), budgets: new Map(), accounts: new Map(),
+  db: null, txCol: null, ruleCol: null, budgetCol: null, accCol: null,
+  setSync(state, text) { const el = $("#sync"); el.dataset.state = state; el.textContent = text; },
+  async init() {
+    let db = null, uid = null;
+    try {
+      if (window.claude && typeof window.claude.use === "function") {
+        const [d, u] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+        db = d; uid = u ? await u.id() : null;
+      }
+    } catch { db = null; }
+    // этому посетителю claude.ai уже отказывал в сохранении — сразу работаем с телефоном
+    if (db && uid && lsGet("aqsha.localFor", null) !== uid) { this.uid = uid; return this.initCloud(db, uid); }
+    return this.initLocal();
+  },
+  unsubs: [],
+  initCloud(db, uid) {
+    this.mode = "cloud";
+    const base = db.doc(`data/users/${uid}/aqsha`);
+    this.txCol = base.collection("tx");
+    this.ruleCol = base.collection("rules");
+    this.budgetCol = base.collection("budgets");
+    this.accCol = base.collection("accounts");
+    this.setSync("loading", "Загрузка…");
+    const slow = setTimeout(() => this.setSync("error", "Нет связи"), 10000);
+    let first = 4;
+    const done = (snap) => { if (!snap.metadata.fromCache && --first <= 0) { clearTimeout(slow); this.setSync("cloud", "Сохранено"); } };
+    this.unsubs.push(this.txCol.onSnapshot((snap) => {
+      this.tx = new Map(snap.docs.map((d) => [d.id, d.data()]));
+      this.loaded = true; done(snap); render();
+    }, (e) => { clearTimeout(slow); this.setSync("error", "Нет доступа"); console.warn(e); }));
+    this.unsubs.push(this.ruleCol.onSnapshot((snap) => {
+      this.rules = new Map(snap.docs.map((d) => [d.id, d.data()]));
+      done(snap); render();
+    }, (e) => console.warn(e)));
+    this.unsubs.push(this.accCol.onSnapshot((snap) => {
+      this.accounts = new Map(snap.docs.map((d) => [d.id, d.data()]));
+      done(snap); render();
+    }, (e) => console.warn(e)));
+    this.unsubs.push(this.budgetCol.onSnapshot((snap) => {
+      this.budgets = new Map(snap.docs.map((d) => [d.id, d.data()]));
+      done(snap); render();
+    }, (e) => console.warn(e)));
+    this.slowTimer = slow;
+  },
+  // Посетитель по публичной ссылке может читать, но не сохранять на claude.ai — тогда храним у него на телефоне.
+  switchToLocal() {
+    if (this.mode === "local") return;
+    if (this.uid) lsSet("aqsha.localFor", this.uid);
+    this.unsubs.forEach((u) => u()); this.unsubs = []; clearTimeout(this.slowTimer);
+    this.initLocal();
+  },
+  initLocal() {
+    this.mode = "local";
+    const saved = lsGet("aqsha.v1", { tx: {}, rules: {}, budgets: {}, accounts: {} });
+    this.accounts = new Map(Object.entries(saved.accounts || {}));
+    this.tx = new Map(Object.entries(saved.tx || {}));
+    this.rules = new Map(Object.entries(saved.rules || {}));
+    this.budgets = new Map(Object.entries(saved.budgets || {}));
+    this.loaded = true;
+    this.setSync("local", "На телефоне");
+    render();
+  },
+  persistLocal() { lsSet("aqsha.v1", { tx: Object.fromEntries(this.tx), rules: Object.fromEntries(this.rules), budgets: Object.fromEntries(this.budgets), accounts: Object.fromEntries(this.accounts) }); },
+  async write(kind, id, body) { // body = null → удалить
+    const map = { tx: this.tx, rule: this.rules, budget: this.budgets, account: this.accounts }[kind];
+    if (this.mode !== "cloud") {
+      if (body) map.set(id, body); else map.delete(id);
+      this.persistLocal(); render(); return;
+    }
+    const ref = { tx: this.txCol, rule: this.ruleCol, budget: this.budgetCol, account: this.accCol }[kind].doc(id);
+    this.setSync("loading", "Сохраняю…");
+    try {
+      if (body) await ref.set(body); else await ref.delete();
+      this.setSync("cloud", "Сохранено");
+    } catch (e) {
+      if (e && e.code === "unavailable") { // временный сбой — одна повторная попытка
+        await new Promise((r) => setTimeout(r, 600 + Math.random() * 800));
+        if (body) await ref.set(body); else await ref.delete();
+        this.setSync("cloud", "Сохранено"); return;
+      }
+      if (e && e.code === "invalid_argument") { // claude.ai не даёт этому посетителю сохранять — переходим на телефон
+        this.switchToLocal();
+        return this.write(kind, id, body);
+      }
+      this.setSync("error", "Не сохранено");
+      if (e && e.code === "quota_exceeded") throw new Error("Место в хранилище закончилось — удалите старые операции");
+      throw new Error("Не удалось сохранить, попробуйте ещё раз");
+    }
+  },
+  putTx(id, tx) { return this.write("tx", id, tx); },
+  delTx(id) { return this.write("tx", id, null); },
+  putRule(id, r) { return this.write("rule", id, r); },
+  delRule(id) { return this.write("rule", id, null); },
+  putBudget(id, b) { return this.write("budget", id, b); },
+  putAccount(id, a) { return this.write("account", id, a); },
+  delAccount(id) { return this.write("account", id, null); },
+  delBudget(id) { return this.write("budget", id, null); },
+};
+function showBanner(html) { const b = $("#banner"); b.innerHTML = html; b.hidden = false; }
+
+// ─── Категоризация ─────────────────────────────────────────────────────────────────────
+function allRules() {
+  const user = [...Store.rules.values()].map((r) => [r.pattern, r.cat, true]);
+  const rules = [...user, ...BUILTIN_RULES.map(([p, c]) => [p, c, false])].filter(([, c]) => CAT[c]);
+  // свои правила — первыми; общие типы операций Kaspi — последними; длинные — раньше коротких
+  return rules.sort((a, b) => (b[2] - a[2]) || (LOW_PRIORITY.has(a[0]) - LOW_PRIORITY.has(b[0])) || (b[0].length - a[0].length));
+}
+function categorize(desc, amount, rules = allRules()) {
+  const text = (desc || "").toLowerCase(), kind = amount > 0 ? "income" : "expense";
+  for (const [p, c] of rules) if (CAT[c].kind === kind && text.includes(p)) return c;
+  return amount > 0 ? "Прочие доходы" : "Прочие расходы";
+}
+
+// ─── Быстрый ввод: «кофе 1500», «+450000 зарплата», «такси 1 200 ₸» ──────────────────────
+const INCOME_WORDS = ["пополнение", "поступление", "зачисление", "возврат", "зарплата", "заработная", "аванс", "премия", "доход", "перевели"];
+function parseQuick(text) {
+  const s = text.trim().replace(/\s+/g, " ");
+  const num = "([+\\-−]?\\s?\\d[\\d \\u00a0]*(?:[.,]\\d{1,2})?)\\s*(?:₸|тг\\.?|тенге|kzt)?";
+  let m = s.match(new RegExp("^" + num + "\\s+(.+)$", "i")), raw, desc;
+  if (m) { raw = m[1]; desc = m[2]; }
+  else if ((m = s.match(new RegExp("^(.+?)\\s+" + num + "$", "i")))) { desc = m[1]; raw = m[2]; }
+  else return null;
+  raw = raw.trim();
+  const value = Math.abs(parseFloat(raw.replace(/[\s +\-−]/g, "").replace(",", ".")));
+  if (!value) return null;
+  const income = raw.startsWith("+") || (!raw.startsWith("-") && !raw.startsWith("−") && INCOME_WORDS.some((w) => desc.toLowerCase().includes(w)));
+  return { amount: income ? value : -value, desc: desc.slice(0, 200) };
+}
+
+// ─── Выписка Kaspi (PDF) ───────────────────────────────────────────────────────────────
+const KASPI_LINE = /^\s*(\d{2}\.\d{2}\.\d{2,4})\s+([+\-−–])\s*(\d{1,3}(?:[   ]?\d{3})*(?:[.,]\d{1,2})?)\s*(₸|KZT|тг\.?|\$|USD|€|EUR|₽|RUB)?\s*(.*?)\s*$/;
+const OPS = ["Покупки", "Пополнение", "Переводы", "Снятия", "Разное", "Платежи", "Покупка", "Перевод", "Снятие", "Платёж", "Платеж", "Бонусы", "Погашение"];
+function parseKaspiText(text) {
+  const out = [], seen = {};
+  for (const line of text.split("\n")) {
+    const m = line.match(KASPI_LINE);
+    if (!m) continue;
+    const [, d, sign, rawAmt, , rest] = m;
+    const [dd, mm, yy] = d.split(".");
+    const year = yy.length === 2 ? "20" + yy : yy;
+    const date = `${year}-${mm}-${dd}`;
+    if (isNaN(Date.parse(date))) continue;
+    let amount = parseFloat(rawAmt.replace(/[\s  ]/g, "").replace(",", "."));
+    if (!amount) continue;
+    if (sign !== "+") amount = -amount;
+    let desc = rest.replace(/\s{2,}/g, " ");
+    for (const op of OPS) if (desc.startsWith(op + " ")) { desc = `${op}: ${desc.slice(op.length + 1).trim()}`; break; }
+    const base = hash(`kaspi|${date}|${amount}|${desc}`);
+    const n = (seen[base] = (seen[base] || 0) + 1) - 1; // одинаковые операции в один день — разные id
+    out.push({ id: `k-${base}-${n}`, date, amount, desc });
+  }
+  return out;
+}
+let pdfReady;
+function loadPdfJs() { // грузим только когда нужно: библиотека большая
+  if (pdfReady) return pdfReady;
+  const add = (src) => new Promise((ok, fail) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => fail(new Error("Не удалось загрузить модуль чтения PDF — проверьте интернет")); document.head.appendChild(s); });
+  const base = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+  // воркер подключаем обычным скриптом: pdf.js тогда работает без отдельного потока
+  pdfReady = add(base + "pdf.worker.min.js").then(() => add(base + "pdf.min.js")).catch((e) => { pdfReady = null; throw e; });
+  return pdfReady;
+}
+async function pdfToText(file, onProgress) {
+  await loadPdfJs();
+  const doc = await window.pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise;
+  const lines = [];
+  for (let p = 1; p <= doc.numPages; p++) {
+    const content = await (await doc.getPage(p)).getTextContent();
+    const rows = new Map(); // строка таблицы = элементы с одинаковой высотой y
+    for (const it of content.items) {
+      if (!it.str || !it.str.trim()) continue;
+      const y = Math.round(it.transform[5] / 2) * 2;
+      if (!rows.has(y)) rows.set(y, []);
+      rows.get(y).push({ x: it.transform[4], s: it.str });
+    }
+    [...rows.entries()].sort((a, b) => b[0] - a[0]).forEach(([, items]) => lines.push(items.sort((a, b) => a.x - b.x).map((i) => i.s).join("   ")));
+    onProgress(p / doc.numPages);
+  }
+  return lines.join("\n");
+}
+let pending = [];
+$("#pdf").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  const prev = $("#preview"), btn = $("#do-import"), bar = $("#progress");
+  prev.hidden = true; btn.hidden = true; pending = [];
+  if (!file) return;
+  bar.hidden = false; bar.firstElementChild.style.width = "5%";
+  try {
+    const text = await pdfToText(file, (f) => (bar.firstElementChild.style.width = Math.round(f * 100) + "%"));
+    const txs = parseKaspiText(text);
+    bar.hidden = true;
+    if (!txs.length) {
+      prev.innerHTML = "<b>Операций не нашлось.</b><span class='hint'>Нужна PDF-выписка Kaspi Gold или депозита. Если это она — формат мог измениться.</span>";
+      prev.hidden = false; return;
+    }
+    pending = txs.filter((t) => !Store.tx.has(t.id));
+    const inc = txs.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
+    const exp = txs.filter((t) => t.amount < 0).reduce((s, t) => s - t.amount, 0);
+    const dates = txs.map((t) => t.date).sort();
+    const fmtD = (d) => d.split("-").reverse().join(".");
+    prev.innerHTML = `<b>Найдено операций: ${txs.length}</b>
+      <span>${fmtD(dates[0])} — ${fmtD(dates[dates.length - 1])}</span>
+      <span>Доходы <b class="pos">${money(inc)}</b> · Расходы <b class="neg">${money(exp)}</b></span>
+      <span class="hint">${pending.length ? `Новых: ${pending.length}` : "Все эти операции уже добавлены."}</span>`;
+    prev.hidden = false;
+    btn.hidden = !pending.length;
+    btn.textContent = `Добавить ${pending.length} операций`;
+  } catch (err) {
+    bar.hidden = true;
+    prev.innerHTML = `<b>Не получилось прочитать файл.</b><span class="hint">${esc(err.message || err)}</span>`;
+    prev.hidden = false;
+  }
+});
+$("#do-import").addEventListener("click", async (e) => {
+  const btn = e.target; btn.disabled = true;
+  const rules = allRules(); let done = 0;
+  try {
+    for (let i = 0; i < pending.length; i += 6) { // небольшими пачками, чтобы не упереться в лимиты
+      await Promise.all(pending.slice(i, i + 6).map((t) => Store.putTx(t.id, { date: t.date, amount: t.amount, desc: t.desc, cat: categorize(t.desc, t.amount, rules), acc: $("#import-acc").value || "main", src: "kaspi", at: Date.now() })));
+      done = Math.min(i + 6, pending.length);
+      btn.textContent = `Сохраняю… ${done} из ${pending.length}`;
+    }
+    toast(`Добавлено операций: ${done}`);
+    pending = []; btn.hidden = true; $("#pdf").value = ""; $("#preview").hidden = true;
+    go("overview");
+  } catch (err) {
+    toast(`${err.message}. Сохранено: ${done}`, { error: true });
+  } finally { btn.disabled = false; }
+});
+
+// ─── Счета ─────────────────────────────────────────────────────────────────────────────
+const ACC_ICONS = ["💳", "💵", "🏦", "🐷", "👛", "📈", "🎁", "💼"];
+// основной счёт есть всегда: в нём операции, у которых счёт не указан (в т.ч. всё, что было до появления счетов)
+function accounts() {
+  const list = [...Store.accounts.entries()].map(([id, a]) => ({ id, ...a }));
+  if (!list.some((a) => a.id === "main")) list.unshift({ id: "main", name: "Kaspi Gold", icon: "💳", start: 0, order: 0 });
+  return list.sort((a, b) => ((a.order ?? 0) - (b.order ?? 0)) || a.name.localeCompare(b.name));
+}
+const accOf = (t) => (t.acc && Store.accounts.has(t.acc) ? t.acc : "main");
+const accById = (id) => accounts().find((a) => a.id === id) || accounts()[0];
+function balance(id, list = txList()) {
+  return (accById(id).start || 0) + list.filter((t) => accOf(t) === id).reduce((s, t) => s + t.amount, 0);
+}
+function fillAccSelect(sel, value) {
+  const prev = value ?? sel.value;
+  sel.innerHTML = accounts().map((a) => `<option value="${esc(a.id)}">${esc(a.icon)} ${esc(a.name)}</option>`).join("");
+  sel.value = accounts().some((a) => a.id === prev) ? prev : "main";
+}
+const quickAcc = () => { const id = lsGet("aqsha.quickAcc", "main"); return accounts().some((a) => a.id === id) ? id : "main"; };
+function renderAccounts(all) {
+  const accs = accounts(), total = accs.reduce((s, a) => s + balance(a.id, all), 0);
+  $("#acc-strip").innerHTML = (accs.length > 1 ? `<div class="acc total"><span class="acc-name">Всего</span><b>${money(total)}</b></div>` : "")
+    + accs.map((a) => { const b = balance(a.id, all); return `<button class="acc" data-acc="${esc(a.id)}"><span class="acc-name">${esc(a.icon)} ${esc(a.name)}</span><b class="${b < 0 ? "neg" : ""}">${money(b)}</b></button>`; }).join("")
+    + `<button class="acc add" data-acc="">+ Счёт</button>`;
+}
+$("#acc-strip").addEventListener("click", (e) => { const b = e.target.closest("[data-acc]"); if (b) openAcc(b.dataset.acc); });
+
+// ─── Окна редактирования ───────────────────────────────────────────────────────────────
+function closeSheets() { $$(".sheet").forEach((s) => (s.hidden = true)); }
+$$(".sheet").forEach((sh) => sh.addEventListener("click", (e) => { if (e.target === sh || e.target.closest("[data-close]")) sh.hidden = true; }));
+function armConfirm(btn, label, action) { // подтверждение на самой кнопке: первое нажатие — «Точно?», второе — действие
+  if (btn.dataset.armed) { delete btn.dataset.armed; btn.textContent = label; action(); return; }
+  btn.dataset.armed = "1"; btn.textContent = "Точно удалить?";
+  setTimeout(() => { delete btn.dataset.armed; btn.textContent = label; }, 3500);
+}
+
+// счёт
+let editingAcc = null, accIcon = "💳";
+function openAcc(id) {
+  const a = id ? accById(id) : null;
+  editingAcc = a ? a.id : null;
+  $("#acc-title").textContent = a ? "Изменить счёт" : "Новый счёт";
+  $("#a-name").value = a ? a.name : "";
+  accIcon = a ? a.icon : "💵";
+  $("#a-icons").innerHTML = ACC_ICONS.map((i) => `<button type="button" data-icon="${i}" aria-pressed="${i === accIcon}" aria-label="Значок ${i}">${i}</button>`).join("");
+  $("#a-balance").value = a ? Math.round(balance(a.id) * 100) / 100 : "";
+  $("#a-delete").hidden = !a || a.id === "main";
+  $("#a-delete").textContent = "Удалить";
+  closeSheets(); $("#acc-sheet").hidden = false;
+  if (!a) setTimeout(() => $("#a-name").focus(), 60);
+}
+$("#a-icons").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-icon]"); if (!b) return;
+  accIcon = b.dataset.icon; $$("#a-icons button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+});
+$("#acc-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const name = $("#a-name").value.trim(); if (!name) return;
+  const id = editingAcc || "a-" + Date.now().toString(36);
+  const flows = txList().filter((t) => accOf(t) === id).reduce((s, t) => s + t.amount, 0);
+  const want = parseFloat(String($("#a-balance").value).replace(",", ".")) || 0;
+  const prev = Store.accounts.get(id) || {};
+  try {
+    await Store.putAccount(id, { name, icon: accIcon, start: Math.round((want - flows) * 100) / 100, order: prev.order ?? (id === "main" ? 0 : Date.now()) });
+    closeSheets(); toast(editingAcc ? "Счёт сохранён" : `Счёт «${name}» добавлен`);
+  } catch (err) { toast(err.message, { error: true }); }
+});
+$("#a-delete").addEventListener("click", (e) => armConfirm(e.target, "Удалить", async () => {
+  const id = editingAcc, moved = txList().filter((t) => accOf(t) === id);
+  try {
+    for (const t of moved) { const { id: tid, ...body } = t; await Store.putTx(tid, { ...body, acc: "main" }); }
+    await Store.delAccount(id);
+    closeSheets(); toast(moved.length ? `Счёт удалён, ${moved.length} операций перенесены в «${accById("main").name}»` : "Счёт удалён");
+  } catch (err) { toast(err.message, { error: true }); }
+}));
+
+// операция
+let editingTx = null, txKind = "expense", catTouched = false;
+function setKind(k) {
+  txKind = k;
+  $$("#tx-form .seg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.kind === k)));
+  const cur = $("#f-cat").value;
+  $("#f-cat").innerHTML = catOptions(null, k);
+  $("#f-cat").value = CAT[cur]?.kind === k ? cur : (k === "income" ? "Прочие доходы" : "Прочие расходы");
+  autoCat();
+}
+function formAmount() { return Math.abs(parseFloat(String($("#f-amount").value).replace(",", ".")) || 0); }
+function autoCat() { // пока категорию не выбрали вручную — подбираем по описанию
+  if (catTouched) return;
+  const d = $("#f-desc").value.trim(); if (!d) return;
+  $("#f-cat").value = categorize(d, txKind === "income" ? 1 : -1);
+}
+function openTx(id, preset = {}) {
+  const t = id ? Store.tx.get(id) : null;
+  editingTx = t ? id : null; catTouched = !!t;
+  $("#tx-title").textContent = t ? "Изменить операцию" : "Новая операция";
+  $("#f-desc").value = t ? t.desc : (preset.desc || "");
+  setKind(t ? (t.amount > 0 ? "income" : "expense") : (preset.kind || "expense"));
+  if (t) $("#f-cat").value = t.cat;
+  $("#f-amount").value = t ? Math.abs(t.amount) : (preset.abs || "");
+  fillAccSelect($("#f-acc"), t ? accOf(t) : quickAcc());
+  $("#f-date").value = t ? t.date : todayISO();
+  $("#f-time").value = t ? txTime(t) : nowHM();
+  $("#f-note").value = t ? (t.note || "") : "";
+  $("#f-delete").hidden = !t; $("#f-delete").textContent = "Удалить";
+  closeSheets(); $("#tx-sheet").hidden = false;
+  if (!t) setTimeout(() => $("#f-amount").focus(), 60);
+}
+$("#tx-form .seg").addEventListener("click", (e) => { const b = e.target.closest("[data-kind]"); if (b) setKind(b.dataset.kind); });
+$("#f-cat").addEventListener("change", () => (catTouched = true));
+$("#f-desc").addEventListener("input", autoCat);
+$("#tx-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const abs = formAmount();
+  if (!abs) { toast("Укажите сумму больше нуля", { error: true }); $("#f-amount").focus(); return; }
+  const amount = txKind === "income" ? abs : -abs, cat = $("#f-cat").value;
+  const desc = $("#f-desc").value.trim() || cat;
+  const prev = editingTx ? Store.tx.get(editingTx) : null;
+  const id = editingTx || "m-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  try {
+    await Store.putTx(id, { ...(prev || { src: "manual", at: Date.now() }), date: $("#f-date").value || todayISO(), time: $("#f-time").value || "", note: $("#f-note").value.trim(), amount, desc, cat, acc: $("#f-acc").value });
+    closeSheets();
+    const hit = !prev && amount < 0 ? budgetStatus().find((b) => b.id === "total" || b.cat === cat) : null;
+    if (hit) toast(`${desc} ${signed(amount)}. ${hit.name}: ${hit.share >= 1 ? "бюджет превышен" : `потрачено ${Math.round(hit.share * 100)}% бюджета`}`, { error: hit.share >= 1 });
+    else toast(prev ? "Операция изменена" : `${desc} ${signed(amount)} → ${cat}`);
+  } catch (err) { toast(err.message, { error: true }); }
+});
+$("#f-delete").addEventListener("click", (e) => armConfirm(e.target, "Удалить", async () => {
+  try { await Store.delTx(editingTx); closeSheets(); toast("Операция удалена"); } catch (err) { toast(err.message, { error: true }); }
+}));
+
+// ─── Период и итоги ────────────────────────────────────────────────────────────────────
+let period = lsGet("aqsha.period", "month");
+function range(p) {
+  const now = new Date(), y = now.getFullYear(), m = now.getMonth();
+  if (p === "month") return [isoDay(new Date(y, m, 1)), isoDay(new Date(y, m + 1, 0))];
+  if (p === "prev") return [isoDay(new Date(y, m - 1, 1)), isoDay(new Date(y, m, 0))];
+  if (p === "3m") return [isoDay(new Date(y, m - 2, 1)), isoDay(new Date(y, m + 1, 0))];
+  if (p === "year") return [`${y}-01-01`, `${y}-12-31`];
+  return ["0000-01-01", "9999-12-31"];
+}
+const txList = () => [...Store.tx.entries()].map(([id, t]) => ({ id, ...t }));
+const inRange = (list, [a, b]) => list.filter((t) => t.date >= a && t.date <= b);
+const sumIncome = (l) => l.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
+const sumExpense = (l) => l.filter((t) => t.amount < 0).reduce((s, t) => s - t.amount, 0);
+function byCategory(list) {
+  const m = {};
+  for (const t of list) if (t.amount < 0) m[t.cat] = (m[t.cat] || 0) - t.amount;
+  return Object.entries(m).sort((a, b) => b[1] - a[1]);
+}
+$("#periods").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-period]"); if (!b) return;
+  period = b.dataset.period; lsSet("aqsha.period", period); render();
+});
+
+const charts = {};
+function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function drawChart(id, config) {
+  if (typeof Chart === "undefined") return;
+  if (charts[id]) charts[id].destroy();
+  charts[id] = new Chart(document.getElementById(id), config);
+}
+function renderOverview() {
+  $$("#periods [data-period]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.period === period)));
+  const all = txList(), list = inRange(all, range(period));
+  const inc = sumIncome(list), exp = sumExpense(list), net = inc - exp;
+  const monthName = new Date().toLocaleDateString("ru-RU", { month: "long" });
+  const prevName = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toLocaleDateString("ru-RU", { month: "long" });
+  $("#m-label").textContent = { month: `Потрачено за ${monthName}`, prev: `Потрачено за ${prevName}`, "3m": "Потрачено за 3 месяца", year: "Потрачено за год", all: "Потрачено за всё время" }[period];
+  $("#t-income").textContent = money(inc); $("#t-expense").textContent = money(exp);
+  $("#t-net").textContent = (net >= 0 ? "в плюсе " : "в минусе ") + money(Math.abs(net)); $("#t-net").className = "net-pill " + (net >= 0 ? "pos" : "neg");
+  $("#donut-total").textContent = money(exp);
+  // бюджет — только для текущего месяца
+  const total = Store.budgets.get("total")?.limit || 0, bar = $("#budget-bar");
+  bar.hidden = !(total && period === "month");
+  if (total && period === "month") {
+    const share = exp / total, left = total - exp;
+    const daysLeft = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate() + 1;
+    bar.className = "budget-bar" + (share >= 1 ? " over" : share >= 0.8 ? " warn" : "");
+    bar.firstElementChild.style.width = Math.min(100, share * 100) + "%";
+    $("#budget-line").textContent = left >= 0 ? `Из бюджета ${money(total)} осталось ${money(left)} · ~${money(left / daysLeft)} в день` : `Бюджет ${money(total)} превышен на ${money(-left)}`;
+  } else $("#budget-line").textContent = "";
+  renderAlerts(all);
+  renderAccounts(all);
+  renderLitBanner();
+  renderAsk("#ask-ov");
+  const empty = all.length === 0 && Store.loaded;
+  $("#overview-empty").hidden = !empty;
+  $("#cat-card").hidden = empty; $("#month-card").hidden = empty;
+  $("#totals").hidden = empty; $("#periods").hidden = empty;
+  if (empty) return;
+
+  const cats = byCategory(list), max = Math.max(1, ...cats.map((c) => c[1]));
+  const text = css("--muted"), grid = css("--border");
+  drawChart("chart-cats", {
+    type: "doughnut",
+    data: { labels: cats.map((c) => c[0]), datasets: [{ data: cats.map((c) => c[1]), backgroundColor: cats.map((c) => CAT[c[0]]?.color || "#999"), borderWidth: 0 }] },
+    options: { maintainAspectRatio: false, cutout: "62%", plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${c.label}: ${money(c.raw)}` } } } },
+  });
+  $("#top-cats").innerHTML = cats.length ? cats.slice(0, 8).map(([name, v]) =>
+    `<li><span class="name">${catIco(name, true)}<span>${esc(name)}</span></span>
+      <i class="bar" style="width:${(v / max) * 100}%;background:${esc(CAT[name]?.color)}"></i><span class="amt">${money(v)}</span></li>`).join("")
+    : `<li class="hint">За этот период расходов нет.</li>`;
+
+  // по месяцам: последние до 6 месяцев внутри периода (для «месяца» — 6 последних)
+  const months = {};
+  const [a, b] = period === "month" || period === "prev" ? [isoDay(new Date(new Date().getFullYear(), new Date().getMonth() - 5, 1)), range(period)[1]] : range(period);
+  for (const t of inRange(all, [a, b])) {
+    const k = t.date.slice(0, 7); months[k] = months[k] || { inc: 0, exp: 0 };
+    if (t.amount > 0) months[k].inc += t.amount; else months[k].exp -= t.amount;
+  }
+  const keys = Object.keys(months).sort().slice(-6);
+  const label = (k) => new Date(k + "-01T00:00:00").toLocaleDateString("ru-RU", { month: "short" }).replace(".", "");
+  drawChart("chart-months", {
+    type: "bar",
+    data: { labels: keys.map(label), datasets: [
+      { label: "Доходы", data: keys.map((k) => months[k].inc), backgroundColor: css("--income"), borderRadius: 4 },
+      { label: "Расходы", data: keys.map((k) => months[k].exp), backgroundColor: css("--expense"), borderRadius: 4 }] },
+    options: { maintainAspectRatio: false, scales: {
+        x: { ticks: { color: text }, grid: { display: false } },
+        y: { ticks: { color: text, callback: (v) => v >= 1e6 ? (v / 1e6).toLocaleString("ru-RU") + " млн" : v >= 1e3 ? (v / 1e3).toLocaleString("ru-RU") + " тыс" : v }, grid: { color: grid } } },
+      plugins: { legend: { labels: { color: text, boxWidth: 12 } }, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${money(c.raw)}` } } } },
+  });
+}
+
+// Предупреждения на главной: бюджеты (80% и превышение) и давняя резервная копия
+function budgetStatus(all = txList()) {
+  const cur = inRange(all, range("month")), out = [];
+  for (const [id, b] of Store.budgets) {
+    if (!b.limit) continue;
+    const spent = id === "total" ? sumExpense(cur) : -cur.filter((t) => t.cat === b.cat && t.amount < 0).reduce((s, t) => s + t.amount, 0);
+    const share = spent / b.limit;
+    if (share >= 0.8) out.push({ id, name: id === "total" ? "Все расходы" : b.cat, cat: b.cat, spent, limit: b.limit, share });
+  }
+  return out.sort((a, b) => b.share - a.share);
+}
+function renderAlerts(all) {
+  const items = budgetStatus(all).map((a) => `<div class="alert${a.share >= 1 ? " over" : ""}">
+      ${a.id === "total" ? '<span class="a-ico">🎯</span>' : catIco(a.cat)}
+      <span class="a-text"><b>${esc(a.name)}: ${a.share >= 1 ? "бюджет превышен" : `потрачено ${Math.round(a.share * 100)}%`}</b>
+      ${money(a.spent)} из ${money(a.limit)}${a.share >= 1 ? ` · сверх лимита ${money(a.spent - a.limit)}` : ` · осталось ${money(a.limit - a.spent)}`}</span></div>`);
+  const last = lsGet("aqsha.lastBackup", null), mine = all.filter((t) => t.src !== "demo").length;
+  if (Store.mode === "local" && mine >= 5 && (!last || (Date.now() - Date.parse(last)) / 864e5 > 14)) {
+    items.push(`<div class="alert"><span class="a-ico">💾</span><span class="a-text"><b>${last ? "Давно не было резервной копии" : "Сделайте резервную копию"}</b>
+      Данные хранятся только на этом телефоне — копия спасёт их при смене телефона.</span>
+      <button class="btn small" data-goto="more" data-jump-after="sec-backup">Копия</button></div>`);
+  }
+  $("#alerts").innerHTML = items.join("");
+}
+
+// ─── Операции ──────────────────────────────────────────────────────────────────────────
+function catOptions(selected, kind) {
+  return CATEGORIES.filter((c) => c.kind === kind).map((c) => `<option ${c.name === selected ? "selected" : ""}>${esc(c.name)}</option>`).join("");
+}
+function renderTransactions() {
+  renderOpsSummary(); renderAsk("#ask-ops");
+  const sel = $("#filter-cat"), prev = sel.value;
+  sel.innerHTML = '<option value="">Все категории</option>' + CATEGORIES.map((c) => `<option>${esc(c.name)}</option>`).join("");
+  sel.value = prev;
+  const fa = $("#filter-acc"), many = accounts().length > 1;
+  fa.hidden = !many;
+  if (many) { const pv = fa.value; fa.innerHTML = '<option value="">Все счета</option>' + accounts().map((a) => `<option value="${esc(a.id)}">${esc(a.icon)} ${esc(a.name)}</option>`).join(""); fa.value = pv; }
+  const q = $("#search").value.trim().toLowerCase();
+  const list = txList().filter((t) => (!q || t.desc.toLowerCase().includes(q) || (t.note || "").toLowerCase().includes(q)) && (!sel.value || t.cat === sel.value) && (!many || !fa.value || accOf(t) === fa.value))
+    .sort((a, b) => (b.date.localeCompare(a.date)) || txTime(b).localeCompare(txTime(a)) || ((b.at || 0) - (a.at || 0))).slice(0, 300);
+  if (!list.length) {
+    $("#tx-list").innerHTML = !Store.loaded ? `<div class="card empty"><span class="hint">Загружаю операции…</span></div>`
+      : Store.tx.size ? `<div class="card empty"><b>Ничего не найдено</b></div>`
+      : `<div class="card empty"><div class="big">✍️</div><b>Пока нет операций</b><p class="hint">Нажмите золотую «+» внизу и напишите «кофе 1500» — первая операция готова. Или загрузите выписку Kaspi.</p><button class="btn" data-action="demo">Показать на примере</button></div>`;
+    return;
+  }
+  const days = new Map();
+  for (const t of list) { if (!days.has(t.date)) days.set(t.date, []); days.get(t.date).push(t); }
+  const dayName = (d) => {
+    const t = todayISO(), y = isoDay(new Date(Date.now() - 864e5));
+    return d === t ? "Сегодня" : d === y ? "Вчера" : new Date(d + "T00:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long", weekday: "short" });
+  };
+  $("#tx-list").innerHTML = [...days.entries()].map(([d, items]) => {
+    const total = items.reduce((s, t) => s + t.amount, 0);
+    return `<div class="day"><span>${esc(dayName(d))}</span><span class="${total >= 0 ? "pos" : "neg"}">${signed(total)}</span></div>
+      <div class="card txs">${items.map((t) => `
+        <div class="tx" data-id="${esc(t.id)}">
+          ${catIco(t.cat)}
+          <span class="tx-desc">${esc(t.desc)}</span>
+          <span class="tx-amt ${t.amount > 0 ? "pos" : "neg"}">${signed(t.amount)}</span>
+          <span class="tx-meta"><label class="cat-pick"><span>${esc(t.cat)}</span><select aria-label="Категория операции «${esc(t.desc)}»">${catOptions(t.cat, t.amount > 0 ? "income" : "expense")}</select></label>${txTime(t) ? `<span class="tx-time">${esc(txTime(t))}</span>` : ""}${many ? `<span class="hint">${esc(accById(accOf(t)).icon)} ${esc(accById(accOf(t)).name)}</span>` : ""}${t.review?.worth ? `<span class="review-mark" title="Ваша оценка">${{ good: "👍", meh: "😐", bad: "👎" }[t.review.worth]}</span>` : ""}${t.note ? '<span class="review-mark" title="Есть заметка">📝</span>' : ""}${t.src === "demo" ? '<span class="badge">пример</span>' : ""}</span>
+          <button class="del" aria-label="Удалить операцию">✕</button>
+        </div>`).join("")}</div>`;
+  }).join("");
+}
+$("#search").addEventListener("input", () => renderTransactions());
+$("#filter-cat").addEventListener("change", () => renderTransactions());
+$("#filter-acc").addEventListener("change", () => renderTransactions());
+$("#quick").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const p = parseQuick($("#quick-text").value);
+  if (!p) { toast("Напишите сумму и что это: «кофе 1500» или «+450000 зарплата»", { error: true }); return; }
+  const cat = categorize(p.desc, p.amount);
+  try {
+    await Store.putTx("q-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), { date: todayISO(), time: nowHM(), amount: p.amount, desc: p.desc, cat, acc: quickAcc(), src: "quick", at: Date.now() });
+    $("#quick-text").value = "";
+    closeAdd();
+    const hit = p.amount < 0 ? budgetStatus().find((b) => b.id === "total" || b.cat === cat) : null;
+    if (hit) toast(`${p.desc} ${signed(p.amount)}. ${hit.name}: ${hit.share >= 1 ? "бюджет превышен" : `потрачено ${Math.round(hit.share * 100)}% бюджета`}`, { error: hit.share >= 1 });
+    else toast(`${p.desc} ${signed(p.amount)} → ${cat}`);
+  } catch (err) { toast(err.message, { error: true }); }
+});
+$("#tx-list").addEventListener("change", async (e) => {
+  if (e.target.tagName !== "SELECT") return;
+  const id = e.target.closest(".tx").dataset.id, t = Store.tx.get(id), cat = e.target.value;
+  try {
+    await Store.putTx(id, { ...t, cat });
+    const pattern = t.desc.toLowerCase().replace(/^(покупки|покупка|платежи|оплата|переводы|перевод):\s*/, "").trim();
+    if (pattern.length >= 2) toast(`Категория: ${cat}`, { action: `Запомнить для «${pattern.slice(0, 18)}»`, onAction: () => remember(pattern, cat, t.amount) });
+  } catch (err) { toast(err.message, { error: true }); }
+});
+async function remember(pattern, cat, sample) {
+  try {
+    await Store.putRule("r-" + hash(pattern), { pattern, cat });
+    const same = txList().filter((x) => x.cat !== cat && (x.amount > 0) === (sample > 0) && x.desc.toLowerCase().includes(pattern));
+    for (const x of same) { const { id, ...body } = x; await Store.putTx(id, { ...body, cat }); }
+    toast(`Правило сохранено${same.length ? `, обновлено ещё ${same.length}` : ""}`);
+  } catch (err) { toast(err.message, { error: true }); }
+}
+$("#tx-list").addEventListener("click", async (e) => {
+  const row = e.target.closest(".tx");
+  if (row && !e.target.closest(".del, .cat-pick")) { openDetail(row.dataset.id); return; }
+  const del = e.target.closest(".del"); if (!del) return;
+  if (!del.classList.contains("armed")) { // подтверждение прямо на кнопке
+    del.classList.add("armed"); del.textContent = "Удалить";
+    setTimeout(() => { del.classList.remove("armed"); del.textContent = "✕"; }, 3000);
+    return;
+  }
+  try { await Store.delTx(del.closest(".tx").dataset.id); toast("Операция удалена"); } catch (err) { toast(err.message, { error: true }); }
+});
+
+// ─── Сводка операций за месяц ──────────────────────────────────────────────────────────
+function renderOpsSummary() {
+  const box = $("#ops-sum"), cur = inRange(txList(), range("month"));
+  box.hidden = !cur.length; if (!cur.length) return;
+  const exp = cur.filter((t) => t.amount < 0), inc = sumIncome(cur), out = sumExpense(cur);
+  const day = new Date().getDate(), biggest = exp.reduce((m, t) => (!m || t.amount < m.amount ? t : m), null);
+  const freq = {}; for (const t of exp) { const k = normDesc(t.desc); if (k) (freq[k] = freq[k] || { n: 0, sum: 0, name: t.desc.replace(/^[^:]{2,20}:\s*/, "") }), freq[k].n++, freq[k].sum -= t.amount; }
+  const top = Object.values(freq).sort((a, b) => b.n - a.n || b.sum - a.sum)[0];
+  const rev = cur.filter((t) => t.review);
+  const bad = rev.filter((t) => t.review.worth === "bad").reduce((s, t) => s - t.amount, 0);
+  const impulse = rev.filter((t) => t.review.planned === "no").reduce((s, t) => s - t.amount, 0);
+  const monthName = new Date().toLocaleDateString("ru-RU", { month: "long" });
+  box.innerHTML = `<div class="sum-head"><h2 class="section-title">Операции за ${esc(monthName)}</h2><span class="hint">${cur.length} ${plural(cur.length, ["операция", "операции", "операций"])}</span></div>
+    <div class="sum-grid">
+      <div class="stat"><span>Расходы</span><b class="neg">${money(out)}</b></div>
+      <div class="stat"><span>Доходы</span><b class="pos">${money(inc)}</b></div>
+      <div class="stat"><span>В среднем в день</span><b>${money(out / day)}</b></div>
+      <div class="stat"><span>Трат за месяц</span><b>${exp.length}</b></div>
+    </div>
+    ${biggest ? `<div class="sum-line">Самая крупная: <b>${esc(biggest.desc)}</b> — ${money(-biggest.amount)}</div>` : ""}
+    ${top && top.n > 1 ? `<div class="sum-line">Чаще всего: <b>${esc(top.name)}</b> — ${top.n} ${plural(top.n, RAZ)}, ${money(top.sum)}</div>` : ""}
+    ${bad || impulse ? `<div class="sum-line">По вашим оценкам: ${bad ? `👎 зря — <b>${money(bad)}</b>` : ""}${bad && impulse ? " · " : ""}${impulse ? `⚡ спонтанно — <b>${money(impulse)}</b>` : ""}</div>` : ""}`;
+}
+
+// ─── Иногда спрашиваем об операции ─────────────────────────────────────────────────────
+const ASK = {
+  worth: { q: "Эта трата была полезной?", opts: [["good", "👍 Да"], ["meh", "😐 Так себе"], ["bad", "👎 Зря"]] },
+  planned: { q: "Это было запланировано?", opts: [["yes", "📝 Да, планировал"], ["no", "⚡ Спонтанно"]] },
+  again: { q: "Купили бы это снова?", opts: [["yes", "🔁 Да"], ["no", "🙅 Нет"]] },
+};
+const ASK_GAP = 3 * 3600e3; // спрашиваем не чаще раза в 3 часа
+let askNow = null;
+function pickAsk() {
+  if (Date.now() - lsGet("aqsha.askAt", 0) < ASK_GAP && !askNow) return null;
+  if (askNow && Store.tx.has(askNow.id) && !Store.tx.get(askNow.id).review?.[askNow.kind]) return askNow;
+  const skipped = new Set(lsGet("aqsha.askSkip", []));
+  const since = isoDay(new Date(Date.now() - 14 * 864e5));
+  const cand = txList().filter((t) => t.amount < 0 && t.date >= since && t.src !== "demo" && !FIXED.has(t.cat) && !skipped.has(t.id))
+    .map((t) => ({ t, kind: Object.keys(ASK).find((k) => !t.review?.[k]) })).filter((x) => x.kind);
+  if (!cand.length) return null;
+  const x = cand.sort((a, b) => b.t.date.localeCompare(a.t.date))[Math.floor(Math.random() * Math.min(5, cand.length))];
+  askNow = { id: x.t.id, kind: x.kind };
+  return askNow;
+}
+function renderAsk(sel) {
+  const box = $(sel), a = pickAsk();
+  if (!a) { box.innerHTML = ""; return; }
+  const t = Store.tx.get(a.id), q = ASK[a.kind];
+  const when = t.date === todayISO() ? "сегодня" : t.date === isoDay(new Date(Date.now() - 864e5)) ? "вчера" : new Date(t.date + "T00:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+  box.innerHTML = `<div class="card ask" data-ask="${esc(a.id)}" data-kind="${a.kind}">
+    <span class="hint">🤔 Короткий вопрос — помогает тратить осознаннее</span>
+    <div class="ask-q">${esc(q.q)}</div>
+    <div class="ask-tx">${catIco(t.cat, true)}<span>${esc(t.desc)} · <b>${money(-t.amount)}</b> · ${esc(when)}${txTime(t) ? " в " + esc(txTime(t)) : ""}</span></div>
+    <div class="ask-row">${q.opts.map(([v, l]) => `<button class="btn" type="button" data-ans="${v}">${l}</button>`).join("")}</div>
+    <button class="skip" type="button" data-ans="">Не сейчас</button></div>`;
+}
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-ans]"); if (!b) return;
+  const card = b.closest("[data-ask]"), id = card.dataset.ask, kind = card.dataset.kind, v = b.dataset.ans;
+  lsSet("aqsha.askAt", Date.now()); askNow = null;
+  if (!v) { lsSet("aqsha.askSkip", [...lsGet("aqsha.askSkip", []), id].slice(-200)); $$("[id^=ask-]").forEach((x) => (x.innerHTML = "")); return; }
+  const t = Store.tx.get(id); if (!t) return;
+  try {
+    await Store.putTx(id, { ...t, review: { ...(t.review || {}), [kind]: v } });
+    const thanks = { bad: "Учтено. Такие траты покажем в сводке — чтобы было проще их сократить.", no: kind === "planned" ? "Учтено как спонтанная покупка." : "Учтено.", good: "Отлично, полезная трата 👍" }[v] || "Спасибо, учтено.";
+    toast(thanks);
+    $$("[id^=ask-]").forEach((x) => (x.innerHTML = ""));
+  } catch (err) { toast(err.message, { error: true }); }
+});
+
+// ─── Подробности операции ──────────────────────────────────────────────────────────────
+let detailId = null, noteTimer;
+function openDetail(id) {
+  const t = Store.tx.get(id); if (!t) return;
+  detailId = id;
+  const all = txList(), kind = t.amount > 0 ? "income" : "expense";
+  const d = new Date(t.date + "T00:00:00");
+  const dateText = d.toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) + (txTime(t) ? ` · ${txTime(t)}` : "");
+  // категория в этом месяце
+  const [mA, mB] = monthBounds(d), month = inRange(all, [mA, mB]);
+  const catSum = Math.abs(month.filter((x) => x.cat === t.cat).reduce((s, x) => s + x.amount, 0));
+  const catN = month.filter((x) => x.cat === t.cat).length;
+  const totalKind = kind === "expense" ? sumExpense(month) : sumIncome(month);
+  // похожие операции за 3 месяца
+  const key = normDesc(t.desc), from = isoDay(new Date(d.getFullYear(), d.getMonth() - 2, 1));
+  const similar = key ? all.filter((x) => normDesc(x.desc) === key && (x.amount > 0) === (t.amount > 0) && x.date >= from && x.date <= mB) : [];
+  const simSum = Math.abs(similar.reduce((s, x) => s + x.amount, 0)), simAvg = similar.length ? simSum / similar.length : 0;
+  const diff = simAvg ? (Math.abs(t.amount) - simAvg) / simAvg : 0;
+  // бюджет категории
+  const lim = kind === "expense" ? Store.budgets.get("c-" + hash(t.cat))?.limit : 0;
+  const curMonth = inRange(all, range("month")), catNow = -curMonth.filter((x) => x.cat === t.cat && x.amount < 0).reduce((s, x) => s + x.amount, 0);
+  const insights = [];
+  if (similar.length > 1) insights.push(`<div class="insight">🔁 «${esc(t.desc.replace(/^[^:]{2,20}:\s*/, ""))}»: <b>${similar.length} ${plural(similar.length, RAZ)}</b> за 3 месяца на <b>${money(simSum)}</b>, в среднем ${money(simAvg)}.
+    ${Math.abs(diff) >= 0.15 ? `Эта операция на <b>${Math.round(Math.abs(diff) * 100)}% ${diff > 0 ? "больше" : "меньше"}</b> обычной.` : "Это обычная для вас сумма."}
+    ${kind === "expense" && similar.length >= 4 ? ` В год это примерно <b>${money(simSum * 4)}</b>.` : ""}</div>`);
+  if (totalKind > 0) insights.push(`<div class="insight">${CAT_ICON[t.cat] || "•"} В «${esc(t.cat)}» за ${esc(d.toLocaleDateString("ru-RU", { month: "long" }))}: <b>${money(catSum)}</b> (${catN} ${plural(catN, ["операция", "операции", "операций"])}) — это <b>${Math.round(catSum / totalKind * 100)}%</b> всех ${kind === "expense" ? "расходов" : "доходов"} месяца.</div>`);
+  if (lim) insights.push(`<div class="insight${catNow >= lim * 0.8 ? " warn" : ""}">🎯 Лимит «${esc(t.cat)}» в этом месяце: потрачено ${money(catNow)} из ${money(lim)} (${Math.round(catNow / lim * 100)}%).</div>`);
+  const rv = t.review || {};
+  const reviewRow = (k) => `<div class="review-row" data-rk="${k}">${ASK[k].opts.map(([v, l]) => `<button type="button" class="chip" data-rv="${v}" aria-pressed="${rv[k] === v}">${l}</button>`).join("")}</div>`;
+  $("#detail").innerHTML = `<div class="sheet-handle" aria-hidden="true"></div>
+    <div class="detail-hero">${catIco(t.cat)}<span class="d-desc">${esc(t.desc)}</span>
+      <span class="big-amt ${t.amount > 0 ? "pos" : "neg"}">${signed(t.amount)}</span></div>
+    <ul class="facts">
+      <li><span>Когда</span><span>${esc(dateText)}</span></li>
+      <li><span>Категория</span><span>${esc(t.cat)}</span></li>
+      <li><span>Счёт</span><span>${esc(accById(accOf(t)).icon)} ${esc(accById(accOf(t)).name)}</span></li>
+      <li><span>Тип</span><span>${kind === "expense" ? "Расход" : "Доход"}</span></li>
+      <li><span>Откуда</span><span>${esc(SRC_NAME[t.src] || "Вручную")}</span></li>
+    </ul>
+    ${insights.join("")}
+    ${kind === "expense" ? `<div class="d-section"><h4>Ваша оценка</h4>
+      <p class="hint" style="margin:0 0 6px">${esc(ASK.worth.q)}</p>${reviewRow("worth")}
+      <p class="hint" style="margin:8px 0 6px">${esc(ASK.planned.q)}</p>${reviewRow("planned")}</div>` : ""}
+    <div class="d-section"><h4>Заметка</h4><textarea id="d-note" maxlength="300" placeholder="Зачем, с кем, что именно купили…">${esc(t.note || "")}</textarea></div>
+    <div class="form-actions">
+      <button type="button" class="btn danger" id="d-delete">Удалить</button>
+      <button type="button" class="btn" data-close>Закрыть</button>
+      <button type="button" class="btn primary" id="d-edit">✏️ Изменить</button>
+    </div>`;
+  closeSheets(); $("#detail-sheet").hidden = false;
+}
+$("#detail").addEventListener("click", async (e) => {
+  if (e.target.id === "d-edit") { openTx(detailId); return; }
+  if (e.target.id === "d-delete") {
+    armConfirm(e.target, "Удалить", async () => { try { await Store.delTx(detailId); closeSheets(); toast("Операция удалена"); } catch (err) { toast(err.message, { error: true }); } });
+    return;
+  }
+  const b = e.target.closest("[data-rv]"); if (!b) return;
+  const k = b.closest("[data-rk]").dataset.rk, t = Store.tx.get(detailId); if (!t) return;
+  const val = (t.review || {})[k] === b.dataset.rv ? undefined : b.dataset.rv; // повторное нажатие снимает оценку
+  const review = { ...(t.review || {}) }; if (val) review[k] = val; else delete review[k];
+  b.closest("[data-rk]").querySelectorAll("[data-rv]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.rv === val)));
+  try { await Store.putTx(detailId, { ...t, review }); } catch (err) { toast(err.message, { error: true }); }
+});
+$("#detail").addEventListener("input", (e) => {
+  if (e.target.id !== "d-note") return;
+  clearTimeout(noteTimer);
+  const id = detailId, text = e.target.value.trim();
+  noteTimer = setTimeout(async () => { // сохраняем заметку после паузы в наборе
+    const t = Store.tx.get(id); if (!t || (t.note || "") === text) return;
+    try { await Store.putTx(id, { ...t, note: text }); } catch (err) { toast(err.message, { error: true }); }
+  }, 700);
+});
+
+// ─── Советы ────────────────────────────────────────────────────────────────────────────
+const GENERAL = TIPS.map(([topic, icon, title, text]) => ({ id: "g-" + hash(title), kind: "general", topic, icon, title, text }));
+function monthBounds(d) { return [isoDay(new Date(d.getFullYear(), d.getMonth(), 1)), isoDay(new Date(d.getFullYear(), d.getMonth() + 1, 0))]; }
+const FIXED = new Set(["Жильё и ЖКХ", "Переводы исходящие"]);
+function personalTips() {
+  const all = txList(); if (!all.length) return [];
+  const now = new Date(), month = todayISO().slice(0, 7), tips = [];
+  const add = (key, icon, title, text) => tips.push({ id: `${key}:${month}`, kind: "personal", icon, title, text });
+  const prevD = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const cur = inRange(all, monthBounds(now)), prev = inRange(all, monthBounds(prevD));
+  const pInc = sumIncome(prev), pExp = sumExpense(prev);
+  if (pInc > 0) {
+    const rate = (pInc - pExp) / pInc, pct = Math.round(rate * 100) + "%";
+    if (rate < 0) add("neg", "⚠️", "Расходы больше доходов", `В прошлом месяце ушло ${money(pExp)} при доходе ${money(pInc)} — минус ${money(pExp - pInc)}. Посмотрите на 2–3 самые крупные категории.`);
+    else if (rate < 0.1) add("low", "🐷", `Вы отложили ${pct} дохода`, `В прошлом месяце осталось ${money(pInc - pExp)} из ${money(pInc)}. Попробуйте переводить 10% (${money(pInc * 0.1)}) на депозит в день зарплаты.`);
+    else if (rate >= 0.2) add("good", "🏆", `Отлично: отложено ${pct} дохода`, `В прошлом месяце осталось ${money(pInc - pExp)}. Если эти деньги лежат на карте — переведите их на депозит.`);
+    else add("mid", "📈", `Отложено ${pct} дохода`, `До ориентира в 20% не хватает ${money(pInc * 0.2 - (pInc - pExp))} в месяц.`);
+  }
+  const day = now.getDate();
+  const prevSame = inRange(all, [monthBounds(prevD)[0], isoDay(new Date(prevD.getFullYear(), prevD.getMonth(), Math.min(day, new Date(prevD.getFullYear(), prevD.getMonth() + 1, 0).getDate())))]);
+  const cExp = sumExpense(cur), psExp = sumExpense(prevSame);
+  if (day >= 5 && psExp > 0 && cExp > 0) {
+    if (cExp - psExp > psExp * 0.15) add("pace", "🏃", "Траты идут быстрее обычного", `За ${day} дн. потрачено ${money(cExp)} — на ${money(cExp - psExp)} больше, чем за те же дни прошлого месяца.`);
+    else if (psExp - cExp > psExp * 0.1) add("pace", "🐢", "В этом месяце вы экономнее", `За ${day} дн. потрачено на ${money(psExp - cExp)} меньше, чем за те же дни прошлого месяца. Эту разницу можно отложить.`);
+  }
+  if (day >= 7) {
+    const c = Object.fromEntries(byCategory(cur)), p = Object.fromEntries(byCategory(prevSame));
+    const grow = Object.entries(c).filter(([n, v]) => !FIXED.has(n) && p[n] > 0 && v - p[n] >= 5000 && (v - p[n]) / p[n] >= 0.25).sort((a, b) => (b[1] - p[b[0]]) - (a[1] - p[a[0]]));
+    if (grow.length) { const [n, v] = grow[0]; add("grow-" + n, "📊", `«${n}» выросли на ${Math.round((v - p[n]) / p[n] * 100)}%`, `За ${day} дн. на «${n}» ушло на ${money(v - p[n])} больше, чем за те же дни прошлого месяца.`); }
+  }
+  const flex = byCategory(prev).filter(([n]) => !FIXED.has(n));
+  if (flex.length && pExp > 0 && flex[0][1] / pExp >= 0.15) {
+    const [n, v] = flex[0];
+    add("top-" + n, "🔍", `${Math.round(v / pExp * 100)}% расходов — «${n}»`, `В прошлом месяце на «${n}» ушло ${money(v)}. Минус 10% — это ${money(v * 0.1)} в месяц и ${money(v * 1.2)} в год.`);
+  }
+  const cafe = prev.filter((t) => t.cat === "Кафе и рестораны" && t.amount < 0);
+  if (cafe.length >= 8) { const s = -cafe.reduce((a, t) => a + t.amount, 0); add("cafe", "🍔", `${cafe.length} заказов еды и кафе за месяц`, `В прошлом месяце — ${money(s)}, в среднем ${money(s / cafe.length)} за раз. Четверть из них дома — около ${money(s * 0.15)} в плюсе.`); }
+  const pp = inRange(all, monthBounds(new Date(now.getFullYear(), now.getMonth() - 2, 1)));
+  const key = (t) => `${t.desc}|${t.amount}`, ppKeys = new Set(pp.filter((t) => t.amount < 0 && t.amount > -30000).map(key));
+  const subs = [...new Map(prev.filter((t) => ppKeys.has(key(t))).map((t) => [key(t), t])).values()];
+  if (subs.length) add("subs", "🔁", `Регулярные платежи: ${money(-subs.reduce((s, t) => s + t.amount, 0))} в месяц`, `Каждый месяц одинаково списываются: ${subs.slice(0, 4).map((t) => t.desc.replace(/^[^:]+:\s*/, "")).join(", ")}${subs.length > 4 ? " и др." : ""}. Всё ли ещё нужно?`);
+  const monthsExp = {}; for (const t of all) if (t.amount < 0 && t.date < monthBounds(now)[0]) monthsExp[t.date.slice(0, 7)] = (monthsExp[t.date.slice(0, 7)] || 0) - t.amount;
+  const last3 = Object.keys(monthsExp).sort().slice(-3).map((k) => monthsExp[k]);
+  if (last3.length) { const avg = last3.reduce((a, b) => a + b, 0) / last3.length; add("cushion", "🛟", `Ваша подушка: ${money(avg * 3)} – ${money(avg * 6)}`, `Вы тратите в среднем ${money(avg)} в месяц. Запас на 3–6 месяцев на отдельном депозите защитит от кредитов в трудной ситуации.`); }
+  const reviewed = inRange(all, monthBounds(now)).filter((t) => t.review && t.amount < 0);
+  const bad = reviewed.filter((t) => t.review.worth === "bad"), imp = reviewed.filter((t) => t.review.planned === "no");
+  if (bad.length) add("bad", "👎", `«Зря» в этом месяце: ${money(-bad.reduce((s, t) => s + t.amount, 0))}`,
+    `Вы сами отметили ${bad.length} ${plural(bad.length, ["трату", "траты", "трат"])} как бесполезные. Перед похожей покупкой вспомните эту оценку — или отложите решение на сутки.`);
+  if (imp.length >= 2) add("impulse", "⚡", `Спонтанные покупки: ${money(-imp.reduce((s, t) => s + t.amount, 0))}`,
+    `${imp.length} ${plural(imp.length, ["покупка", "покупки", "покупок"])} в этом месяце ${imp.length === 1 ? "была незапланированной" : "были незапланированными"}. Попробуйте список перед магазином и правило 72 часов для крупных трат.`);
+  return tips;
+}
+const tipHistory = []; let tipPos = -1;
+function pickTip() {
+  const seen = new Set(lsGet("aqsha.seenTips", []));
+  const personal = personalTips().filter((t) => !seen.has(t.id)), general = GENERAL.filter((t) => !seen.has(t.id));
+  let tip;
+  if (personal.length && (!general.length || Math.random() < 0.5)) tip = personal[Math.floor(Math.random() * personal.length)];
+  else if (general.length) tip = general[Math.floor(Math.random() * general.length)];
+  else { lsSet("aqsha.seenTips", []); return pickTip(); }
+  lsSet("aqsha.seenTips", [...seen, tip.id].slice(-400));
+  return tip;
+}
+function showTip(tip, back = false) {
+  const card = $("#tip"), body = $("#tip-body");
+  card.classList.toggle("personal", tip.kind === "personal");
+  $("#tip-icon").textContent = tip.icon;
+  $("#tip-label").textContent = tip.kind === "personal" ? "Про ваши деньги" : "Совет дня";
+  $("#tip-sub").textContent = tip.kind === "personal" ? "Посчитано по вашим операциям" : TOPICS[tip.topic];
+  $("#tip-title").textContent = tip.title;
+  $("#tip-text").textContent = tip.text;
+  $("#tip-prev").disabled = tipPos <= 0;
+  $$("#tip-dots i").forEach((d, i) => d.classList.toggle("on", i === tipPos % 5));
+  body.classList.remove("hero-swap", "back"); void body.offsetWidth; // перезапуск анимации
+  body.classList.add("hero-swap"); if (back) body.classList.add("back");
+}
+function nextTip() {
+  if (tipPos < tipHistory.length - 1) tipPos++;
+  else { tipHistory.push(pickTip()); tipPos = tipHistory.length - 1; }
+  showTip(tipHistory[tipPos]);
+}
+function prevTip() { if (tipPos > 0) { tipPos--; showTip(tipHistory[tipPos], true); } }
+$("#tip-next").addEventListener("click", nextTip);
+$("#tip-prev").addEventListener("click", prevTip);
+let touchX = null;
+$("#tip").addEventListener("touchstart", (e) => { touchX = e.touches[0].clientX; }, { passive: true });
+$("#tip").addEventListener("touchend", (e) => {
+  if (touchX === null) return;
+  const dx = e.changedTouches[0].clientX - touchX; touchX = null;
+  if (dx < -45) nextTip(); else if (dx > 45) prevTip();
+}, { passive: true });
+let topic = "";
+const tipCard = (t) => `<article class="card tip ${t.kind === "personal" ? "personal" : ""}"><div class="tip-icon">${esc(t.icon)}</div>
+  <div class="tip-label">${t.kind === "personal" ? "По вашим расходам" : esc(TOPICS[t.topic])}</div><div class="tip-title">${esc(t.title)}</div><p class="tip-text">${esc(t.text)}</p></article>`;
+function renderTips() {
+  const p = personalTips();
+  $("#personal-block").hidden = !p.length;
+  $("#personal-tips").innerHTML = p.map(tipCard).join("");
+  const counts = {}; GENERAL.forEach((t) => (counts[t.topic] = (counts[t.topic] || 0) + 1));
+  $("#topics").innerHTML = [["", `Все · ${GENERAL.length}`], ...Object.entries(TOPICS).map(([k, v]) => [k, `${v} · ${counts[k] || 0}`])]
+    .map(([k, l]) => `<button class="chip" data-topic="${k}" aria-pressed="${k === topic}">${esc(l)}</button>`).join("");
+  $("#general-tips").innerHTML = GENERAL.filter((t) => !topic || t.topic === topic).map(tipCard).join("");
+}
+$("#topics").addEventListener("click", (e) => { const b = e.target.closest("[data-topic]"); if (b) { topic = b.dataset.topic; renderTips(); } });
+
+// ─── Финансовая грамотность ─────────────────────────────────────────────────────────────
+const CASE = Object.fromEntries(CASES.map((c) => [c.id, c]));
+let know = "lit";
+function setKnow(k) {
+  know = k;
+  $$("[data-know]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.know === k)));
+  $("#know-lit").hidden = k !== "lit"; $("#know-tips").hidden = k !== "tips";
+  if (k === "tips") renderTips(); else renderLiteracy();
+}
+$$("[data-know]").forEach((b) => b.addEventListener("click", () => setKnow(b.dataset.know)));
+// по операциям: на какую ситуацию похоже (если данных достаточно)
+function diagnose() {
+  const all = txList().filter((t) => t.src !== "demo"); if (all.length < 5) return null;
+  const now = new Date(), prevM = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prev = inRange(all, monthBounds(prevM)), inc = sumIncome(prev), exp = sumExpense(prev);
+  if (inc > 0 && exp > inc) return { id: "overspend", why: `в прошлом месяце расходы (${money(exp)}) больше доходов (${money(inc)})` };
+  if (inc > 0 && (inc - exp) / inc < 0.05) return { id: "paycheck", why: `в прошлом месяце осталось всего ${money(inc - exp)} из ${money(inc)}` };
+  const months = {}; for (const t of all) if (t.amount < 0) months[t.date.slice(0, 7)] = (months[t.date.slice(0, 7)] || 0) - t.amount;
+  const vals = Object.values(months); const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+  const total = accounts().reduce((s, a) => s + balance(a.id), 0);
+  if (Store.accounts.size && avg > 0 && total < avg * 3) return { id: "cushion", why: `на счетах ${money(total)} — это меньше трёх месяцев ваших расходов (${money(avg * 3)})` };
+  return null;
+}
+function renderLitBanner() {
+  const d = diagnose(), m = $("#lit-match");
+  m.hidden = !d; $("#lit-banner").dataset.lit = d ? d.id : "";
+  if (d) m.innerHTML = `Похоже на вашу ситуацию: <b>«${esc(CASE[d.id].title)}»</b>`;
+}
+const planKey = (id) => "aqsha.plan." + id;
+function caseCard(c, match) {
+  const done = lsGet(planKey(c.id), []);
+  const n = done.filter(Boolean).length;
+  return `<details class="card case${match ? " match" : ""}" id="case-${c.id}">
+    <summary><span class="c-ico">${esc(c.icon)}</span><span class="c-title">${esc(c.title)}</span>
+      <span class="c-progress${n === c.steps.length ? " done" : ""}">${n ? `${n}/${c.steps.length}` : ""}</span>
+      <span class="c-sub">${esc(c.signs[0])}</span></summary>
+    <div class="case-body">
+      <div><h4>Признаки</h4><ul>${c.signs.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>
+      <div><h4>Пример</h4><p class="story">${esc(c.story)}</p></div>
+      <div><h4>Как выйти</h4><ol class="plan">${c.steps.map((x, i) => `<li><label><input type="checkbox" data-plan="${c.id}" data-step="${i}" ${done[i] ? "checked" : ""}><span>${esc(x)}</span></label></li>`).join("")}</ol></div>
+      <p class="result">✅ ${esc(c.result)}</p>
+      <div class="case-actions">${c.actions.map(([label, to]) => `<button class="btn${to === c.actions[0][1] ? " primary" : ""}" type="button" data-case-act="${esc(to)}">${esc(label)}</button>`).join("")}</div>
+    </div></details>`;
+}
+function renderLiteracy() {
+  const d = diagnose(), diag = $("#lit-diag");
+  diag.hidden = !d;
+  if (d) diag.innerHTML = `<h2 class="section-title">🎯 Ваша ситуация</h2><p class="hint" style="margin-top:4px">По операциям в Aqsha: ${esc(d.why)}.</p>
+    <button class="btn primary" type="button" data-open-case="${d.id}" style="margin-top:10px">${esc(CASE[d.id].icon)} ${esc(CASE[d.id].title)} →</button>`;
+  const open = new Set([...$$("#cases details[open]")].map((x) => x.id));
+  $("#cases").innerHTML = CASES.map((c) => caseCard(c, d && d.id === c.id)).join("");
+  open.forEach((id) => { const el = document.getElementById(id); if (el) el.open = true; });
+  renderQuiz();
+}
+let quizAnswers = {};
+function renderQuiz() {
+  const rows = QUIZ.map(([q], i) => `<div class="quiz-q"><span>${esc(q)}</span><span class="yn">
+      <button type="button" class="chip" data-q="${i}" data-a="yes" aria-pressed="${quizAnswers[i] === "yes"}">Да</button>
+      <button type="button" class="chip" data-q="${i}" data-a="no" aria-pressed="${quizAnswers[i] === "no"}">Нет</button></span></div>`).join("");
+  let result = "";
+  if (Object.keys(quizAnswers).length === QUIZ.length) {
+    const hits = QUIZ.filter(([, when], i) => quizAnswers[i] === when).map(([, , id]) => id);
+    result = hits.length
+      ? `<div class="quiz-result"><b>Начните с этого (по порядку важности):</b><div class="case-actions" style="margin-top:8px">${hits.map((id) => `<button class="btn" type="button" data-open-case="${id}">${esc(CASE[id].icon)} ${esc(CASE[id].title)}</button>`).join("")}</div></div>`
+      : `<div class="quiz-result"><b>Отличная база!</b> Срочных проблем нет — время для больших целей.<div class="case-actions" style="margin-top:8px">
+          <button class="btn" type="button" data-open-case="home">🏠 Коплю на квартиру</button><button class="btn" type="button" data-open-case="invest">📈 Инвестиции</button></div></div>`;
+  }
+  $("#quiz").innerHTML = rows + result;
+}
+$("#quiz").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-q]"); if (!b) return;
+  quizAnswers[b.dataset.q] = b.dataset.a; renderQuiz();
+});
+function openCase(id) {
+  go("tips"); setKnow("lit");
+  setTimeout(() => { const el = document.getElementById("case-" + id); if (el) { el.open = true; el.scrollIntoView({ behavior: "smooth", block: "start" }); } }, 60);
+}
+$("#lit-banner").addEventListener("click", (e) => {
+  const id = e.currentTarget.dataset.lit;
+  if (id) openCase(id); else { go("tips"); setKnow("lit"); }
+});
+document.addEventListener("click", (e) => {
+  const oc = e.target.closest("[data-open-case]"); if (oc) { openCase(oc.dataset.openCase); return; }
+  const a = e.target.closest("[data-case-act]"); if (!a) return;
+  const to = a.dataset.caseAct;
+  if (to === "add") openAdd();
+  else if (to === "overview") go("overview");
+  else if (to.startsWith("acc:")) { openAcc(null); $("#a-name").value = to.slice(4); }
+  else if (to.startsWith("more#")) { go("more"); setTimeout(() => document.getElementById(to.slice(5))?.scrollIntoView({ behavior: "smooth", block: "start" }), 80); }
+  else if (to.startsWith("tips:")) { setKnow("tips"); topic = to.slice(5); renderTips(); window.scrollTo(0, 0); }
+});
+$("#cases").addEventListener("change", (e) => {
+  const cb = e.target.closest("[data-plan]"); if (!cb) return;
+  const key = planKey(cb.dataset.plan), done = lsGet(key, []);
+  done[+cb.dataset.step] = cb.checked; lsSet(key, done);
+  const c = CASE[cb.dataset.plan], n = done.filter(Boolean).length, prog = cb.closest(".case").querySelector(".c-progress");
+  prog.textContent = n ? `${n}/${c.steps.length}` : ""; prog.classList.toggle("done", n === c.steps.length);
+  if (n === c.steps.length) toast(`План «${c.title}» выполнен! 🎉`);
+});
+
+// ─── Категории ─────────────────────────────────────────────────────────────────────────
+function renderCategories() {
+  const cur = inRange(txList(), range("month")), sums = {};
+  for (const t of cur) sums[t.cat] = (sums[t.cat] || 0) + Math.abs(t.amount);
+  $("#cat-list").innerHTML = CATEGORIES.map((c) => `<li><i class="dot" style="background:${esc(c.color)}"></i><span class="grow">${esc(c.name)}</span>
+    <span class="amt ${c.kind === "income" ? "pos" : ""}">${sums[c.name] ? money(sums[c.name]) : "—"}</span></li>`).join("");
+  const rules = [...Store.rules.entries()];
+  $("#rule-list").innerHTML = rules.length ? rules.map(([id, r]) => `<li data-id="${esc(id)}"><span class="grow">«${esc(r.pattern)}» → ${esc(r.cat)}</span><button class="btn small" data-action="unrule">Удалить</button></li>`).join("")
+    : `<li class="hint">Пока нет — появятся, когда вы поправите категорию и нажмёте «Запомнить».</li>`;
+  $("#builtin-list").innerHTML = CATEGORIES.map((c) => {
+    const ps = BUILTIN_RULES.filter(([, cat]) => cat === c.name).map(([p]) => p);
+    return ps.length ? `<li><span class="grow"><b>${esc(c.name)}:</b> ${esc(ps.join(", "))}</span></li>` : "";
+  }).join("");
+  $("#demo-card").hidden = !txList().some((t) => t.src === "demo");
+}
+$("#rule-list").addEventListener("click", async (e) => {
+  if (e.target.dataset.action !== "unrule") return;
+  try { await Store.delRule(e.target.closest("li").dataset.id); toast("Правило удалено"); } catch (err) { toast(err.message, { error: true }); }
+});
+
+// ─── Резервная копия (CSV) ─────────────────────────────────────────────────────────────
+const CSV_HEAD = ["Дата", "Сумма", "Описание", "Категория", "Источник", "Счёт", "Время", "Заметка"];
+const csvCell = (v) => { const t = String(v ?? ""); return /[;"\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+function toCSV() {
+  const rows = txList().filter((t) => t.src !== "demo").sort((a, b) => a.date.localeCompare(b.date));
+  // \u0441\u0442\u0440\u043e\u043a\u0438 \u00ab\u041e\u0441\u0442\u0430\u0442\u043e\u043a\u00bb \u0445\u0440\u0430\u043d\u044f\u0442 \u043d\u0430\u0447\u0430\u043b\u044c\u043d\u044b\u0439 \u043e\u0441\u0442\u0430\u0442\u043e\u043a \u0438 \u0437\u043d\u0430\u0447\u043e\u043a \u043a\u0430\u0436\u0434\u043e\u0433\u043e \u0441\u0447\u0451\u0442\u0430
+  const accRows = accounts().map((a) => ["\u041e\u0441\u0442\u0430\u0442\u043e\u043a", String(a.start || 0).replace(".", ","), a.name, a.icon, a.id === "main" ? "\u043e\u0441\u043d\u043e\u0432\u043d\u043e\u0439 \u0441\u0447\u0451\u0442" : "\u0441\u0447\u0451\u0442", a.name]);
+  return "\ufeff" + [CSV_HEAD, ...accRows, ...rows.map((t) => [t.date, String(t.amount).replace(".", ","), t.desc, t.cat, t.src || "", accById(accOf(t)).name, txTime(t), t.note || ""])]
+    .map((r) => r.map(csvCell).join(";")).join("\r\n");
+}
+function parseCSV(text) {
+  const rows = []; let row = [], cell = "", q = false;
+  text = text.replace(/^\ufeff/, "");
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c; }
+    else if (c === '"') q = true;
+    else if (c === ";") { row.push(cell); cell = ""; }
+    else if (c === "\n") { row.push(cell); rows.push(row); row = []; cell = ""; }
+    else if (c !== "\r") cell += c;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows;
+}
+let downloadsNs = null; // узнаём заранее, чтобы копирование сработало прямо в момент нажатия
+window.claude?.use?.("downloads").then((d) => (downloadsNs = d)).catch(() => {});
+function copyBackupAsText(csv, count) {
+  const note = $("#backup-note"), area = $("#backup-text");
+  const text = csv.replace(/^\ufeff/, "");
+  const shown = () => { area.value = text; area.hidden = false; area.focus(); area.select();
+    note.textContent = "Выделите текст ниже, скопируйте и сохраните в Заметках или отправьте себе в чат."; note.hidden = false; };
+  try {
+    navigator.clipboard.writeText(text).then(() => {
+      note.textContent = `Копия (${count} операций) скопирована. Вставьте её в Заметки или отправьте себе в WhatsApp или Telegram.`;
+      lsSet("aqsha.lastBackup", todayISO());
+      note.hidden = false; area.hidden = true;
+    }, shown);
+  } catch { shown(); }
+}
+$("#backup-save").addEventListener("click", async (e) => {
+  const note = $("#backup-note");
+  const count = txList().filter((t) => t.src !== "demo").length;
+  if (!count) { toast("Пока нечего сохранять — добавьте операции"); return; }
+  const csv = toCSV();
+  if (!window.claude) { // отдельный сайт (не claude.ai): обычное скачивание файла
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    a.download = `aqsha-${todayISO()}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    note.textContent = `Файл копии (${count} операций) сохранён в «Загрузки».`; note.hidden = false;
+    lsSet("aqsha.lastBackup", todayISO());
+    return;
+  }
+  if (!downloadsNs) { copyBackupAsText(csv, count); return; }
+  e.target.disabled = true;
+  try {
+    await downloadsNs.save({ filename: `aqsha-${todayISO()}.csv`, data: csv });
+    lsSet("aqsha.lastBackup", todayISO());
+    note.textContent = `Копия сохранена: ${count} операций.`; note.hidden = false;
+  } catch (err) {
+    if (err?.code === "declined") return;
+    if (err?.code === "rate_limited") { toast("Окно сохранения уже открыто"); return; }
+    downloadsNs = null; copyBackupAsText(csv, count); // сохранение файлов здесь недоступно — даём текст
+  } finally { e.target.disabled = false; }
+});
+async function restoreFromText(text) {
+  const rows = parseCSV(text.trim());
+  const head = rows.shift() || [];
+  if (head[0] !== CSV_HEAD[0] || head[1] !== CSV_HEAD[1]) throw new Error("Это не копия Aqsha: первая строка должна начинаться с «Дата;Сумма»");
+  const items = rows.filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r[0]) && r[1]).map((r) => {
+    const amount = parseFloat(r[1].replace(",", "."));
+    return { id: "b-" + hash(r.slice(0, 5).join("|")), date: r[0], amount, desc: r[2] || "", cat: CAT[r[3]] ? r[3] : categorize(r[2], amount), src: r[4] || "backup", accName: (r[5] || "").trim(), ...(r[6] ? { time: r[6] } : {}), ...(r[7] ? { note: r[7] } : {}) };
+  }).filter((t) => t.amount && !Store.tx.has(t.id));
+  // операция могла уже быть с другим id (из выписки) — сверяем по дате, сумме и описанию
+  const known = new Set(txList().map((t) => `${t.date}|${t.amount}|${t.desc}`));
+  const fresh = items.filter((t) => !known.has(`${t.date}|${t.amount}|${t.desc}`));
+  // счета из копии: строки «Остаток» задают начальный остаток и значок; основной счёт сопоставляем всегда
+  const byName = Object.fromEntries(accounts().map((a) => [a.name, a.id]));
+  for (const r of rows.filter((x) => x[0] === "Остаток" && x[2])) {
+    const name = r[2].trim(), isMain = r[4] === "основной счёт";
+    const id = isMain ? "main" : (byName[name] || "a-" + hash(name));
+    const prev = Store.accounts.get(id) || {};
+    await Store.putAccount(id, { name, icon: r[3] || prev.icon || "💵", start: parseFloat(String(r[1]).replace(",", ".")) || 0, order: prev.order ?? (isMain ? 0 : Date.now()) });
+    byName[name] = id;
+  }
+  for (const name of new Set(fresh.map((t) => t.accName).filter(Boolean))) {
+    if (!byName[name]) { const nid = "a-" + hash(name); await Store.putAccount(nid, { name, icon: "💵", start: 0, order: Date.now() }); byName[name] = nid; }
+  }
+  for (let i = 0; i < fresh.length; i += 6) await Promise.all(fresh.slice(i, i + 6).map(({ id, accName, ...t }) => Store.putTx(id, { ...t, acc: byName[accName] || "main", at: Date.now() })));
+  toast(fresh.length ? `Восстановлено операций: ${fresh.length}` : "Все операции из копии уже есть");
+}
+$("#backup-file").addEventListener("change", async (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  try { await restoreFromText(await file.text()); } catch (err) { toast(err.message || "Не удалось прочитать файл", { error: true }); }
+  e.target.value = "";
+});
+$("#restore-go").addEventListener("click", async () => {
+  try { await restoreFromText($("#restore-text").value); $("#restore-text").value = ""; }
+  catch (err) { toast(err.message || "Не удалось прочитать копию", { error: true }); }
+});
+
+// ─── Пример данных ─────────────────────────────────────────────────────────────────────
+async function loadDemo(btn) {
+  if (btn) btn.disabled = true;
+  const shops = [["Покупки: Magnum Cash&Carry", 3000, 18000], ["Покупки: Small", 800, 5000], ["Покупки: Glovo", 2500, 7000], ["Покупки: Coffee Boom", 1200, 2500],
+    ["Покупки: ONAY", 200, 400], ["Покупки: inDriver", 900, 3000], ["Покупки: Europharma", 1500, 9000], ["Покупки: Kaspi магазин", 5000, 40000], ["Переводы: Айгерим К.", 2000, 15000]];
+  let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const now = new Date(), items = [];
+  for (let d = new Date(now.getFullYear(), now.getMonth() - 2, 1); d <= now; d.setDate(d.getDate() + 1)) {
+    const day = isoDay(d), n = d.getDate();
+    if (n === 5) items.push([day, 450000, "Пополнение: Зарплата ТОО"]);
+    if (n === 8) items.push([day, -180000, "Платежи: Аренда квартиры"]);
+    if (n === 15) items.push([day, -4990, "Платежи: Kcell"]);
+    for (let k = Math.floor(rnd() * 3); k > 0; k--) { const [desc, lo, hi] = shops[Math.floor(rnd() * shops.length)]; items.push([day, -Math.round((lo + rnd() * (hi - lo)) / 10) * 10, desc]); }
+  }
+  const rules = allRules();
+  try {
+    for (let i = 0; i < items.length; i += 6) await Promise.all(items.slice(i, i + 6).map(([date, amount, desc], j) =>
+      Store.putTx(`demo-${i + j}`, { date, amount, desc, cat: categorize(desc, amount, rules), src: "demo", at: i + j })));
+    toast("Добавлен пример за 3 месяца. Удалить его можно на вкладке «Ещё».");
+  } catch (err) { toast(err.message, { error: true }); }
+  if (btn) btn.disabled = false;
+}
+async function removeDemo(btn) {
+  btn.disabled = true;
+  try { for (const t of txList().filter((x) => x.src === "demo")) await Store.delTx(t.id); toast("Пример удалён"); }
+  catch (err) { toast(err.message, { error: true }); }
+  btn.disabled = false;
+}
+document.addEventListener("click", (e) => {
+  const a = e.target.closest("[data-action]");
+  if (a?.dataset.action === "demo") loadDemo(a);
+  if (a?.dataset.action === "undemo") removeDemo(a);
+  const g = e.target.closest("[data-goto]");
+  if (g) {
+    closeAdd(); go(g.dataset.goto);
+    if (g.dataset.jumpAfter) setTimeout(() => document.getElementById(g.dataset.jumpAfter)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  }
+  const j = e.target.closest("[data-jump]");
+  if (j) document.getElementById(j.dataset.jump)?.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+// ─── Окно «+» ───────────────────────────────────────────────────────────────────────────
+function openAdd() {
+  closeSheets();
+  const accs = accounts(), cur = quickAcc();
+  $("#quick-accs").hidden = accs.length < 2;
+  $("#quick-accs").innerHTML = accs.map((a) => `<button type="button" class="chip" data-qacc="${esc(a.id)}" aria-pressed="${a.id === cur}">${esc(a.icon)} ${esc(a.name)}</button>`).join("");
+  $("#add-sheet").hidden = false; setTimeout(() => $("#quick-text").focus(), 60);
+}
+$("#quick-accs").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-qacc]"); if (!b) return;
+  lsSet("aqsha.quickAcc", b.dataset.qacc);
+  $$("#quick-accs .chip").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+});
+$("#open-full").addEventListener("click", () => {
+  const p = parseQuick($("#quick-text").value);
+  openTx(null, p ? { abs: Math.abs(p.amount), desc: p.desc, kind: p.amount > 0 ? "income" : "expense" } : { desc: $("#quick-text").value.trim() });
+  $("#quick-text").value = "";
+});
+function closeAdd() { $("#add-sheet").hidden = true; }
+$("#fab").addEventListener("click", openAdd);
+$("#add-sheet").addEventListener("click", (e) => { if (e.target.id === "add-sheet") closeAdd(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeSheets(); });
+$("#examples").addEventListener("click", (e) => {
+  const c = e.target.closest(".chip"); if (!c) return;
+  $("#quick-text").value = c.textContent.startsWith("+") ? "+" : c.textContent.replace(/\d+/, "").trim() + " ";
+  $("#quick-text").focus();
+});
+
+// ─── Бюджет ────────────────────────────────────────────────────────────────────────────
+function renderBudget() {
+  const totalInput = $("#budget-total");
+  if (document.activeElement !== totalInput) totalInput.value = Store.budgets.get("total")?.limit || "";
+  const spent = byCategory(inRange(txList(), range("month")));
+  const spentOf = Object.fromEntries(spent);
+  $("#budget-cats").innerHTML = CATEGORIES.filter((c) => c.kind === "expense").map((c) => {
+    const id = "c-" + hash(c.name), lim = Store.budgets.get(id)?.limit || "";
+    return `<li>${catIco(c.name, true)}<span class="grow">${esc(c.name)}<br><span class="hint">в этом месяце ${money(spentOf[c.name] || 0)}</span></span>
+      <input type="number" inputmode="numeric" min="0" step="1000" placeholder="лимит" value="${lim}" data-budget="${esc(c.name)}" aria-label="Лимит: ${esc(c.name)}" style="width:110px"></li>`;
+  }).join("");
+}
+async function saveBudget(id, body) {
+  try { if (body.limit > 0) await Store.putBudget(id, body); else await Store.delBudget(id); toast(body.limit > 0 ? "Бюджет сохранён" : "Лимит убран"); }
+  catch (err) { toast(err.message, { error: true }); }
+}
+$("#budget-total-save").addEventListener("click", () => saveBudget("total", { limit: Math.round(+$("#budget-total").value || 0) }));
+$("#budget-cats").addEventListener("change", (e) => {
+  const cat = e.target.dataset.budget; if (!cat) return;
+  saveBudget("c-" + hash(cat), { cat, limit: Math.round(+e.target.value || 0) });
+});
+
+// ─── Напоминания через Календарь ───────────────────────────────────────────────────────
+function renderReminders() {
+  $("#remind-evening").href = `${SITE}reminders/evening-${$("#remind-time").value}.ics`;
+  $("#remind-monthly").href = `${SITE}reminders/monthly-statement.ics`;
+}
+$("#remind-time").addEventListener("change", () => { lsSet("aqsha.remindTime", $("#remind-time").value); renderReminders(); });
+$("#remind-time").value = lsGet("aqsha.remindTime", "2100");
+
+// ─── Вкладки и отрисовка ───────────────────────────────────────────────────────────────
+let tab = "overview";
+function go(name) {
+  tab = name;
+  $$(".tabbar [data-tab]").forEach((b) => (b.dataset.tab === name ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current")));
+  $$(".tab").forEach((s) => s.classList.toggle("active", s.id === "tab-" + name));
+  window.scrollTo(0, 0);
+  render();
+}
+$$(".tabbar [data-tab]").forEach((b) => b.addEventListener("click", () => go(b.dataset.tab)));
+let raf;
+function render() { // перерисовываем только видимую вкладку, не чаще раза за кадр
+  cancelAnimationFrame(raf);
+  raf = requestAnimationFrame(() => {
+    if (tab === "overview") renderOverview();
+    if (tab === "transactions") renderTransactions();
+    if (tab === "tips") (know === "lit" ? renderLiteracy() : renderTips());
+    if (tab === "more") { renderCategories(); renderBudget(); renderReminders(); fillAccSelect($("#import-acc")); }
+  });
+}
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", render);
+new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+nextTip();
+render();
+Store.init();
+// ссылка из напоминания в Календаре открывает сразу окно добавления
+const fromHash = () => { if (location.hash === "#add") openAdd(); };
+fromHash(); window.addEventListener("hashchange", fromHash);
+</script>

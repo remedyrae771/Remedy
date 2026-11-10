@@ -1,0 +1,23 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Aqsha//Reminders//RU
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:monthly-statement@aqsha
+DTSTAMP:20260101T000000Z
+DTSTART:20260101T100000
+DURATION:PT10M
+RRULE:FREQ=MONTHLY;BYMONTHDAY=1
+SUMMARY:Aqsha: выписка Kaspi за прошлый месяц
+DESCRIPTION:Kaspi.kz → Kaspi Gold → Выписка → PDF\, затем
+  Aqsha → Ещё → Выписка. И сохраните резервн
+ ую копию. https://remedyrae771.github.io/Remedy/
+URL:https://remedyrae771.github.io/Remedy/#add
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Aqsha: выписка Kaspi за прошлый месяц
+TRIGGER:PT0M
+END:VALARM
+END:VEVENT
+END:VCALENDAR
