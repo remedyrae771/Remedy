@@ -17,7 +17,7 @@ export default function Join() {
     if (loading) return;
     (async () => {
       if (code) await savePendingInvite(String(code));
-      if (!session) router.replace('/sign-in');
+      if (!session) router.replace({ pathname: '/sign-in', params: code ? { invited: '1' } : {} });
       else if (!profile?.couple_id) router.replace('/pair');
       else {
         await clearPendingInvite();

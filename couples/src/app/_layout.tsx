@@ -6,6 +6,8 @@ import { AuthProvider, useAuth } from '../providers/AuthProvider';
 import { colors } from '../theme';
 import { isSupabaseConfigured } from '../lib/supabase';
 import SetupNeeded from '../components/SetupNeeded';
+// Импорт ради побочного эффекта: сохраняет код приглашения из адреса (?join=…) при запуске.
+import '../lib/invite';
 
 function RootNavigator() {
   const { session, profile, loading } = useAuth();

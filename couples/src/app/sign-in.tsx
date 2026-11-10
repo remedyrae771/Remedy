@@ -1,28 +1,29 @@
 import { useEffect, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import { KeyboardAvoidingView, Platform, Text, View } from 'react-native';
 import { Button, Card, ErrorText, Input, Screen, Title, styles } from '../components/ui';
-import { getPendingInvite } from '../lib/invite';
+import { getPendingInvite, inviteFromUrl } from '../lib/invite';
 import { errorText, supabase } from '../lib/supabase';
 import { colors, spacing } from '../theme';
 
 export default function SignIn() {
-  const [mode, setMode] = useState<'signIn' | 'signUp'>('signIn');
+  const [modeChoice, setMode] = useState<'signIn' | 'signUp' | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [invited, setInvited] = useState(false);
+  const { invited: invitedParam } = useLocalSearchParams<{ invited?: string }>();
+  const [storedInvite, setStoredInvite] = useState(false);
+  const invited = invitedParam === '1' || storedInvite || Boolean(inviteFromUrl);
+  // Приглашённому по умолчанию показываем регистрацию.
+  const mode = modeChoice ?? (invited ? 'signUp' : 'signIn');
 
   useEffect(() => {
-    getPendingInvite().then((code) => {
-      if (code) {
-        setInvited(true);
-        setMode('signUp');
-      }
-    });
-  }, []);
+    getPendingInvite().then((code) => setStoredInvite(Boolean(code)));
+  }, [invitedParam]);
+
 
   const submit = async () => {
     setError(null);

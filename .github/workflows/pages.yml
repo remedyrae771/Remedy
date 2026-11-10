@@ -1,4 +1,8 @@
-name: Deploy web app to GitHub Pages
+name: Deploy sites to GitHub Pages
+
+# Один сайт на два приложения:
+#   /Remedy/          — Aqsha (статические файлы из docs/)
+#   /Remedy/couples/  — Remedy, приложение для пар (сборка Expo из couples/)
 
 on:
   push:
@@ -23,18 +27,43 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npx tsc --noEmit
-      - name: Export web build
+          cache-dependency-path: couples/package-lock.json
+
+      - name: Install couples app
+        working-directory: couples
+        run: npm ci
+
+      - name: Typecheck couples app
+        working-directory: couples
+        run: npx tsc --noEmit
+
+      - name: Build couples app for the web
+        working-directory: couples
         run: npx expo export --platform web --output-dir dist
         env:
           EXPO_PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
-      # GitHub Pages отдаёт 404.html для неизвестных путей — так работают ссылки вида /join?code=…
-      - run: cp dist/index.html dist/404.html && touch dist/.nojekyll
+
+      - name: Assemble site
+        run: |
+          mkdir -p site
+          cp -r docs/. site/
+          cp -r couples/dist site/couples
+          touch site/.nojekyll
+          # Обновили страницу на внутреннем адресе приложения для пар — вернуть на его главную.
+          cat > site/404.html <<'HTML'
+          <!doctype html><meta charset="utf-8"><title>Страница не найдена</title>
+          <script>
+            var p = location.pathname;
+            if (p.indexOf('/Remedy/couples/') === 0) location.replace('/Remedy/couples/' + location.search);
+            else location.replace('/Remedy/');
+          </script>
+          <p>Страница не найдена. <a href="/Remedy/">На главную</a></p>
+          HTML
+
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: dist
+          path: site
 
   deploy:
     needs: build

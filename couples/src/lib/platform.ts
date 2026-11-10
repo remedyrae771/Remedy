@@ -2,11 +2,14 @@ import * as Clipboard from 'expo-clipboard';
 import { Alert, Platform, Share } from 'react-native';
 
 /** Адрес веб-версии: по нему открываются приглашения. */
-export const WEB_URL = (process.env.EXPO_PUBLIC_WEB_URL ?? 'https://remedyrae771.github.io/Remedy').replace(/\/$/, '');
+export const WEB_URL = (process.env.EXPO_PUBLIC_WEB_URL ?? 'https://remedyrae771.github.io/Remedy/couples').replace(/\/$/, '');
 
-/** Реферальная ссылка-приглашение для партнёра. */
+/**
+ * Реферальная ссылка-приглашение для партнёра. Код передаётся параметром главной
+ * страницы (?join=…), поэтому ссылка открывается напрямую на любом статическом хостинге.
+ */
 export function inviteLink(code: string): string {
-  return `${WEB_URL}/join?code=${encodeURIComponent(code)}`;
+  return `${WEB_URL}/?join=${encodeURIComponent(code)}`;
 }
 
 export function inviteMessage(code: string, name?: string): string {

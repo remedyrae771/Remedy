@@ -32,7 +32,7 @@
     ],
     "scheme": "remedy",
     "experiments": {
-      "baseUrl": "/Remedy"
+      "baseUrl": "/Remedy/couples"
     }
   }
 }
