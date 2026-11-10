@@ -236,3 +236,11 @@ def test_personal_tips_from_data(tmp_path, monkeypatch):
     assert "cafe-count" in tips and "13 заказов" in tips["cafe-count"]["title"]
     assert "subs" in tips and "Kcell" in tips["subs"]["text"]
     assert "cushion" in tips
+
+
+def test_env_new_and_old_names(monkeypatch):
+    monkeypatch.delenv("AQSHA_CURRENCY", raising=False)
+    monkeypatch.setenv("REMEDY_CURRENCY", "RUB")
+    assert db.env("CURRENCY") == "RUB"           # старое имя ещё работает
+    monkeypatch.setenv("AQSHA_CURRENCY", "KZT")
+    assert db.env("CURRENCY") == "KZT"           # новое имя важнее

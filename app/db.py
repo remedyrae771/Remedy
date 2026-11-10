@@ -3,7 +3,19 @@ import os
 import sqlite3
 from contextlib import contextmanager
 
-DB_PATH = os.environ.get("REMEDY_DB", os.path.join(os.path.dirname(__file__), "..", "remedy.db"))
+def env(name: str, default: str | None = None) -> str | None:
+    """Настройка AQSHA_<name>; старое имя REMEDY_<name> тоже понимается (приложение раньше называлось Remedy)."""
+    return os.environ.get(f"AQSHA_{name}", os.environ.get(f"REMEDY_{name}", default))
+
+
+def _default_db_path() -> str:
+    root = os.path.join(os.path.dirname(__file__), "..")
+    new, old = os.path.join(root, "aqsha.db"), os.path.join(root, "remedy.db")
+    # база, созданная до переименования, продолжает использоваться
+    return old if os.path.exists(old) and not os.path.exists(new) else new
+
+
+DB_PATH = env("DB") or _default_db_path()
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS categories (

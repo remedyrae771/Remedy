@@ -111,6 +111,8 @@ async function loadOverview() {
 
   const exp = s.by_category.filter((c) => c.kind === "expense");
   const text = getComputedStyle(document.body).color;
+  const css = getComputedStyle(document.documentElement);
+  const incomeColor = css.getPropertyValue("--income").trim(), expenseColor = css.getPropertyValue("--expense").trim();
   chart("#chart-categories", {
     type: "doughnut",
     data: { labels: exp.map((c) => c.name), datasets: [{ data: exp.map((c) => c.total), backgroundColor: exp.map((c) => c.color), borderWidth: 0 }] },
@@ -121,8 +123,8 @@ async function loadOverview() {
     data: {
       labels: s.by_month.map((m) => new Date(m.month + "-01T00:00:00").toLocaleDateString("ru-RU", { month: "short", year: "numeric" })),
       datasets: [
-        { label: "Доходы", data: s.by_month.map((m) => m.income), backgroundColor: "#1f9d55" },
-        { label: "Расходы", data: s.by_month.map((m) => m.expense), backgroundColor: "#d64545" },
+        { label: "Доходы", data: s.by_month.map((m) => m.income), backgroundColor: incomeColor, borderRadius: 4 },
+        { label: "Расходы", data: s.by_month.map((m) => m.expense), backgroundColor: expenseColor, borderRadius: 4 },
       ],
     },
     options: {
@@ -139,7 +141,7 @@ async function loadOverview() {
 }
 
 // --- Финансовые советы ------------------------------------------------------------------
-const SEEN_KEY = "remedy.seenTips";
+const SEEN_KEY = "aqsha.seenTips";
 function seenTips() {
   try { return JSON.parse(localStorage.getItem(SEEN_KEY) || "[]"); } catch { return []; }
 }

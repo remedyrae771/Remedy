@@ -1,4 +1,4 @@
-"""Remedy — учёт доходов и расходов с синхронизацией с банком. HTTP API + веб-интерфейс."""
+"""Aqsha — учёт доходов и расходов с синхронизацией с банком. HTTP API + веб-интерфейс."""
 import asyncio
 import logging
 import os
@@ -20,10 +20,10 @@ from .sync import link_connection, save_transactions, sync_account
 from .tips import general_tips, has_data, personal_tips, pick_tip
 from .tips_library import TOPICS
 
-log = logging.getLogger("remedy")
+log = logging.getLogger("aqsha")
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend")
-AUTO_SYNC_HOURS = float(os.environ.get("REMEDY_AUTO_SYNC_HOURS", "6"))
-DEFAULT_CURRENCY = os.environ.get("REMEDY_CURRENCY", "KZT").upper()
+AUTO_SYNC_HOURS = float(db.env("AUTO_SYNC_HOURS", "6"))
+DEFAULT_CURRENCY = db.env("CURRENCY", "KZT").upper()
 
 
 def sync_all() -> dict:
@@ -55,7 +55,7 @@ async def lifespan(app: FastAPI):
         task.cancel()
 
 
-app = FastAPI(title="Remedy — учёт финансов", lifespan=lifespan)
+app = FastAPI(title="Aqsha — учёт финансов", lifespan=lifespan)
 
 
 def bank_error(e: Exception) -> HTTPException:
