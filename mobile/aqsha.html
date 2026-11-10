@@ -296,6 +296,38 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
 .quiz-q .yn .chip { padding: 5px 12px; }
 .quiz-result { border-radius: 12px; padding: 12px 14px; background: var(--accent-soft); font-size: 14px; }
 
+/* операции: сводка, вопрос, подробности */
+.ops-sum { display: flex; flex-direction: column; gap: 10px; }
+.ops-sum .sum-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.ops-sum .sum-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.ops-sum .stat { background: var(--bg); border-radius: 12px; padding: 9px 11px; min-width: 0; }
+.ops-sum .stat span { display: block; font-size: 12px; color: var(--muted); }
+.ops-sum .stat b { font-variant-numeric: tabular-nums; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ops-sum .sum-line { font-size: 13.5px; color: var(--muted); }
+.ops-sum .sum-line b { color: var(--text); }
+.ask { border: 2px dashed var(--gold); background: var(--gold-soft); display: flex; flex-direction: column; gap: 10px; }
+.ask .ask-q { font: 700 16px/1.3 var(--display); }
+.ask .ask-tx { display: flex; gap: 10px; align-items: center; font-size: 14px; }
+.ask .ask-tx b { font-variant-numeric: tabular-nums; }
+.ask .ask-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.ask .ask-row .btn { flex: 1 1 auto; }
+.ask .skip { align-self: flex-end; font-size: 13px; color: var(--muted); background: none; border: none; padding: 2px 4px; }
+.tx-time { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.review-mark { font-size: 13px; }
+.detail-hero { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; padding-top: 4px; }
+.detail-hero .big-amt { font: 700 30px/1.1 var(--display); font-variant-numeric: tabular-nums; }
+.detail-hero .d-desc { font-size: 16px; font-weight: 600; }
+.facts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.facts li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+.facts li:last-child { border-bottom: none; }
+.facts li span:first-child { color: var(--muted); flex: none; }
+.facts li span:last-child { text-align: right; min-width: 0; }
+.insight { border-radius: 12px; padding: 10px 12px; background: var(--accent-soft); font-size: 14px; line-height: 1.45; }
+.insight.warn { background: var(--gold-soft); }
+.d-section h4 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--gold-text); }
+.review-row { display: flex; gap: 6px; flex-wrap: wrap; }
+#d-note { width: 100%; min-height: 64px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); padding: 10px; font: inherit; font-size: 15px; resize: vertical; }
+
 /* нижняя панель */
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--surface); border-top: 1px solid var(--border);
   padding: 0 max(8px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(8px, env(safe-area-inset-left, 0px));
@@ -402,6 +434,7 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
       <div class="acc-strip" id="acc-strip"></div>
     </section>
     <div class="alerts" id="alerts"></div>
+    <div id="ask-ov"></div>
 
 
     <div class="card" id="cat-card">
@@ -418,8 +451,10 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
 
   <!-- Операции -->
   <section class="tab" id="tab-transactions" aria-label="Операции">
+    <section class="card ops-sum" id="ops-sum" aria-label="Сводка операций" hidden></section>
+    <div id="ask-ops"></div>
     <div class="filters">
-      <input type="search" id="search" placeholder="Поиск" aria-label="Поиск по описанию">
+      <input type="search" id="search" placeholder="Поиск" aria-label="Поиск по описанию и заметкам">
       <select id="filter-cat" aria-label="Категория"><option value="">Все категории</option></select>
       <select id="filter-acc" aria-label="Счёт" style="grid-column:1/-1" hidden><option value="">Все счета</option></select>
     </div>
@@ -597,13 +632,21 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
       <label>Категория<select id="f-cat"></select></label>
       <label>Счёт<select id="f-acc"></select></label>
     </div>
-    <label>Дата<input type="date" id="f-date" required></label>
+    <div class="row2">
+      <label>Дата<input type="date" id="f-date" required></label>
+      <label>Время<input type="time" id="f-time"></label>
+    </div>
+    <label>Заметка<input type="text" id="f-note" maxlength="300" placeholder="необязательно: зачем, с кем, что купили"></label>
     <div class="form-actions">
       <button type="button" class="btn danger" id="f-delete" hidden>Удалить</button>
       <button type="button" class="btn" data-close>Отмена</button>
       <button class="btn primary">Сохранить</button>
     </div>
   </form>
+</div>
+
+<div class="sheet" id="detail-sheet" hidden>
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-label="Подробности операции" id="detail"></div>
 </div>
 
 <div class="sheet" id="acc-sheet" hidden>
@@ -649,6 +692,18 @@ const money = (n) => new Intl.NumberFormat("ru-RU", { style: "currency", currenc
 const signed = (n) => (n > 0 ? "+" : "") + money(n);
 const isoDay = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const todayISO = () => isoDay(new Date());
+const nowHM = () => { const d = new Date(); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
+// время операции: сохранённое, иначе — момент ввода (для ручных); у выписки Kaspi времени нет
+function txTime(t) {
+  if (t.time) return t.time;
+  if ((t.src === "quick" || t.src === "manual") && t.at > 1e12) { const d = new Date(t.at); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; }
+  return "";
+}
+// «1 раз, 2 раза, 5 раз»
+const plural = (n, [one, few, many]) => { const m10 = n % 10, m100 = n % 100; return m10 === 1 && m100 !== 11 ? one : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? few : many; };
+const RAZ = ["раз", "раза", "раз"];
+const SRC_NAME = { quick: "Быстрый ввод", manual: "Вручную", kaspi: "Выписка Kaspi", demo: "Пример", backup: "Из копии" };
+const normDesc = (d) => (d || "").toLowerCase().replace(/^[^:]{2,20}:\s*/, "").trim();
 function hash(s) { // FNV-1a, два прохода — стабильный id операции из выписки
   let h1 = 0x811c9dc5, h2 = 0x01000193;
   for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); h1 = Math.imul(h1 ^ c, 16777619); h2 = Math.imul(h2 ^ c, 2246822519); }
@@ -1005,6 +1060,8 @@ function openTx(id, preset = {}) {
   $("#f-amount").value = t ? Math.abs(t.amount) : (preset.abs || "");
   fillAccSelect($("#f-acc"), t ? accOf(t) : quickAcc());
   $("#f-date").value = t ? t.date : todayISO();
+  $("#f-time").value = t ? txTime(t) : nowHM();
+  $("#f-note").value = t ? (t.note || "") : "";
   $("#f-delete").hidden = !t; $("#f-delete").textContent = "Удалить";
   closeSheets(); $("#tx-sheet").hidden = false;
   if (!t) setTimeout(() => $("#f-amount").focus(), 60);
@@ -1021,7 +1078,7 @@ $("#tx-form").addEventListener("submit", async (e) => {
   const prev = editingTx ? Store.tx.get(editingTx) : null;
   const id = editingTx || "m-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   try {
-    await Store.putTx(id, { ...(prev || { src: "manual", at: Date.now() }), date: $("#f-date").value || todayISO(), amount, desc, cat, acc: $("#f-acc").value });
+    await Store.putTx(id, { ...(prev || { src: "manual", at: Date.now() }), date: $("#f-date").value || todayISO(), time: $("#f-time").value || "", note: $("#f-note").value.trim(), amount, desc, cat, acc: $("#f-acc").value });
     closeSheets();
     const hit = !prev && amount < 0 ? budgetStatus().find((b) => b.id === "total" || b.cat === cat) : null;
     if (hit) toast(`${desc} ${signed(amount)}. ${hit.name}: ${hit.share >= 1 ? "бюджет превышен" : `потрачено ${Math.round(hit.share * 100)}% бюджета`}`, { error: hit.share >= 1 });
@@ -1086,6 +1143,7 @@ function renderOverview() {
   renderAlerts(all);
   renderAccounts(all);
   renderLitBanner();
+  renderAsk("#ask-ov");
   const empty = all.length === 0 && Store.loaded;
   $("#overview-empty").hidden = !empty;
   $("#cat-card").hidden = empty; $("#month-card").hidden = empty;
@@ -1155,6 +1213,7 @@ function catOptions(selected, kind) {
   return CATEGORIES.filter((c) => c.kind === kind).map((c) => `<option ${c.name === selected ? "selected" : ""}>${esc(c.name)}</option>`).join("");
 }
 function renderTransactions() {
+  renderOpsSummary(); renderAsk("#ask-ops");
   const sel = $("#filter-cat"), prev = sel.value;
   sel.innerHTML = '<option value="">Все категории</option>' + CATEGORIES.map((c) => `<option>${esc(c.name)}</option>`).join("");
   sel.value = prev;
@@ -1162,8 +1221,8 @@ function renderTransactions() {
   fa.hidden = !many;
   if (many) { const pv = fa.value; fa.innerHTML = '<option value="">Все счета</option>' + accounts().map((a) => `<option value="${esc(a.id)}">${esc(a.icon)} ${esc(a.name)}</option>`).join(""); fa.value = pv; }
   const q = $("#search").value.trim().toLowerCase();
-  const list = txList().filter((t) => (!q || t.desc.toLowerCase().includes(q)) && (!sel.value || t.cat === sel.value) && (!many || !fa.value || accOf(t) === fa.value))
-    .sort((a, b) => (b.date.localeCompare(a.date)) || ((b.at || 0) - (a.at || 0))).slice(0, 300);
+  const list = txList().filter((t) => (!q || t.desc.toLowerCase().includes(q) || (t.note || "").toLowerCase().includes(q)) && (!sel.value || t.cat === sel.value) && (!many || !fa.value || accOf(t) === fa.value))
+    .sort((a, b) => (b.date.localeCompare(a.date)) || txTime(b).localeCompare(txTime(a)) || ((b.at || 0) - (a.at || 0))).slice(0, 300);
   if (!list.length) {
     $("#tx-list").innerHTML = !Store.loaded ? `<div class="card empty"><span class="hint">Загружаю операции…</span></div>`
       : Store.tx.size ? `<div class="card empty"><b>Ничего не найдено</b></div>`
@@ -1184,7 +1243,7 @@ function renderTransactions() {
           ${catIco(t.cat)}
           <span class="tx-desc">${esc(t.desc)}</span>
           <span class="tx-amt ${t.amount > 0 ? "pos" : "neg"}">${signed(t.amount)}</span>
-          <span class="tx-meta"><label class="cat-pick"><span>${esc(t.cat)}</span><select aria-label="Категория операции «${esc(t.desc)}»">${catOptions(t.cat, t.amount > 0 ? "income" : "expense")}</select></label>${many ? `<span class="hint">${esc(accById(accOf(t)).icon)} ${esc(accById(accOf(t)).name)}</span>` : ""}${t.src === "demo" ? '<span class="badge">пример</span>' : ""}</span>
+          <span class="tx-meta"><label class="cat-pick"><span>${esc(t.cat)}</span><select aria-label="Категория операции «${esc(t.desc)}»">${catOptions(t.cat, t.amount > 0 ? "income" : "expense")}</select></label>${txTime(t) ? `<span class="tx-time">${esc(txTime(t))}</span>` : ""}${many ? `<span class="hint">${esc(accById(accOf(t)).icon)} ${esc(accById(accOf(t)).name)}</span>` : ""}${t.review?.worth ? `<span class="review-mark" title="Ваша оценка">${{ good: "👍", meh: "😐", bad: "👎" }[t.review.worth]}</span>` : ""}${t.note ? '<span class="review-mark" title="Есть заметка">📝</span>' : ""}${t.src === "demo" ? '<span class="badge">пример</span>' : ""}</span>
           <button class="del" aria-label="Удалить операцию">✕</button>
         </div>`).join("")}</div>`;
   }).join("");
@@ -1198,7 +1257,7 @@ $("#quick").addEventListener("submit", async (e) => {
   if (!p) { toast("Напишите сумму и что это: «кофе 1500» или «+450000 зарплата»", { error: true }); return; }
   const cat = categorize(p.desc, p.amount);
   try {
-    await Store.putTx("q-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), { date: todayISO(), amount: p.amount, desc: p.desc, cat, acc: quickAcc(), src: "quick", at: Date.now() });
+    await Store.putTx("q-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), { date: todayISO(), time: nowHM(), amount: p.amount, desc: p.desc, cat, acc: quickAcc(), src: "quick", at: Date.now() });
     $("#quick-text").value = "";
     closeAdd();
     const hit = p.amount < 0 ? budgetStatus().find((b) => b.id === "total" || b.cat === cat) : null;
@@ -1225,7 +1284,7 @@ async function remember(pattern, cat, sample) {
 }
 $("#tx-list").addEventListener("click", async (e) => {
   const row = e.target.closest(".tx");
-  if (row && !e.target.closest(".del, .cat-pick")) { openTx(row.dataset.id); return; }
+  if (row && !e.target.closest(".del, .cat-pick")) { openDetail(row.dataset.id); return; }
   const del = e.target.closest(".del"); if (!del) return;
   if (!del.classList.contains("armed")) { // подтверждение прямо на кнопке
     del.classList.add("armed"); del.textContent = "Удалить";
@@ -1233,6 +1292,150 @@ $("#tx-list").addEventListener("click", async (e) => {
     return;
   }
   try { await Store.delTx(del.closest(".tx").dataset.id); toast("Операция удалена"); } catch (err) { toast(err.message, { error: true }); }
+});
+
+// ─── Сводка операций за месяц ──────────────────────────────────────────────────────────
+function renderOpsSummary() {
+  const box = $("#ops-sum"), cur = inRange(txList(), range("month"));
+  box.hidden = !cur.length; if (!cur.length) return;
+  const exp = cur.filter((t) => t.amount < 0), inc = sumIncome(cur), out = sumExpense(cur);
+  const day = new Date().getDate(), biggest = exp.reduce((m, t) => (!m || t.amount < m.amount ? t : m), null);
+  const freq = {}; for (const t of exp) { const k = normDesc(t.desc); if (k) (freq[k] = freq[k] || { n: 0, sum: 0, name: t.desc.replace(/^[^:]{2,20}:\s*/, "") }), freq[k].n++, freq[k].sum -= t.amount; }
+  const top = Object.values(freq).sort((a, b) => b.n - a.n || b.sum - a.sum)[0];
+  const rev = cur.filter((t) => t.review);
+  const bad = rev.filter((t) => t.review.worth === "bad").reduce((s, t) => s - t.amount, 0);
+  const impulse = rev.filter((t) => t.review.planned === "no").reduce((s, t) => s - t.amount, 0);
+  const monthName = new Date().toLocaleDateString("ru-RU", { month: "long" });
+  box.innerHTML = `<div class="sum-head"><h2 class="section-title">Операции за ${esc(monthName)}</h2><span class="hint">${cur.length} ${plural(cur.length, ["операция", "операции", "операций"])}</span></div>
+    <div class="sum-grid">
+      <div class="stat"><span>Расходы</span><b class="neg">${money(out)}</b></div>
+      <div class="stat"><span>Доходы</span><b class="pos">${money(inc)}</b></div>
+      <div class="stat"><span>В среднем в день</span><b>${money(out / day)}</b></div>
+      <div class="stat"><span>Трат за месяц</span><b>${exp.length}</b></div>
+    </div>
+    ${biggest ? `<div class="sum-line">Самая крупная: <b>${esc(biggest.desc)}</b> — ${money(-biggest.amount)}</div>` : ""}
+    ${top && top.n > 1 ? `<div class="sum-line">Чаще всего: <b>${esc(top.name)}</b> — ${top.n} ${plural(top.n, RAZ)}, ${money(top.sum)}</div>` : ""}
+    ${bad || impulse ? `<div class="sum-line">По вашим оценкам: ${bad ? `👎 зря — <b>${money(bad)}</b>` : ""}${bad && impulse ? " · " : ""}${impulse ? `⚡ спонтанно — <b>${money(impulse)}</b>` : ""}</div>` : ""}`;
+}
+
+// ─── Иногда спрашиваем об операции ─────────────────────────────────────────────────────
+const ASK = {
+  worth: { q: "Эта трата была полезной?", opts: [["good", "👍 Да"], ["meh", "😐 Так себе"], ["bad", "👎 Зря"]] },
+  planned: { q: "Это было запланировано?", opts: [["yes", "📝 Да, планировал"], ["no", "⚡ Спонтанно"]] },
+  again: { q: "Купили бы это снова?", opts: [["yes", "🔁 Да"], ["no", "🙅 Нет"]] },
+};
+const ASK_GAP = 3 * 3600e3; // спрашиваем не чаще раза в 3 часа
+let askNow = null;
+function pickAsk() {
+  if (Date.now() - lsGet("aqsha.askAt", 0) < ASK_GAP && !askNow) return null;
+  if (askNow && Store.tx.has(askNow.id) && !Store.tx.get(askNow.id).review?.[askNow.kind]) return askNow;
+  const skipped = new Set(lsGet("aqsha.askSkip", []));
+  const since = isoDay(new Date(Date.now() - 14 * 864e5));
+  const cand = txList().filter((t) => t.amount < 0 && t.date >= since && t.src !== "demo" && !FIXED.has(t.cat) && !skipped.has(t.id))
+    .map((t) => ({ t, kind: Object.keys(ASK).find((k) => !t.review?.[k]) })).filter((x) => x.kind);
+  if (!cand.length) return null;
+  const x = cand.sort((a, b) => b.t.date.localeCompare(a.t.date))[Math.floor(Math.random() * Math.min(5, cand.length))];
+  askNow = { id: x.t.id, kind: x.kind };
+  return askNow;
+}
+function renderAsk(sel) {
+  const box = $(sel), a = pickAsk();
+  if (!a) { box.innerHTML = ""; return; }
+  const t = Store.tx.get(a.id), q = ASK[a.kind];
+  const when = t.date === todayISO() ? "сегодня" : t.date === isoDay(new Date(Date.now() - 864e5)) ? "вчера" : new Date(t.date + "T00:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+  box.innerHTML = `<div class="card ask" data-ask="${esc(a.id)}" data-kind="${a.kind}">
+    <span class="hint">🤔 Короткий вопрос — помогает тратить осознаннее</span>
+    <div class="ask-q">${esc(q.q)}</div>
+    <div class="ask-tx">${catIco(t.cat, true)}<span>${esc(t.desc)} · <b>${money(-t.amount)}</b> · ${esc(when)}${txTime(t) ? " в " + esc(txTime(t)) : ""}</span></div>
+    <div class="ask-row">${q.opts.map(([v, l]) => `<button class="btn" type="button" data-ans="${v}">${l}</button>`).join("")}</div>
+    <button class="skip" type="button" data-ans="">Не сейчас</button></div>`;
+}
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-ans]"); if (!b) return;
+  const card = b.closest("[data-ask]"), id = card.dataset.ask, kind = card.dataset.kind, v = b.dataset.ans;
+  lsSet("aqsha.askAt", Date.now()); askNow = null;
+  if (!v) { lsSet("aqsha.askSkip", [...lsGet("aqsha.askSkip", []), id].slice(-200)); $$("[id^=ask-]").forEach((x) => (x.innerHTML = "")); return; }
+  const t = Store.tx.get(id); if (!t) return;
+  try {
+    await Store.putTx(id, { ...t, review: { ...(t.review || {}), [kind]: v } });
+    const thanks = { bad: "Учтено. Такие траты покажем в сводке — чтобы было проще их сократить.", no: kind === "planned" ? "Учтено как спонтанная покупка." : "Учтено.", good: "Отлично, полезная трата 👍" }[v] || "Спасибо, учтено.";
+    toast(thanks);
+    $$("[id^=ask-]").forEach((x) => (x.innerHTML = ""));
+  } catch (err) { toast(err.message, { error: true }); }
+});
+
+// ─── Подробности операции ──────────────────────────────────────────────────────────────
+let detailId = null, noteTimer;
+function openDetail(id) {
+  const t = Store.tx.get(id); if (!t) return;
+  detailId = id;
+  const all = txList(), kind = t.amount > 0 ? "income" : "expense";
+  const d = new Date(t.date + "T00:00:00");
+  const dateText = d.toLocaleDateString("ru-RU", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) + (txTime(t) ? ` · ${txTime(t)}` : "");
+  // категория в этом месяце
+  const [mA, mB] = monthBounds(d), month = inRange(all, [mA, mB]);
+  const catSum = Math.abs(month.filter((x) => x.cat === t.cat).reduce((s, x) => s + x.amount, 0));
+  const catN = month.filter((x) => x.cat === t.cat).length;
+  const totalKind = kind === "expense" ? sumExpense(month) : sumIncome(month);
+  // похожие операции за 3 месяца
+  const key = normDesc(t.desc), from = isoDay(new Date(d.getFullYear(), d.getMonth() - 2, 1));
+  const similar = key ? all.filter((x) => normDesc(x.desc) === key && (x.amount > 0) === (t.amount > 0) && x.date >= from && x.date <= mB) : [];
+  const simSum = Math.abs(similar.reduce((s, x) => s + x.amount, 0)), simAvg = similar.length ? simSum / similar.length : 0;
+  const diff = simAvg ? (Math.abs(t.amount) - simAvg) / simAvg : 0;
+  // бюджет категории
+  const lim = kind === "expense" ? Store.budgets.get("c-" + hash(t.cat))?.limit : 0;
+  const curMonth = inRange(all, range("month")), catNow = -curMonth.filter((x) => x.cat === t.cat && x.amount < 0).reduce((s, x) => s + x.amount, 0);
+  const insights = [];
+  if (similar.length > 1) insights.push(`<div class="insight">🔁 «${esc(t.desc.replace(/^[^:]{2,20}:\s*/, ""))}»: <b>${similar.length} ${plural(similar.length, RAZ)}</b> за 3 месяца на <b>${money(simSum)}</b>, в среднем ${money(simAvg)}.
+    ${Math.abs(diff) >= 0.15 ? `Эта операция на <b>${Math.round(Math.abs(diff) * 100)}% ${diff > 0 ? "больше" : "меньше"}</b> обычной.` : "Это обычная для вас сумма."}
+    ${kind === "expense" && similar.length >= 4 ? ` В год это примерно <b>${money(simSum * 4)}</b>.` : ""}</div>`);
+  if (totalKind > 0) insights.push(`<div class="insight">${CAT_ICON[t.cat] || "•"} В «${esc(t.cat)}» за ${esc(d.toLocaleDateString("ru-RU", { month: "long" }))}: <b>${money(catSum)}</b> (${catN} ${plural(catN, ["операция", "операции", "операций"])}) — это <b>${Math.round(catSum / totalKind * 100)}%</b> всех ${kind === "expense" ? "расходов" : "доходов"} месяца.</div>`);
+  if (lim) insights.push(`<div class="insight${catNow >= lim * 0.8 ? " warn" : ""}">🎯 Лимит «${esc(t.cat)}» в этом месяце: потрачено ${money(catNow)} из ${money(lim)} (${Math.round(catNow / lim * 100)}%).</div>`);
+  const rv = t.review || {};
+  const reviewRow = (k) => `<div class="review-row" data-rk="${k}">${ASK[k].opts.map(([v, l]) => `<button type="button" class="chip" data-rv="${v}" aria-pressed="${rv[k] === v}">${l}</button>`).join("")}</div>`;
+  $("#detail").innerHTML = `<div class="sheet-handle" aria-hidden="true"></div>
+    <div class="detail-hero">${catIco(t.cat)}<span class="d-desc">${esc(t.desc)}</span>
+      <span class="big-amt ${t.amount > 0 ? "pos" : "neg"}">${signed(t.amount)}</span></div>
+    <ul class="facts">
+      <li><span>Когда</span><span>${esc(dateText)}</span></li>
+      <li><span>Категория</span><span>${esc(t.cat)}</span></li>
+      <li><span>Счёт</span><span>${esc(accById(accOf(t)).icon)} ${esc(accById(accOf(t)).name)}</span></li>
+      <li><span>Тип</span><span>${kind === "expense" ? "Расход" : "Доход"}</span></li>
+      <li><span>Откуда</span><span>${esc(SRC_NAME[t.src] || "Вручную")}</span></li>
+    </ul>
+    ${insights.join("")}
+    ${kind === "expense" ? `<div class="d-section"><h4>Ваша оценка</h4>
+      <p class="hint" style="margin:0 0 6px">${esc(ASK.worth.q)}</p>${reviewRow("worth")}
+      <p class="hint" style="margin:8px 0 6px">${esc(ASK.planned.q)}</p>${reviewRow("planned")}</div>` : ""}
+    <div class="d-section"><h4>Заметка</h4><textarea id="d-note" maxlength="300" placeholder="Зачем, с кем, что именно купили…">${esc(t.note || "")}</textarea></div>
+    <div class="form-actions">
+      <button type="button" class="btn danger" id="d-delete">Удалить</button>
+      <button type="button" class="btn" data-close>Закрыть</button>
+      <button type="button" class="btn primary" id="d-edit">✏️ Изменить</button>
+    </div>`;
+  closeSheets(); $("#detail-sheet").hidden = false;
+}
+$("#detail").addEventListener("click", async (e) => {
+  if (e.target.id === "d-edit") { openTx(detailId); return; }
+  if (e.target.id === "d-delete") {
+    armConfirm(e.target, "Удалить", async () => { try { await Store.delTx(detailId); closeSheets(); toast("Операция удалена"); } catch (err) { toast(err.message, { error: true }); } });
+    return;
+  }
+  const b = e.target.closest("[data-rv]"); if (!b) return;
+  const k = b.closest("[data-rk]").dataset.rk, t = Store.tx.get(detailId); if (!t) return;
+  const val = (t.review || {})[k] === b.dataset.rv ? undefined : b.dataset.rv; // повторное нажатие снимает оценку
+  const review = { ...(t.review || {}) }; if (val) review[k] = val; else delete review[k];
+  b.closest("[data-rk]").querySelectorAll("[data-rv]").forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.rv === val)));
+  try { await Store.putTx(detailId, { ...t, review }); } catch (err) { toast(err.message, { error: true }); }
+});
+$("#detail").addEventListener("input", (e) => {
+  if (e.target.id !== "d-note") return;
+  clearTimeout(noteTimer);
+  const id = detailId, text = e.target.value.trim();
+  noteTimer = setTimeout(async () => { // сохраняем заметку после паузы в наборе
+    const t = Store.tx.get(id); if (!t || (t.note || "") === text) return;
+    try { await Store.putTx(id, { ...t, note: text }); } catch (err) { toast(err.message, { error: true }); }
+  }, 700);
 });
 
 // ─── Советы ────────────────────────────────────────────────────────────────────────────
@@ -1279,6 +1482,12 @@ function personalTips() {
   const monthsExp = {}; for (const t of all) if (t.amount < 0 && t.date < monthBounds(now)[0]) monthsExp[t.date.slice(0, 7)] = (monthsExp[t.date.slice(0, 7)] || 0) - t.amount;
   const last3 = Object.keys(monthsExp).sort().slice(-3).map((k) => monthsExp[k]);
   if (last3.length) { const avg = last3.reduce((a, b) => a + b, 0) / last3.length; add("cushion", "🛟", `Ваша подушка: ${money(avg * 3)} – ${money(avg * 6)}`, `Вы тратите в среднем ${money(avg)} в месяц. Запас на 3–6 месяцев на отдельном депозите защитит от кредитов в трудной ситуации.`); }
+  const reviewed = inRange(all, monthBounds(now)).filter((t) => t.review && t.amount < 0);
+  const bad = reviewed.filter((t) => t.review.worth === "bad"), imp = reviewed.filter((t) => t.review.planned === "no");
+  if (bad.length) add("bad", "👎", `«Зря» в этом месяце: ${money(-bad.reduce((s, t) => s + t.amount, 0))}`,
+    `Вы сами отметили ${bad.length} ${plural(bad.length, ["трату", "траты", "трат"])} как бесполезные. Перед похожей покупкой вспомните эту оценку — или отложите решение на сутки.`);
+  if (imp.length >= 2) add("impulse", "⚡", `Спонтанные покупки: ${money(-imp.reduce((s, t) => s + t.amount, 0))}`,
+    `${imp.length} ${plural(imp.length, ["покупка", "покупки", "покупок"])} в этом месяце ${imp.length === 1 ? "была незапланированной" : "были незапланированными"}. Попробуйте список перед магазином и правило 72 часов для крупных трат.`);
   return tips;
 }
 const tipHistory = []; let tipPos = -1;
@@ -1455,13 +1664,13 @@ $("#rule-list").addEventListener("click", async (e) => {
 });
 
 // ─── Резервная копия (CSV) ─────────────────────────────────────────────────────────────
-const CSV_HEAD = ["Дата", "Сумма", "Описание", "Категория", "Источник", "Счёт"];
+const CSV_HEAD = ["Дата", "Сумма", "Описание", "Категория", "Источник", "Счёт", "Время", "Заметка"];
 const csvCell = (v) => { const t = String(v ?? ""); return /[;"\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
 function toCSV() {
   const rows = txList().filter((t) => t.src !== "demo").sort((a, b) => a.date.localeCompare(b.date));
   // \u0441\u0442\u0440\u043e\u043a\u0438 \u00ab\u041e\u0441\u0442\u0430\u0442\u043e\u043a\u00bb \u0445\u0440\u0430\u043d\u044f\u0442 \u043d\u0430\u0447\u0430\u043b\u044c\u043d\u044b\u0439 \u043e\u0441\u0442\u0430\u0442\u043e\u043a \u0438 \u0437\u043d\u0430\u0447\u043e\u043a \u043a\u0430\u0436\u0434\u043e\u0433\u043e \u0441\u0447\u0451\u0442\u0430
   const accRows = accounts().map((a) => ["\u041e\u0441\u0442\u0430\u0442\u043e\u043a", String(a.start || 0).replace(".", ","), a.name, a.icon, a.id === "main" ? "\u043e\u0441\u043d\u043e\u0432\u043d\u043e\u0439 \u0441\u0447\u0451\u0442" : "\u0441\u0447\u0451\u0442", a.name]);
-  return "\ufeff" + [CSV_HEAD, ...accRows, ...rows.map((t) => [t.date, String(t.amount).replace(".", ","), t.desc, t.cat, t.src || "", accById(accOf(t)).name])]
+  return "\ufeff" + [CSV_HEAD, ...accRows, ...rows.map((t) => [t.date, String(t.amount).replace(".", ","), t.desc, t.cat, t.src || "", accById(accOf(t)).name, txTime(t), t.note || ""])]
     .map((r) => r.map(csvCell).join(";")).join("\r\n");
 }
 function parseCSV(text) {
@@ -1526,7 +1735,7 @@ async function restoreFromText(text) {
   if (head[0] !== CSV_HEAD[0] || head[1] !== CSV_HEAD[1]) throw new Error("Это не копия Aqsha: первая строка должна начинаться с «Дата;Сумма»");
   const items = rows.filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r[0]) && r[1]).map((r) => {
     const amount = parseFloat(r[1].replace(",", "."));
-    return { id: "b-" + hash(r.slice(0, 5).join("|")), date: r[0], amount, desc: r[2] || "", cat: CAT[r[3]] ? r[3] : categorize(r[2], amount), src: r[4] || "backup", accName: (r[5] || "").trim() };
+    return { id: "b-" + hash(r.slice(0, 5).join("|")), date: r[0], amount, desc: r[2] || "", cat: CAT[r[3]] ? r[3] : categorize(r[2], amount), src: r[4] || "backup", accName: (r[5] || "").trim(), ...(r[6] ? { time: r[6] } : {}), ...(r[7] ? { note: r[7] } : {}) };
   }).filter((t) => t.amount && !Store.tx.has(t.id));
   // операция могла уже быть с другим id (из выписки) — сверяем по дате, сумме и описанию
   const known = new Set(txList().map((t) => `${t.date}|${t.amount}|${t.desc}`));
