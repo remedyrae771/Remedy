@@ -27,6 +27,21 @@ button.primary { background: var(--accent); border-color: var(--accent); color: 
 button.link { border: none; background: none; color: var(--muted); padding: 2px 6px; }
 button.link:hover { color: var(--expense); }
 
+.tip { display: flex; gap: 14px; align-items: flex-start; background: var(--surface); border: 1px solid var(--border);
+  border-left: 4px solid var(--accent); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; }
+.tip.personal { border-left-color: var(--income); }
+.tip-icon { font-size: 28px; line-height: 1; }
+.tip-body { flex: 1; min-width: 0; }
+.tip-label { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 2px; }
+.tip-body p { margin: 4px 0 0; color: var(--muted); }
+button.tip-next { color: var(--accent); white-space: nowrap; font-weight: 600; }
+button.tip-next:hover { color: var(--accent); text-decoration: underline; }
+@media (max-width: 700px) {
+  .tip { flex-wrap: wrap; gap: 10px; padding: 12px 14px; }
+  .tip-icon { font-size: 24px; }
+  button.tip-next { order: 3; flex-basis: 100%; text-align: right; padding: 4px 0 0; }
+}
+
 .period, .filters, .inline-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }

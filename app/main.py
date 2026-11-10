@@ -17,6 +17,7 @@ from .banks import BankError, available_providers, get_provider
 from .banks.importers import parse_statement
 from .categorize import categorize, load_rules
 from .sync import link_connection, save_transactions, sync_account
+from .tips import pick_tip
 
 log = logging.getLogger("remedy")
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend")
@@ -297,6 +298,14 @@ def summary(date_from: Optional[date] = Query(None, alias="from"),
         "by_category": [dict(r) for r in by_category],
         "by_month": [dict(r) for r in by_month],
     }
+
+
+# --- Советы ------------------------------------------------------------------------------
+@app.get("/api/tip")
+def tip(seen: str = ""):
+    """Случайный финансовый совет. seen — id уже показанных советов через запятую."""
+    with db.get_conn() as conn:
+        return pick_tip(conn, {s for s in seen.split(",") if s})
 
 
 # --- Банки -------------------------------------------------------------------------------

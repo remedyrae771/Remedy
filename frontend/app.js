@@ -137,6 +137,30 @@ async function loadOverview() {
     : '<li class="hint">Нет расходов за период. Подключите банк или импортируйте выписку на вкладке «Счета и банки».</li>';
 }
 
+// --- Финансовые советы ------------------------------------------------------------------
+const SEEN_KEY = "remedy.seenTips";
+function seenTips() {
+  try { return JSON.parse(localStorage.getItem(SEEN_KEY) || "[]"); } catch { return []; }
+}
+function saveSeen(list) {
+  try { localStorage.setItem(SEEN_KEY, JSON.stringify(list.slice(-80))); } catch { /* приватный режим */ }
+}
+let tipSeenThisSession = [];
+async function loadTip() {
+  const seen = [...new Set([...seenTips(), ...tipSeenThisSession])];
+  const t = await api("/api/tip?seen=" + encodeURIComponent(seen.join(",")));
+  const next = t.reset ? [t.id] : [...seen, t.id];
+  tipSeenThisSession = next;
+  saveSeen(next);
+  $("#tip-icon").textContent = t.icon;
+  $("#tip-label").textContent = t.kind === "personal" ? "Совет по вашим расходам" : "Финансовый совет";
+  $("#tip").classList.toggle("personal", t.kind === "personal");
+  $("#tip-title").textContent = t.title;
+  $("#tip-text").textContent = t.text;
+  $("#tip").hidden = false;
+}
+$("#tip-next").addEventListener("click", guard(loadTip));
+
 // --- Операции ----------------------------------------------------------------------------
 async function loadTransactions() {
   const p = new URLSearchParams();
@@ -318,4 +342,5 @@ $("#recategorize").addEventListener("click", guard(async () => {
   if (params.has("bank_error")) toast(`Не удалось подключить банк: ${params.get("bank_error")}`, true);
   if (params.has("bank_linked") || params.has("bank_error")) history.replaceState(null, "", "/");
   guard(refresh)();
+  guard(loadTip)();
 })();

@@ -190,3 +190,42 @@ def test_kaspi_salary_beats_generic_topup(client):
     client.post("/api/transactions", json={"account_id": acc, "date": "2026-11-05", "amount": 450000,
                                            "description": "Пополнение: Зарплата ТОО Алем"})
     assert client.get("/api/transactions").json()[0]["category"] == "Зарплата"
+
+
+def test_tips_rotate_without_repeats(client):
+    seen, ids = [], set()
+    for _ in range(40):
+        t = client.get("/api/tip", params={"seen": ",".join(seen)}).json()
+        assert t["title"] and t["text"]
+        if t["reset"]:
+            break
+        assert t["id"] not in ids  # пока не показаны все — без повторов
+        ids.add(t["id"])
+        seen.append(t["id"])
+    assert len(ids) >= 30
+
+
+def test_personal_tips_from_data(tmp_path, monkeypatch):
+    from datetime import date
+    from app.tips import personal_tips
+    monkeypatch.setattr(db, "DB_PATH", str(tmp_path / "t.db"))
+    db.init_db()
+    with db.get_conn() as conn:
+        acc = conn.execute("INSERT INTO accounts (name) VALUES ('Kaspi Gold')").lastrowid
+        cats = {r["name"]: r["id"] for r in conn.execute("SELECT id, name FROM categories")}
+        rows = [("2026-09-05", 400000, "Зарплата"), ("2026-10-05", 400000, "Зарплата"),
+                ("2026-09-15", -4990, "Платежи: Kcell"), ("2026-10-15", -4990, "Платежи: Kcell"),
+                ("2026-10-08", -380000, "Аренда")]
+        rows += [(f"2026-10-{d:02d}", -3000, "Покупки: Glovo") for d in range(10, 22)]
+        rows += [(f"2026-11-{d:02d}", -9000, "Покупки: Glovo") for d in range(1, 9)]
+        rows += [("2026-10-03", -4000, "Покупки: Glovo")]
+        for d, a, desc in rows:
+            cat = "Кафе и рестораны" if "Glovo" in desc else ("Зарплата" if a > 0 else "Прочие расходы")
+            conn.execute("INSERT INTO transactions (account_id, date, amount, description, category_id) VALUES (?,?,?,?,?)",
+                         (acc, d, a, desc, cats[cat]))
+        tips = {t["id"].split(":")[0]: t for t in personal_tips(conn, date(2026, 11, 10))}
+    assert "savings-neg" in tips                     # в октябре расходы больше доходов
+    assert "growth-Кафе и рестораны" in tips         # кафе выросли
+    assert "cafe-count" in tips and "13 заказов" in tips["cafe-count"]["title"]
+    assert "subs" in tips and "Kcell" in tips["subs"]["text"]
+    assert "cushion" in tips
