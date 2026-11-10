@@ -7,6 +7,7 @@
 """
 import json
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -14,11 +15,26 @@ sys.path.insert(0, ROOT)
 
 from app.categorize import LOW_PRIORITY  # noqa: E402
 from app.db import DEFAULT_CATEGORIES, DEFAULT_RULES  # noqa: E402
+from app.literacy_library import CASES, QUIZ  # noqa: E402
 from app.tips_library import TIPS, TOPICS  # noqa: E402
 
 
 def js(value) -> str:
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+
+
+def nbsp(value):
+    """Неразрывные пробелы внутри сумм («80 000 ₸» не должно переноситься посреди числа)."""
+    if isinstance(value, str):
+        prev = None
+        while prev != value:
+            prev, value = value, re.sub(r"(\d) (\d{3})(?!\d)", "\\1\u00a0\\2", value)
+        return value.replace(" ₸", "\u00a0₸")
+    if isinstance(value, list):
+        return [nbsp(v) for v in value]
+    if isinstance(value, dict):
+        return {k: nbsp(v) for k, v in value.items()}
+    return value
 
 
 def build() -> str:
@@ -32,7 +48,9 @@ def build() -> str:
         "/*__RULES__*/[]": js([[p, cat] for cat, patterns in DEFAULT_RULES.items() for p in patterns]),
         "/*__LOW_PRIORITY__*/[]": js(sorted(LOW_PRIORITY)),
         "/*__TOPICS__*/{}": js(TOPICS),
-        "/*__TIPS__*/[]": js([[t, i, title, text] for t, i, title, text in TIPS]),
+        "/*__TIPS__*/[]": js(nbsp([[t, i, title, text] for t, i, title, text in TIPS])),
+        "/*__CASES__*/[]": js(nbsp(CASES)),
+        "/*__QUIZ__*/[]": js(QUIZ),
         "<!--__ICON__-->": icon.replace('<svg ', '<svg class="logo" aria-hidden="true" ', 1),
     }
     for key, value in data.items():
@@ -74,6 +92,49 @@ MANIFEST = {
 }
 
 
+SITE_URL = "https://remedyrae771.github.io/Remedy/"
+
+
+def ics(uid: str, summary: str, description: str, start: str, rule: str) -> str:
+    """Повторяющееся событие с напоминанием в момент начала. Время «плавающее» — местное время телефона."""
+    lines = [
+        "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Aqsha//Reminders//RU", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+        "BEGIN:VEVENT", f"UID:{uid}@aqsha", "DTSTAMP:20260101T000000Z", f"DTSTART:{start}", "DURATION:PT10M",
+        f"RRULE:{rule}", f"SUMMARY:{ics_text(summary)}", f"DESCRIPTION:{ics_text(description)}", f"URL:{SITE_URL}#add",
+        "BEGIN:VALARM", "ACTION:DISPLAY", f"DESCRIPTION:{ics_text(summary)}", "TRIGGER:PT0M", "END:VALARM",
+        "END:VEVENT", "END:VCALENDAR",
+    ]
+    return "\r\n".join(fold(line) for line in lines) + "\r\n"
+
+
+def ics_text(text: str) -> str:
+    return text.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,")
+
+
+def fold(line: str) -> str:
+    """Строки iCalendar — не длиннее 75 байт; продолжение начинается с пробела (RFC 5545)."""
+    out, cur = [], ""
+    for ch in line:
+        if len((cur + ch).encode()) > (75 if not out else 74):
+            out.append(cur); cur = ""
+        cur += ch
+    out.append(cur)
+    return "\r\n ".join(out)
+
+
+def build_reminders(out_dir: str) -> None:
+    os.makedirs(out_dir, exist_ok=True)
+    for hhmm in ("1900", "2000", "2100", "2200"):
+        with open(os.path.join(out_dir, f"evening-{hhmm}.ics"), "w", encoding="utf-8", newline="") as f:
+            f.write(ics(f"evening-{hhmm}", "Aqsha: запишите расходы за сегодня",
+                        f"Пара секунд: откройте Aqsha и нажмите «+». {SITE_URL}#add",
+                        f"20260101T{hhmm}00", "FREQ=DAILY"))
+    with open(os.path.join(out_dir, "monthly-statement.ics"), "w", encoding="utf-8", newline="") as f:
+        f.write(ics("monthly-statement", "Aqsha: выписка Kaspi за прошлый месяц",
+                    f"Kaspi.kz → Kaspi Gold → Выписка → PDF, затем Aqsha → Ещё → Выписка. И сохраните резервную копию. {SITE_URL}",
+                    "20260101T100000", "FREQ=MONTHLY;BYMONTHDAY=1"))
+
+
 def build_site(page: str, out_dir: str) -> None:
     import shutil
     os.makedirs(os.path.join(out_dir, "icons"), exist_ok=True)
@@ -85,6 +146,7 @@ def build_site(page: str, out_dir: str) -> None:
     for name in ("icon.svg", "favicon-32.png", "apple-touch-icon.png", "icon-192.png", "icon-512.png", "icon-maskable-512.png"):
         shutil.copy(os.path.join(src, name), os.path.join(out_dir, "icons", name))
     open(os.path.join(out_dir, ".nojekyll"), "w").close()  # GitHub Pages отдаёт файлы как есть
+    build_reminders(os.path.join(out_dir, "reminders"))
 
 
 if __name__ == "__main__":
