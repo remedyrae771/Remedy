@@ -343,6 +343,16 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
       <ul class="cats" id="rule-list"></ul>
       <details style="margin-top:8px"><summary>Встроенные правила</summary><ul class="cats" id="builtin-list"></ul></details>
     </div>
+    <div class="card">
+      <h2 class="section-title">Резервная копия</h2>
+      <p class="hint">Файл CSV со всеми операциями: открывается в Excel и Google Таблицах, из него же можно всё восстановить.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+        <button class="btn primary" id="backup-save">Сохранить копию</button>
+        <label class="btn" for="backup-file" style="display:inline-flex;align-items:center">Восстановить из копии</label>
+        <input type="file" id="backup-file" accept=".csv,text/csv" hidden>
+      </div>
+      <p class="hint" id="backup-note" hidden style="margin-top:8px"></p>
+    </div>
     <div class="card" id="demo-card" hidden>
       <h2 class="section-title">Пример</h2>
       <p class="hint">Сейчас показаны примерные операции. Удалите их, когда начнёте вести свои.</p>
@@ -874,6 +884,63 @@ function renderCategories() {
 $("#rule-list").addEventListener("click", async (e) => {
   if (e.target.dataset.action !== "unrule") return;
   try { await Store.delRule(e.target.closest("li").dataset.id); toast("Правило удалено"); } catch (err) { toast(err.message, { error: true }); }
+});
+
+// ─── Резервная копия (CSV) ─────────────────────────────────────────────────────────────
+const CSV_HEAD = ["Дата", "Сумма", "Описание", "Категория", "Источник"];
+const csvCell = (v) => { const t = String(v ?? ""); return /[;"\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
+function toCSV() {
+  const rows = txList().filter((t) => t.src !== "demo").sort((a, b) => a.date.localeCompare(b.date));
+  return "\ufeff" + [CSV_HEAD, ...rows.map((t) => [t.date, String(t.amount).replace(".", ","), t.desc, t.cat, t.src || ""])]
+    .map((r) => r.map(csvCell).join(";")).join("\r\n");
+}
+function parseCSV(text) {
+  const rows = []; let row = [], cell = "", q = false;
+  text = text.replace(/^\ufeff/, "");
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c; }
+    else if (c === '"') q = true;
+    else if (c === ";") { row.push(cell); cell = ""; }
+    else if (c === "\n") { row.push(cell); rows.push(row); row = []; cell = ""; }
+    else if (c !== "\r") cell += c;
+  }
+  if (cell || row.length) { row.push(cell); rows.push(row); }
+  return rows;
+}
+$("#backup-save").addEventListener("click", async (e) => {
+  const note = $("#backup-note");
+  const count = txList().filter((t) => t.src !== "demo").length;
+  if (!count) { toast("Пока нечего сохранять — добавьте операции"); return; }
+  e.target.disabled = true;
+  try {
+    const dl = window.claude?.use ? await window.claude.use("downloads") : null;
+    if (!dl) { note.textContent = "Сохранение файла доступно, когда Aqsha открыта по ссылке claude.ai."; note.hidden = false; return; }
+    await dl.save({ filename: `aqsha-${todayISO()}.csv`, data: toCSV() });
+    lsSet("aqsha.lastBackup", todayISO());
+    note.textContent = `Копия сохранена: ${count} операций.`; note.hidden = false;
+  } catch (err) {
+    if (err?.code === "declined") return;
+    toast(err?.code === "rate_limited" ? "Окно сохранения уже открыто" : "Не удалось сохранить файл", { error: true });
+  } finally { e.target.disabled = false; }
+});
+$("#backup-file").addEventListener("change", async (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  try {
+    const rows = parseCSV(await file.text());
+    const head = rows.shift() || [];
+    if (head[0] !== CSV_HEAD[0] || head[1] !== CSV_HEAD[1]) throw new Error("Это не файл копии Aqsha");
+    const items = rows.filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r[0]) && r[1]).map((r) => {
+      const amount = parseFloat(r[1].replace(",", "."));
+      return { id: "b-" + hash(r.join("|")), date: r[0], amount, desc: r[2] || "", cat: CAT[r[3]] ? r[3] : categorize(r[2], amount), src: r[4] || "backup" };
+    }).filter((t) => t.amount && !Store.tx.has(t.id));
+    // операция могла уже быть с другим id (из выписки) — сверяем по дате, сумме и описанию
+    const known = new Set(txList().map((t) => `${t.date}|${t.amount}|${t.desc}`));
+    const fresh = items.filter((t) => !known.has(`${t.date}|${t.amount}|${t.desc}`));
+    for (let i = 0; i < fresh.length; i += 6) await Promise.all(fresh.slice(i, i + 6).map(({ id, ...t }) => Store.putTx(id, { ...t, at: Date.now() })));
+    toast(fresh.length ? `Восстановлено операций: ${fresh.length}` : "Все операции из копии уже есть");
+  } catch (err) { toast(err.message || "Не удалось прочитать файл", { error: true }); }
+  e.target.value = "";
 });
 
 // ─── Пример данных ─────────────────────────────────────────────────────────────────────
