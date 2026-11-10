@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Aqsha — учёт финансов</title>
+  <meta name="theme-color" content="#007a92">
+  <link rel="icon" href="/static/icons/icon.svg" type="image/svg+xml">
+  <link rel="icon" href="/static/icons/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-title" content="Aqsha">
+  <link rel="manifest" href="/static/manifest.json">
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+<header>
+  <h1><img src="/static/icons/icon.svg" alt="" width="28" height="28">Aqsha</h1>
+  <button id="sync-all" class="primary">⟳ Синхронизировать</button>
+</header>
+
+<div id="toast" hidden></div>
+
+<main>
+  <!-- Обзор -->
+  <section id="tab-overview" class="tab active">
+    <div id="tip" class="tip" hidden>
+      <div class="tip-icon" id="tip-icon"></div>
+      <div class="tip-body">
+        <div class="tip-label" id="tip-label"></div>
+        <b id="tip-title"></b>
+        <p id="tip-text"></p>
+        <p id="tip-nodata" class="tip-nodata" hidden>Загрузите <a href="#" data-goto="accounts">выписку Kaspi</a> — появятся советы по вашим расходам.</p>
+      </div>
+      <button id="tip-next" class="link tip-next" title="Другой совет">Ещё совет ›</button>
+    </div>
+    <div class="period">
+      <label>С <input type="date" id="ov-from"></label>
+      <label>По <input type="date" id="ov-to"></label>
+      <button data-period="month">Этот месяц</button>
+      <button data-period="prev">Прошлый месяц</button>
+      <button data-period="year">Год</button>
+    </div>
+    <div class="cards">
+      <div class="card income"><span>Доходы</span><b id="sum-income">0</b></div>
+      <div class="card expense"><span>Расходы</span><b id="sum-expense">0</b></div>
+      <div class="card net"><span>Итого</span><b id="sum-net">0</b></div>
+    </div>
+    <div class="charts">
+      <div class="chart-box"><h3>Расходы по категориям</h3><canvas id="chart-categories"></canvas></div>
+      <div class="chart-box"><h3>Доходы и расходы по месяцам</h3><canvas id="chart-months"></canvas></div>
+    </div>
+    <div class="chart-box"><h3>Топ категорий расходов</h3><ul id="top-categories"></ul></div>
+  </section>
+
+  <!-- Операции -->
+  <section id="tab-transactions" class="tab">
+    <form id="quick-form" class="quick">
+      <input name="text" placeholder="кофе 1500 · +450000 зарплата" autocomplete="off" required>
+      <button class="primary" aria-label="Добавить">＋</button>
+    </form>
+    <details id="add-tx" class="add-tx"><summary>＋ Добавить операцию</summary>
+    <form id="tx-form" class="inline-form">
+      <select name="account_id" required></select>
+      <input type="date" name="date" required>
+      <select name="sign"><option value="-1">Расход</option><option value="1">Доход</option></select>
+      <input type="number" name="amount" step="0.01" min="0.01" placeholder="Сумма" required>
+      <input name="description" placeholder="Описание">
+      <select name="category_id"><option value="">Авто-категория</option></select>
+      <button class="primary">Добавить</button>
+    </form>
+    </details>
+    <div class="filters">
+      <input id="f-q" placeholder="Поиск по описанию">
+      <select id="f-account"><option value="">Все счета</option></select>
+      <select id="f-category"><option value="">Все категории</option></select>
+      <select id="f-kind"><option value="">Все</option><option value="income">Доходы</option><option value="expense">Расходы</option></select>
+      <input type="date" id="f-from"> <input type="date" id="f-to">
+    </div>
+    <table>
+      <thead><tr><th>Дата</th><th>Описание</th><th>Счёт</th><th>Категория</th><th class="num">Сумма</th><th></th></tr></thead>
+      <tbody id="tx-body"></tbody>
+    </table>
+  </section>
+
+  <!-- Счета -->
+  <section id="tab-accounts" class="tab">
+    <table>
+      <thead><tr><th>Счёт</th><th>Источник</th><th>Операций</th><th class="num">Баланс*</th><th>Синхронизация</th><th></th></tr></thead>
+      <tbody id="acc-body"></tbody>
+    </table>
+    <p class="hint">* сумма загруженных операций, а не фактический остаток в банке.</p>
+
+    <div class="panels">
+      <div class="panel panel-wide" id="push-panel">
+        <h3>📲 Автоматически из уведомлений Kaspi</h3>
+        <p class="hint">Обход без банковского API: телефон пересылает уведомления о покупках в Aqsha, и операции
+          появляются сразу. В конце месяца загрузите выписку — операции из уведомлений сольются с ней без дублей.</p>
+        <div class="push-row">
+          <label>Счёт для операций <select id="push-account"></select></label>
+          <span class="hint" id="push-count"></span>
+        </div>
+        <label class="hint" for="push-url">Ваш адрес для телефона (держите в секрете — это как пароль):</label>
+        <div class="push-row">
+          <input id="push-url" readonly>
+          <button id="push-copy" type="button">Копировать</button>
+          <button id="push-reset" type="button" class="link" title="Старый адрес перестанет работать">Новый ключ</button>
+        </div>
+        <p class="hint">Телефон должен «видеть» Aqsha: быть в одной Wi-Fi сети с компьютером, где запущено приложение
+          (откройте Aqsha на телефоне по адресу вида http://192.168…:8000 — тогда и адрес выше будет таким),
+          или Aqsha должна работать на сервере.</p>
+        <details class="howto"><summary>Android: MacroDroid (бесплатно)</summary>
+          <ol>
+            <li>Установите <b>MacroDroid</b> из Google Play и дайте ему доступ к уведомлениям.</li>
+            <li>Добавить макрос → <b>Триггер</b>: «Уведомление» → «Уведомление получено» → приложение <b>Kaspi.kz</b>.</li>
+            <li><b>Действие</b>: «Подключение» → «HTTP-запрос». Метод <b>POST</b>, URL — адрес выше.</li>
+            <li>Тело запроса — тип «Текст», содержимое: волшебный текст «Текст уведомления»
+              (можно добавить и «Заголовок уведомления» перед ним).</li>
+            <li>Сохраните макрос и сделайте тестовую покупку — операция появится в «Операциях».</li>
+          </ol>
+          <p class="hint">Вместо MacroDroid подойдёт Tasker или Automate — главное, отправить текст уведомления POST-запросом на адрес выше.</p>
+        </details>
+        <details class="howto"><summary>iPhone: «Команды» + Apple Wallet</summary>
+          <ol>
+            <li>Карта должна быть добавлена в <b>Apple Wallet</b>, а платить нужно телефоном или часами.</li>
+            <li>«Команды» → «Автоматизация» → «+» → <b>«Транзакция»</b> → выберите карту → «Запускать сразу».</li>
+            <li>Действие <b>«Получить содержимое URL»</b>: URL — адрес выше, метод <b>POST</b>,
+              тело запроса <b>JSON</b>: поле <code>amount</code> = «Сумма», поле <code>merchant</code> = «Продавец».</li>
+          </ol>
+          <p class="hint">iPhone не даёт читать уведомления других приложений, поэтому переводы и оплаты картой без Apple Pay
+            так не попадут — для них остаётся быстрый ввод на вкладке «Операции» и выписка в конце месяца.</p>
+        </details>
+        <form id="push-test" class="push-row">
+          <input name="text" placeholder="Проверка: вставьте текст уведомления Kaspi" required>
+          <button>Проверить</button>
+        </form>
+        <p id="push-test-result" class="hint" hidden></p>
+      </div>
+      <div class="panel">
+        <h3>📄 Импорт выписки</h3>
+        <p class="hint"><b>Kaspi:</b> приложение Kaspi.kz → Kaspi Gold → «Выписка» → период → «Поделиться» → сохраните PDF и выберите его здесь.<br>
+          Также подходят CSV и OFX других банков. Повторный импорт не создаёт дублей.</p>
+        <form id="import-form">
+          <input type="file" name="file" accept=".pdf,.csv,.ofx,.qfx,.txt,application/pdf" required>
+          <select name="account_id"><option value="">➕ Новый счёт</option></select>
+          <button class="primary">Загрузить</button>
+        </form>
+      </div>
+      <div class="panel">
+        <h3>🏦 Подключить банк</h3>
+        <p class="hint">Вы авторизуетесь на сайте банка, после чего операции будут подтягиваться автоматически.</p>
+        <select id="bank-provider"></select>
+        <input id="bank-country" value="DE" maxlength="2" size="3" title="Код страны (ISO)">
+        <button id="bank-load">Найти банки</button>
+        <input id="bank-search" placeholder="Фильтр по названию" hidden>
+        <ul id="bank-list" class="bank-list"></ul>
+      </div>
+      <div class="panel">
+        <h3>✍️ Счёт вручную</h3>
+        <form id="account-form">
+          <input name="name" placeholder="Наличные" required>
+          <input name="currency" value="KZT" maxlength="3" size="4">
+          <button>Создать</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Советы -->
+  <section id="tab-tips" class="tab">
+    <div id="tips-personal-block" hidden>
+      <h2 class="section-title">По вашим расходам</h2>
+      <div id="tips-personal" class="tips-grid"></div>
+    </div>
+    <div id="tips-nodata" class="tip tip-cta" hidden>
+      <div class="tip-icon">📥</div>
+      <div class="tip-body">
+        <b>Хотите советы именно про ваши деньги?</b>
+        <p>Загрузите PDF-выписку Kaspi — приложение посчитает, сколько вы откладываете, на что уходит больше всего
+          и где можно сэкономить. А пока — вся подборка ниже.</p>
+      </div>
+      <button class="primary" data-goto="accounts">Загрузить выписку</button>
+    </div>
+    <h2 class="section-title">Полезные советы</h2>
+    <div id="tips-topics" class="chips"></div>
+    <div id="tips-general" class="tips-grid"></div>
+  </section>
+
+  <!-- Категории -->
+  <section id="tab-categories" class="tab">
+    <div class="panels">
+      <div class="panel">
+        <h3>Категории</h3>
+        <form id="cat-form" class="inline-form">
+          <input name="name" placeholder="Название" required>
+          <select name="kind"><option value="expense">Расход</option><option value="income">Доход</option></select>
+          <input type="color" name="color" value="#4a90d9">
+          <button>Добавить</button>
+        </form>
+        <ul id="cat-list" class="simple-list"></ul>
+      </div>
+      <div class="panel">
+        <h3>Правила автокатегоризации</h3>
+        <p class="hint">Если описание операции содержит текст — ей назначается категория.</p>
+        <form id="rule-form" class="inline-form">
+          <input name="pattern" placeholder="Текст в описании" required>
+          <select name="category_id" required></select>
+          <button>Добавить</button>
+        </form>
+        <button id="recategorize">Применить правила ко всем операциям</button>
+        <ul id="rule-list" class="simple-list"></ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<nav class="tabbar" aria-label="Разделы">
+  <button data-tab="overview" class="active"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.3A9 9 0 0 1 20.7 9H15z"/></svg><span>Обзор</span></button>
+  <button data-tab="transactions"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 20V4M7 20l-3-3M7 20l3-3"/><path d="M17 4v16M17 4l-3 3M17 4l3 3"/></svg><span>Операции</span></button>
+  <button data-tab="accounts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"/><path d="M21 9h-5a3 3 0 0 0 0 6h5z"/></svg><span>Счета</span></button>
+  <button data-tab="tips"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></svg><span>Советы</span></button>
+  <button data-tab="categories"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg><span>Категории</span></button>
+</nav>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
