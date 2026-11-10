@@ -3,8 +3,6 @@
 -- Применить: Supabase Dashboard → SQL Editor → вставить файл → Run
 -- или `supabase db push` при использовании Supabase CLI.
 
-create extension if not exists pgcrypto;
-
 -- ---------------------------------------------------------------------------
 -- Пары и профили
 -- ---------------------------------------------------------------------------
@@ -74,7 +72,7 @@ begin
   end if;
 
   loop
-    code := upper(substr(encode(gen_random_bytes(6), 'hex'), 1, 6));
+    code := upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 6));
     exit when not exists (select 1 from public.couples where invite_code = code);
   end loop;
 

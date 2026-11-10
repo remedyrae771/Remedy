@@ -8,14 +8,15 @@ import {
   nextOccurrence,
   parseISODate,
   parseUserDate,
-  relativeDays,
+  pluralDays,
+  toISODate,
   today,
 } from '../../lib/dates';
 import { confirmAction } from '../../lib/platform';
 import { errorText, supabase } from '../../lib/supabase';
 import type { CoupleEvent } from '../../lib/types';
 import { useCouple } from '../../providers/AuthProvider';
-import { colors, spacing } from '../../theme';
+import { colors, radius, spacing } from '../../theme';
 
 const EMOJIS = ['📅', '💍', '🎂', '❤️', '✈️', '🍷', '🎁', '🎉'];
 
@@ -73,7 +74,7 @@ export default function Dates() {
         title: event.title,
         date: event.date,
         days: daysBetween(now, next),
-        subtitle: event.repeats_yearly && years > 0 ? `исполнится ${years} — ` : '',
+        subtitle: event.repeats_yearly && years > 0 ? `${years}-я годовщина · ` : '',
         event,
       };
     });
@@ -88,7 +89,7 @@ export default function Dates() {
           title: 'Наша годовщина',
           date: startedOn,
           days: daysBetween(now, next),
-          subtitle: `${years}-я годовщина — `,
+          subtitle: `${years}-я годовщина · `,
         });
       }
       // Круглые даты: 100, 500, 1000… дней вместе.
@@ -174,21 +175,32 @@ export default function Dates() {
       ) : null}
 
       {rows.map((row, i) => (
-        <View key={row.key}>
+        <View key={row.key} style={{ gap: spacing.sm }}>
           {i > 0 && row.days < 0 && rows[i - 1].days >= 0 ? <SectionLabel>Прошедшие</SectionLabel> : null}
           <Pressable onLongPress={row.event ? () => remove(row.event!) : undefined} delayLongPress={400}>
-            <Card style={[styles.row, row.days < 0 && { opacity: 0.6 }]}>
-              <Text style={{ fontSize: 32 }}>{row.emoji}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.body}>{row.title}</Text>
+            <Card style={[styles.row, { gap: spacing.md, paddingVertical: spacing.md }, row.days < 0 && { opacity: 0.6 }]}>
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  backgroundColor: colors.primarySoft,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text style={{ fontSize: 24 }}>{row.emoji}</Text>
+              </View>
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={[styles.body, { fontWeight: '600' }]} numberOfLines={2}>
+                  {row.title}
+                </Text>
                 <Muted>
                   {row.subtitle}
-                  {row.key === 'milestone' ? '' : formatDate(row.date)}
+                  {formatDate(row.key === 'milestone' ? toISODate(addDays(today(), row.days)) : row.date)}
                 </Muted>
               </View>
-              <Text style={{ color: row.days === 0 ? colors.primary : colors.muted, fontWeight: '600' }}>
-                {relativeDays(row.days)}
-              </Text>
+              <DaysBadge days={row.days} />
             </Card>
           </Pressable>
         </View>
@@ -196,5 +208,40 @@ export default function Dates() {
 
       {rows.some((r) => r.event) ? <Muted>Удерживайте дату, чтобы удалить её.</Muted> : null}
     </Screen>
+  );
+}
+
+function addDays(date: Date, n: number): Date {
+  const d = new Date(date);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+
+/** Плашка «сколько осталось»: крупное число дней, акцент для ближайших дат. */
+function DaysBadge({ days }: { days: number }) {
+  const soon = days >= 0 && days <= 30;
+  const base = {
+    minWidth: 64,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radius.sm,
+    alignItems: 'center' as const,
+    backgroundColor: soon ? colors.primarySoft : colors.background,
+  };
+  if (days === 0 || days === 1) {
+    return (
+      <View style={[base, { backgroundColor: colors.primary }]}>
+        <Text style={{ color: '#fff', fontWeight: '700', fontSize: 14 }}>{days === 0 ? 'Сегодня' : 'Завтра'}</Text>
+      </View>
+    );
+  }
+  const n = Math.abs(days);
+  return (
+    <View style={base}>
+      <Text style={{ fontSize: 20, fontWeight: '800', color: soon ? colors.primary : colors.text, fontVariant: ['tabular-nums'] }}>
+        {n}
+      </Text>
+      <Text style={{ fontSize: 11, color: colors.muted }}>{days < 0 ? `${pluralDays(n)} назад` : pluralDays(n)}</Text>
+    </View>
   );
 }
