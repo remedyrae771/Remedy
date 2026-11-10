@@ -21,6 +21,7 @@ from .sync import link_connection, save_transactions, sync_account
 log = logging.getLogger("remedy")
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend")
 AUTO_SYNC_HOURS = float(os.environ.get("REMEDY_AUTO_SYNC_HOURS", "6"))
+DEFAULT_CURRENCY = os.environ.get("REMEDY_CURRENCY", "KZT").upper()
 
 
 def sync_all() -> dict:
@@ -62,7 +63,7 @@ def bank_error(e: Exception) -> HTTPException:
 # --- Модели ------------------------------------------------------------------------------
 class AccountIn(BaseModel):
     name: str = Field(min_length=1)
-    currency: str = "RUB"
+    currency: str = DEFAULT_CURRENCY
 
 
 class TransactionIn(BaseModel):
@@ -352,13 +353,15 @@ async def import_statement(file: UploadFile = File(...),
                            account_name: Optional[str] = Form(None)):
     data = await file.read()
     try:
-        txs = parse_statement(file.filename or "", data)
+        txs, currency = parse_statement(file.filename or "", data)
     except BankError as e:
         raise HTTPException(400, str(e))
+    is_pdf = (file.filename or "").lower().endswith(".pdf") or data[:5] == b"%PDF-"
     with db.get_conn() as conn:
         if not account_id:
-            name = account_name or os.path.splitext(file.filename or "Выписка")[0]
-            account_id = conn.execute("INSERT INTO accounts (name, provider) VALUES (?, 'file')", (name,)).lastrowid
+            name = account_name or ("Kaspi Gold" if is_pdf else os.path.splitext(file.filename or "Выписка")[0])
+            account_id = conn.execute("INSERT INTO accounts (name, provider, currency) VALUES (?, 'file', ?)",
+                                      (name, currency or DEFAULT_CURRENCY)).lastrowid
         elif not conn.execute("SELECT 1 FROM accounts WHERE id = ?", (account_id,)).fetchone():
             raise HTTPException(404, "Счёт не найден")
         added = save_transactions(conn, account_id, txs)

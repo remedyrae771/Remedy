@@ -69,20 +69,22 @@ DEFAULT_CATEGORIES = [
 ]
 
 DEFAULT_RULES = {
-    "Продукты": ["пятёрочка", "пятерочка", "перекрёсток", "перекресток", "магнит", "лента", "ашан",
+    # Казахстан (Kaspi и др.)
+    "Продукты": ["magnum", "small", "galmart", "анвар", "fix price", "arbuz", "airba fresh", "toimart",
+                 "пятёрочка", "пятерочка", "перекрёсток", "перекресток", "магнит", "лента", "ашан",
                  "вкусвилл", "дикси", "metro", "spar", "supermarket", "grocery", "lidl", "aldi", "tesco"],
-    "Кафе и рестораны": ["кафе", "ресторан", "кофе", "coffee", "cafe", "restaurant", "burger",
+    "Кафе и рестораны": ["glovo", "wolt", "chocofood", "yandex eats", "яндекс еда", "кафе", "ресторан", "кофе", "coffee", "cafe", "restaurant", "burger",
                          "макдоналдс", "kfc", "вкусно и точка", "starbucks", "pizza", "пицц"],
-    "Транспорт": ["метро", "яндекс go", "yandex go", "такси", "taxi", "uber", "bolt", "азс",
+    "Транспорт": ["onay", "онай", "indriver", "yandex.taxi", "qazaq gaz", "helios", "sinooil", "kmg", "метро", "яндекс go", "yandex go", "такси", "taxi", "uber", "bolt", "азс",
                   "лукойл", "газпромнефть", "роснефть", "shell", "ржд", "аэрофлот", "тройка"],
-    "Жильё и ЖКХ": ["жкх", "аренда", "квартплата", "мосэнергосбыт", "rent", "electricity"],
-    "Связь и интернет": ["мтс", "билайн", "мегафон", "теле2", "ростелеком", "mobile", "internet"],
-    "Здоровье": ["аптека", "pharmacy", "клиника", "стоматолог", "invitro", "здоровье"],
+    "Жильё и ЖКХ": ["алсеко", "alseco", "ерц", "коммунальные", "жкх", "аренда", "квартплата", "мосэнергосбыт", "rent", "electricity"],
+    "Связь и интернет": ["kcell", "activ", "beeline", "altel", "tele2", "казахтелеком", "kazakhtelecom", "мтс", "билайн", "мегафон", "теле2", "ростелеком", "mobile", "internet"],
+    "Здоровье": ["europharma", "sadykhan", "биосфера", "аптека", "pharmacy", "клиника", "стоматолог", "invitro", "здоровье"],
     "Развлечения": ["кино", "netflix", "spotify", "кинопоиск", "steam", "театр", "cinema"],
-    "Покупки": ["zara", "h&m", "uniqlo", "wildberries", "ozon", "lamoda"],
+    "Покупки": ["kaspi магазин", "kaspi.kz магазин", "technodom", "sulpak", "mechta", "zara", "h&m", "uniqlo", "wildberries", "ozon", "lamoda"],
     "Зарплата": ["зарплата", "заработная плата", "salary", "аванс"],
-    "Переводы входящие": ["входящий перевод", "пополнение"],
-    "Переводы исходящие": ["перевод по сбп", "перевод на карту", "исходящий перевод", "внешний перевод"],
+    "Переводы входящие": ["входящий перевод", "пополнение", "переводы:"],
+    "Переводы исходящие": ["переводы:", "перевод по сбп", "перевод на карту", "исходящий перевод", "внешний перевод"],
 }
 
 
@@ -108,13 +110,27 @@ def get_conn():
         conn.close()
 
 
+# увеличивайте при изменении DEFAULT_RULES — новые правила добавятся и в существующие базы
+SEED_VERSION = 2
+
+
+def _seed_rules(conn: sqlite3.Connection) -> None:
+    ids = {r["name"]: r["id"] for r in conn.execute("SELECT id, name FROM categories")}
+    existing = {(r["pattern"], r["category_id"]) for r in conn.execute("SELECT pattern, category_id FROM rules")}
+    conn.executemany(
+        "INSERT INTO rules (pattern, category_id) VALUES (?, ?)",
+        [(p, ids[cat]) for cat, patterns in DEFAULT_RULES.items() if cat in ids
+         for p in patterns if (p, ids[cat]) not in existing],
+    )
+
+
 def init_db() -> None:
     with get_conn() as conn:
         conn.executescript(SCHEMA)
+        conn.execute("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
         if conn.execute("SELECT COUNT(*) FROM categories").fetchone()[0] == 0:
             conn.executemany("INSERT INTO categories (name, kind, color) VALUES (?, ?, ?)", DEFAULT_CATEGORIES)
-            ids = {r["name"]: r["id"] for r in conn.execute("SELECT id, name FROM categories")}
-            conn.executemany(
-                "INSERT INTO rules (pattern, category_id) VALUES (?, ?)",
-                [(p, ids[cat]) for cat, patterns in DEFAULT_RULES.items() for p in patterns],
-            )
+        row = conn.execute("SELECT value FROM settings WHERE key = 'seed_version'").fetchone()
+        if int(row["value"] if row else 0) < SEED_VERSION:
+            _seed_rules(conn)
+            conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('seed_version', ?)", (str(SEED_VERSION),))

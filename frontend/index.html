@@ -87,9 +87,10 @@
       </div>
       <div class="panel">
         <h3>📄 Импорт выписки</h3>
-        <p class="hint">CSV или OFX из интернет-банка (Т-Банк, Сбер, Альфа и др.). Повторный импорт не создаёт дублей.</p>
+        <p class="hint"><b>Kaspi:</b> приложение Kaspi.kz → Kaspi Gold → «Выписка» → период → «Поделиться» → сохраните PDF и выберите его здесь.<br>
+          Также подходят CSV и OFX других банков. Повторный импорт не создаёт дублей.</p>
         <form id="import-form">
-          <input type="file" name="file" accept=".csv,.ofx,.qfx,.txt" required>
+          <input type="file" name="file" accept=".pdf,.csv,.ofx,.qfx,.txt,application/pdf" required>
           <select name="account_id"><option value="">➕ Новый счёт</option></select>
           <button class="primary">Загрузить</button>
         </form>
@@ -98,7 +99,7 @@
         <h3>✍️ Счёт вручную</h3>
         <form id="account-form">
           <input name="name" placeholder="Наличные" required>
-          <input name="currency" value="RUB" maxlength="3" size="4">
+          <input name="currency" value="KZT" maxlength="3" size="4">
           <button>Создать</button>
         </form>
       </div>

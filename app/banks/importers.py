@@ -156,10 +156,15 @@ def parse_ofx(data: bytes) -> list[BankTransaction]:
     return result
 
 
-def parse_statement(filename: str, data: bytes) -> list[BankTransaction]:
+def parse_statement(filename: str, data: bytes) -> tuple[list[BankTransaction], Optional[str]]:
+    """Возвращает операции и валюту выписки (если её удалось определить)."""
     name = filename.lower()
+    if name.endswith(".pdf") or data[:5] == b"%PDF-":
+        from .kaspi import parse_kaspi_pdf
+        return parse_kaspi_pdf(data)
     if name.endswith((".ofx", ".qfx")) or b"<OFX>" in data[:2000].upper():
-        return parse_ofx(data)
+        cur = re.search(rb"<CURDEF>\s*([A-Z]{3})", data[:5000])
+        return parse_ofx(data), cur.group(1).decode() if cur else None
     if name.endswith((".csv", ".txt", ".tsv")):
-        return parse_csv(data)
-    raise BankError("Поддерживаются файлы CSV и OFX/QFX")
+        return parse_csv(data), None
+    raise BankError("Поддерживаются файлы PDF (Kaspi), CSV и OFX/QFX")

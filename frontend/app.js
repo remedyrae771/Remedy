@@ -4,7 +4,13 @@ const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 const state = { categories: [], accounts: [], charts: {} };
 
-const fmt = (n, cur = "RUB") =>
+// основная валюта — самая частая среди счетов (для итогов и графиков)
+function mainCurrency() {
+  const count = {};
+  state.accounts.forEach((a) => (count[a.currency] = (count[a.currency] || 0) + a.tx_count + 1));
+  return Object.keys(count).sort((a, b) => count[b] - count[a])[0] || "KZT";
+}
+const fmt = (n, cur = mainCurrency()) =>
   new Intl.NumberFormat("ru-RU", { style: "currency", currency: cur, maximumFractionDigits: 2 }).format(n);
 const iso = (d) => d.toISOString().slice(0, 10);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
