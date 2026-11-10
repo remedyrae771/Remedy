@@ -11,7 +11,7 @@ function mainCurrency() {
   return Object.keys(count).sort((a, b) => count[b] - count[a])[0] || "KZT";
 }
 const fmt = (n, cur = mainCurrency()) =>
-  new Intl.NumberFormat("ru-RU", { style: "currency", currency: cur, maximumFractionDigits: 2 }).format(n);
+  new Intl.NumberFormat("ru-RU", { style: "currency", currency: cur, currencyDisplay: "narrowSymbol", minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(n);
 const iso = (d) => d.toISOString().slice(0, 10);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -113,18 +113,22 @@ async function loadOverview() {
   chart("#chart-categories", {
     type: "doughnut",
     data: { labels: exp.map((c) => c.name), datasets: [{ data: exp.map((c) => c.total), backgroundColor: exp.map((c) => c.color), borderWidth: 0 }] },
-    options: { plugins: { legend: { position: "right", labels: { color: text } }, tooltip: { callbacks: { label: (c) => `${c.label}: ${fmt(c.raw)}` } } } },
+    options: { maintainAspectRatio: false, plugins: { legend: { position: window.innerWidth < 700 ? "bottom" : "right", labels: { color: text } }, tooltip: { callbacks: { label: (c) => `${c.label}: ${fmt(c.raw)}` } } } },
   });
   chart("#chart-months", {
     type: "bar",
     data: {
-      labels: s.by_month.map((m) => m.month),
+      labels: s.by_month.map((m) => new Date(m.month + "-01T00:00:00").toLocaleDateString("ru-RU", { month: "short", year: "numeric" })),
       datasets: [
         { label: "Доходы", data: s.by_month.map((m) => m.income), backgroundColor: "#1f9d55" },
         { label: "Расходы", data: s.by_month.map((m) => m.expense), backgroundColor: "#d64545" },
       ],
     },
-    options: { scales: { x: { ticks: { color: text } }, y: { ticks: { color: text } } }, plugins: { legend: { labels: { color: text } } } },
+    options: {
+      locale: "ru-RU",
+      scales: { x: { ticks: { color: text } }, y: { ticks: { color: text, callback: (v) => v.toLocaleString("ru-RU") } } },
+      plugins: { legend: { labels: { color: text } }, tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${fmt(c.raw)}` } } },
+    },
   });
   const max = Math.max(1, ...exp.map((c) => c.total));
   $("#top-categories").innerHTML = exp.length
@@ -141,13 +145,13 @@ async function loadTransactions() {
   add("kind", $("#f-kind").value); add("from", $("#f-from").value); add("to", $("#f-to").value);
   const txs = await api("/api/transactions?" + p);
   $("#tx-body").innerHTML = txs.length ? txs.map((t) => `
-    <tr data-id="${t.id}">
-      <td>${t.date.split("-").reverse().join(".")}</td>
-      <td>${esc(t.description)}</td>
-      <td>${esc(t.account)}</td>
-      <td><select class="tx-cat"><option value="">—</option>${categoryOptions(t.category_id, t.amount > 0 ? "income" : "expense")}</select></td>
-      <td class="num ${t.amount > 0 ? "pos" : "neg"}">${t.amount > 0 ? "+" : ""}${fmt(t.amount, t.currency)}</td>
-      <td><button class="link tx-del" title="Удалить">✕</button></td>
+    <tr data-id="${t.id}" class="row-tx">
+      <td class="c-date">${t.date.split("-").reverse().join(".")}</td>
+      <td class="c-desc">${esc(t.description)}</td>
+      <td class="c-acc">${esc(t.account)}</td>
+      <td class="c-cat"><select class="tx-cat"><option value="">—</option>${categoryOptions(t.category_id, t.amount > 0 ? "income" : "expense")}</select></td>
+      <td class="num c-amount ${t.amount > 0 ? "pos" : "neg"}">${t.amount > 0 ? "+" : ""}${fmt(t.amount, t.currency)}</td>
+      <td class="c-del"><button class="link tx-del" title="Удалить">✕</button></td>
     </tr>`).join("")
     : '<tr><td colspan="6" class="hint">Операций нет</td></tr>';
 }
@@ -181,6 +185,7 @@ $("#tx-form").addEventListener("submit", guard(async (e) => {
   } });
   e.target.amount.value = ""; e.target.description.value = "";
   toast("Операция добавлена");
+  $("#add-tx").open = window.innerWidth >= 700;
   loadTransactions();
 }));
 
@@ -190,11 +195,11 @@ const PROVIDERS = { manual: "Вручную", file: "Выписка", demo: "Д�
 async function loadAccounts() {
   $("#acc-body").innerHTML = state.accounts.length ? state.accounts.map((a) => {
     const syncable = !["manual", "file"].includes(a.provider);
-    return `<tr data-id="${a.id}">
-      <td>${esc(a.name)}</td><td>${PROVIDERS[a.provider] || a.provider}</td><td>${a.tx_count}</td>
-      <td class="num ${a.balance >= 0 ? "pos" : "neg"}">${fmt(a.balance, a.currency)}</td>
-      <td>${syncable ? `<button class="acc-sync">⟳</button> <span class="hint">${a.last_synced_at ? new Date(a.last_synced_at).toLocaleString("ru-RU") : "никогда"}</span>` : "—"}</td>
-      <td><button class="link acc-del" title="Удалить счёт и его операции">✕</button></td></tr>`;
+    return `<tr data-id="${a.id}" class="row-acc">
+      <td class="c-desc">${esc(a.name)}</td><td class="c-prov">${PROVIDERS[a.provider] || a.provider}</td><td class="c-count">${a.tx_count} опер.</td>
+      <td class="num c-amount ${a.balance >= 0 ? "pos" : "neg"}">${fmt(a.balance, a.currency)}</td>
+      <td class="c-sync">${syncable ? `<button class="acc-sync">⟳</button> <span class="hint">${a.last_synced_at ? new Date(a.last_synced_at).toLocaleString("ru-RU") : "никогда"}</span>` : ""}</td>
+      <td class="c-del"><button class="link acc-del" title="Удалить счёт и его операции">✕</button></td></tr>`;
   }).join("") : '<tr><td colspan="6" class="hint">Счетов пока нет — подключите банк, загрузите выписку или создайте счёт вручную.</td></tr>';
 
   const providers = await api("/api/banks/providers");
@@ -306,6 +311,7 @@ $("#recategorize").addEventListener("click", guard(async () => {
 // --- Старт -------------------------------------------------------------------------------
 (function init() {
   setPeriod("month");
+  $("#add-tx").open = window.innerWidth >= 700;
   $("#tx-form [name=date]").value = iso(new Date());
   const params = new URLSearchParams(location.search);
   if (params.has("bank_linked")) toast(`Банк подключён, счетов: ${params.get("bank_linked")}`);

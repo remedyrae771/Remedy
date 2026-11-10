@@ -80,7 +80,7 @@ DEFAULT_RULES = {
     "Жильё и ЖКХ": ["алсеко", "alseco", "ерц", "коммунальные", "жкх", "аренда", "квартплата", "мосэнергосбыт", "rent", "electricity"],
     "Связь и интернет": ["kcell", "activ", "beeline", "altel", "tele2", "казахтелеком", "kazakhtelecom", "мтс", "билайн", "мегафон", "теле2", "ростелеком", "mobile", "internet"],
     "Здоровье": ["europharma", "sadykhan", "биосфера", "аптека", "pharmacy", "клиника", "стоматолог", "invitro", "здоровье"],
-    "Развлечения": ["кино", "netflix", "spotify", "кинопоиск", "steam", "театр", "cinema"],
+    "Развлечения": ["kinopark", "chaplin", "kino.kz", "ticketon", "кино", "netflix", "spotify", "кинопоиск", "steam", "театр", "cinema"],
     "Покупки": ["kaspi магазин", "kaspi.kz магазин", "technodom", "sulpak", "mechta", "zara", "h&m", "uniqlo", "wildberries", "ozon", "lamoda"],
     "Зарплата": ["зарплата", "заработная плата", "salary", "аванс"],
     "Переводы входящие": ["входящий перевод", "пополнение", "переводы:"],
@@ -111,7 +111,7 @@ def get_conn():
 
 
 # увеличивайте при изменении DEFAULT_RULES — новые правила добавятся и в существующие базы
-SEED_VERSION = 2
+SEED_VERSION = 3
 
 
 def _seed_rules(conn: sqlite3.Connection) -> None:

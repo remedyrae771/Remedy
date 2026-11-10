@@ -38,8 +38,9 @@ button.link:hover { color: var(--expense); }
 .chart-box, .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; min-width: 0; }
 .chart-box h3, .panel h3 { margin: 0 0 12px; font-size: 16px; }
 .chart-box canvas { max-height: 300px; }
+#chart-categories { height: 300px !important; }
 #top-categories { list-style: none; padding: 0; margin: 0; }
-#top-categories li { display: grid; grid-template-columns: 160px 1fr 110px; gap: 10px; align-items: center; padding: 4px 0; }
+#top-categories li { display: grid; grid-template-columns: 190px 1fr 120px; gap: 10px; align-items: center; padding: 4px 0; }
 .bar { height: 10px; border-radius: 5px; }
 
 table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
@@ -66,11 +67,45 @@ td select { padding: 3px 6px; max-width: 190px; }
 #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px; z-index: 10; max-width: calc(100% - 32px); }
 #toast.error { background: var(--expense); color: #fff; }
 
+.add-tx summary { cursor: pointer; color: var(--accent); font-weight: 600; margin-bottom: 12px; list-style: none; }
+.add-tx summary::-webkit-details-marker { display: none; }
+.add-tx[open] summary { display: none; }
+
 @media (max-width: 700px) {
+  .add-tx summary { display: inline-block; background: var(--accent); color: #fff; padding: 9px 14px; border-radius: 10px; }
+  .add-tx[open] summary { display: none; }
+  .filters { display: grid; grid-template-columns: 1fr 1fr; }
+  .filters #f-q { grid-column: span 2; }
+  .inline-form > * { flex: 1 1 140px; }
+  /* операции и счета — карточки */
+  tr.row-tx, tr.row-acc { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center;
+    column-gap: 8px; padding: 10px 12px; }
+  tr.row-tx { grid-template-areas: "desc desc amount del" "date acc acc acc" "cat cat cat cat"; }
+  tr.row-acc { grid-template-areas: "desc desc amount del" "prov count count count" "sync sync sync sync"; }
+  tr.row-tx td, tr.row-acc td { padding: 0; width: auto; }
+  .c-desc { grid-area: desc; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .c-amount { grid-area: amount; font-weight: 600; }
+  .c-del { grid-area: del; }
+  .c-date { grid-area: date; } .c-acc { grid-area: acc; }
+  .c-prov { grid-area: prov; } .c-count { grid-area: count; } .c-sync { grid-area: sync; }
+  .c-date, .c-acc, .c-prov, .c-count { color: var(--muted); font-size: 13px; }
+  .c-date::after, .c-prov::after { content: " ·"; }
+  .c-cat { grid-area: cat; margin-top: 6px; }
+  .c-sync { grid-area: sync; } .c-sync:not(:empty) { margin-top: 6px; }
+  td select { max-width: 100%; }
+  header { padding: 10px 16px 0; gap: 8px 12px; }
+  header h1 { font-size: 18px; }
+  #sync-all { margin-left: auto; padding: 6px 10px; }
+  nav { order: 3; flex: 1 0 100%; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 12px 8px; }
+  nav button { white-space: nowrap; }
+  main { padding: 16px; }
+  .card b { font-size: 22px; }
+  .cards { grid-template-columns: 1fr 1fr; }
+  .card.net { grid-column: span 2; }
   table thead { display: none; }
   table, tbody, tr, td { display: block; width: 100%; }
   tr { border-bottom: 1px solid var(--border); padding: 6px 0; }
   td { border: none; padding: 3px 10px; }
   td.num { text-align: left; }
-  #top-categories li { grid-template-columns: 110px 1fr 90px; }
+  #top-categories li { grid-template-columns: minmax(0, 1.3fr) 1fr auto; }
 }

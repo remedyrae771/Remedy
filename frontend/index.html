@@ -45,6 +45,7 @@
 
   <!-- Операции -->
   <section id="tab-transactions" class="tab">
+    <details id="add-tx" class="add-tx"><summary>＋ Добавить операцию</summary>
     <form id="tx-form" class="inline-form">
       <select name="account_id" required></select>
       <input type="date" name="date" required>
@@ -54,6 +55,7 @@
       <select name="category_id"><option value="">Авто-категория</option></select>
       <button class="primary">Добавить</button>
     </form>
+    </details>
     <div class="filters">
       <input id="f-q" placeholder="Поиск по описанию">
       <select id="f-account"><option value="">Все счета</option></select>
@@ -77,15 +79,6 @@
 
     <div class="panels">
       <div class="panel">
-        <h3>🏦 Подключить банк</h3>
-        <p class="hint">Вы авторизуетесь на сайте банка, после чего операции будут подтягиваться автоматически.</p>
-        <select id="bank-provider"></select>
-        <input id="bank-country" value="DE" maxlength="2" size="3" title="Код страны (ISO)">
-        <button id="bank-load">Найти банки</button>
-        <input id="bank-search" placeholder="Фильтр по названию" hidden>
-        <ul id="bank-list" class="bank-list"></ul>
-      </div>
-      <div class="panel">
         <h3>📄 Импорт выписки</h3>
         <p class="hint"><b>Kaspi:</b> приложение Kaspi.kz → Kaspi Gold → «Выписка» → период → «Поделиться» → сохраните PDF и выберите его здесь.<br>
           Также подходят CSV и OFX других банков. Повторный импорт не создаёт дублей.</p>
@@ -94,6 +87,15 @@
           <select name="account_id"><option value="">➕ Новый счёт</option></select>
           <button class="primary">Загрузить</button>
         </form>
+      </div>
+      <div class="panel">
+        <h3>🏦 Подключить банк</h3>
+        <p class="hint">Вы авторизуетесь на сайте банка, после чего операции будут подтягиваться автоматически.</p>
+        <select id="bank-provider"></select>
+        <input id="bank-country" value="DE" maxlength="2" size="3" title="Код страны (ISO)">
+        <button id="bank-load">Найти банки</button>
+        <input id="bank-search" placeholder="Фильтр по названию" hidden>
+        <ul id="bank-list" class="bank-list"></ul>
       </div>
       <div class="panel">
         <h3>✍️ Счёт вручную</h3>

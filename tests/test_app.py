@@ -183,3 +183,10 @@ def test_kaspi_pdf_import(client):
 def test_bad_pdf(client):
     r = client.post("/api/import", files={"file": ("x.pdf", b"%PDF-1.4 garbage", "application/pdf")})
     assert r.status_code == 400
+
+
+def test_kaspi_salary_beats_generic_topup(client):
+    acc = client.post("/api/accounts", json={"name": "Kaspi Gold"}).json()["id"]
+    client.post("/api/transactions", json={"account_id": acc, "date": "2026-11-05", "amount": 450000,
+                                           "description": "Пополнение: Зарплата ТОО Алем"})
+    assert client.get("/api/transactions").json()[0]["category"] == "Зарплата"

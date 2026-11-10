@@ -3,6 +3,14 @@
 Веб-приложение для личных финансов: операции сами подтягиваются из банка, раскладываются по категориям,
 а на главной видно, сколько пришло, сколько ушло и на что.
 
+<p>
+  <img src="docs/screenshots/phone-overview.png" width="200" alt="Обзор на телефоне">
+  <img src="docs/screenshots/phone-transactions.png" width="200" alt="Операции на телефоне">
+  <img src="docs/screenshots/phone-overview-dark.png" width="200" alt="Тёмная тема">
+</p>
+
+![Обзор на компьютере](docs/screenshots/desktop-overview.png)
+
 ## Возможности
 
 - **Синхронизация с банком через Open Banking** (GoCardless Bank Account Data, ~2300 банков ЕС и Великобритании):
