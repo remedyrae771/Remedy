@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Aqsha — учёт финансов</title>
   <meta name="theme-color" content="#007a92">
   <link rel="icon" href="/static/icons/icon.svg" type="image/svg+xml">
@@ -16,13 +16,6 @@
 <body>
 <header>
   <h1><img src="/static/icons/icon.svg" alt="" width="28" height="28">Aqsha</h1>
-  <nav>
-    <button data-tab="overview" class="active">Обзор</button>
-    <button data-tab="transactions">Операции</button>
-    <button data-tab="accounts">Счета и банки</button>
-    <button data-tab="tips">Советы</button>
-    <button data-tab="categories">Категории</button>
-  </nav>
   <button id="sync-all" class="primary">⟳ Синхронизировать</button>
 </header>
 
@@ -172,6 +165,14 @@
     </div>
   </section>
 </main>
+
+<nav class="tabbar" aria-label="Разделы">
+  <button data-tab="overview" class="active"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.3A9 9 0 0 1 20.7 9H15z"/></svg><span>Обзор</span></button>
+  <button data-tab="transactions"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 20V4M7 20l-3-3M7 20l3-3"/><path d="M17 4v16M17 4l-3 3M17 4l3 3"/></svg><span>Операции</span></button>
+  <button data-tab="accounts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"/><path d="M21 9h-5a3 3 0 0 0 0 6h5z"/></svg><span>Счета</span></button>
+  <button data-tab="tips"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></svg><span>Советы</span></button>
+  <button data-tab="categories"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg><span>Категории</span></button>
+</nav>
 
 <script src="/static/app.js"></script>
 </body>

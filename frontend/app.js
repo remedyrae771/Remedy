@@ -41,8 +41,12 @@ const guard = (fn) => async (...a) => { try { await fn(...a); } catch (e) { toas
 // --- Вкладки -----------------------------------------------------------------------------
 $$("nav button").forEach((b) =>
   b.addEventListener("click", () => {
-    $$("nav button").forEach((x) => x.classList.toggle("active", x === b));
+    $$("nav button").forEach((x) => {
+      x.classList.toggle("active", x === b);
+      if (x === b) x.setAttribute("aria-current", "page"); else x.removeAttribute("aria-current");
+    });
     $$(".tab").forEach((t) => t.classList.toggle("active", t.id === "tab-" + b.dataset.tab));
+    window.scrollTo(0, 0);
     refresh();
   })
 );
