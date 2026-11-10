@@ -1,6 +1,9 @@
 <title>Aqsha</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#007a92">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700&display=swap">
 <style>
 /* Aqsha — «степь и золото». Одна колонка под телефон, нижняя панель вкладок, карточки только для объектов. */
 :root {
@@ -9,7 +12,10 @@
   --gold: #f2b705; --gold-text: #9a6e00; --gold-soft: #fdf4d9;
   --income: #17805a; --expense: #c8462f; --danger-soft: #fbe9e5;
   --shadow: 0 1px 2px rgba(30, 42, 46, .06);
+  --hero-sky1: #00738a; --hero-sky2: #005a6e; --hero-gold1: #f9cf4a; --hero-gold2: #f2b705;
+  --hero-ink: #ffffff; --hero-ink-soft: rgba(255, 255, 255, .93); --hero-dark: #1e2a2e; --hero-dark-soft: rgba(30, 42, 46, .86);
   --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --display: "Unbounded", system-ui, -apple-system, "Segoe UI", sans-serif;
   --num: ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
@@ -18,6 +24,7 @@
     --accent: #3cc8e0; --on-accent: #0e1a1f; --accent-soft: #173a44;
     --gold: #f5c542; --gold-text: #f5c542; --gold-soft: #2c2a1c;
     --income: #3ccb8a; --expense: #f07a62; --danger-soft: #3a2420;
+    --hero-sky1: #0a6f85; --hero-sky2: #073f4d; --hero-gold1: #f2c33c; --hero-gold2: #d9a206;
     --shadow: none; color-scheme: dark;
   }
 }
@@ -26,6 +33,7 @@
   --accent: #3cc8e0; --on-accent: #0e1a1f; --accent-soft: #173a44;
   --gold: #f5c542; --gold-text: #f5c542; --gold-soft: #2c2a1c;
   --income: #3ccb8a; --expense: #f07a62; --danger-soft: #3a2420;
+  --hero-sky1: #0a6f85; --hero-sky2: #073f4d; --hero-gold1: #f2c33c; --hero-gold2: #d9a206;
   --shadow: none; color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -41,7 +49,7 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 /* шапка */
 .top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 3px solid var(--gold); }
 .top .wrap { display: flex; align-items: center; gap: 10px; padding-block: 10px; }
-.top h1 { font-size: 20px; color: var(--accent); letter-spacing: -.01em; }
+.top h1 { font: 700 19px/1 var(--display); color: var(--accent); letter-spacing: -.01em; }
 .logo { width: 30px; height: 30px; border-radius: 8px; flex: none; }
 .sync { margin-left: auto; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
 .sync::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
@@ -71,10 +79,55 @@ input[type=text], input[type=search], input[type=number], input[type=date], sele
 .chip { flex: none; border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: 6px 12px; font-size: 14px; white-space: nowrap; }
 .chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 
-/* совет */
+/* совет дня — главный акцент экрана: небо и холмы степи, иконка внутри солнца */
+.hero-tip { position: relative; overflow: hidden; isolation: isolate; border-radius: 22px; padding: 18px 18px 14px;
+  color: var(--hero-ink); background: linear-gradient(155deg, var(--hero-sky1) 0%, var(--hero-sky2) 100%);
+  box-shadow: 0 10px 28px -12px rgba(0, 90, 110, .55); display: flex; flex-direction: column; gap: 10px; touch-action: pan-y; }
+.hero-tip.personal { color: var(--hero-dark); background: linear-gradient(155deg, var(--hero-gold1) 0%, var(--hero-gold2) 100%);
+  box-shadow: 0 10px 28px -12px rgba(190, 140, 0, .6); }
+.hero-hills { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 46%; z-index: -1; pointer-events: none; }
+.hero-hills path:nth-child(1) { fill: rgba(255, 255, 255, .07); }
+.hero-hills path:nth-child(2) { fill: rgba(255, 255, 255, .10); }
+.hero-tip.personal .hero-hills path:nth-child(1) { fill: rgba(255, 255, 255, .22); }
+.hero-tip.personal .hero-hills path:nth-child(2) { fill: rgba(255, 255, 255, .30); }
+.hero-top { display: flex; align-items: center; gap: 14px; }
+.hero-sun { flex: none; width: 58px; height: 58px; border-radius: 50%; display: grid; place-items: center; font-size: 30px; line-height: 1;
+  background: radial-gradient(circle at 35% 30%, #ffe27a, var(--gold) 70%);
+  box-shadow: 0 0 0 6px rgba(242, 183, 5, .28), 0 0 0 13px rgba(242, 183, 5, .12), 0 0 34px rgba(255, 210, 60, .55); }
+.hero-tip.personal .hero-sun { background: radial-gradient(circle at 35% 30%, #ffffff, #fff6d8 70%);
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, .45), 0 0 0 13px rgba(255, 255, 255, .2); }
+.hero-meta { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.hero-pill { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; padding: 4px 10px; border-radius: 999px;
+  background: rgba(255, 255, 255, .18); color: var(--hero-ink); }
+.hero-tip.personal .hero-pill { background: var(--hero-dark); color: var(--hero-gold1); }
+.hero-sub { font-size: 12px; color: var(--hero-ink-soft); }
+.hero-tip.personal .hero-sub { color: var(--hero-dark-soft); }
+.hero-title { font: 700 21px/1.22 var(--display); letter-spacing: -.01em; margin: 2px 0 0; }
+.hero-text { margin: 0; font-size: 15.5px; line-height: 1.5; color: var(--hero-ink-soft); max-width: 60ch; }
+.hero-tip.personal .hero-text { color: var(--hero-dark-soft); }
+.hero-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 4px; }
+.hero-dots { display: flex; gap: 5px; }
+.hero-dots i { width: 6px; height: 6px; border-radius: 3px; background: currentColor; opacity: .35; transition: width .25s, opacity .25s; }
+.hero-dots i.on { width: 18px; opacity: .95; }
+.hero-nav { display: flex; gap: 8px; }
+.hero-btn { border: none; border-radius: 999px; padding: 9px 16px; font-weight: 700; font-size: 14px; background: #ffffff; color: var(--hero-sky2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .15); }
+.hero-btn.round { width: 38px; padding: 9px 0; background: rgba(255, 255, 255, .18); color: var(--hero-ink); box-shadow: none; }
+.hero-tip.personal .hero-btn { background: var(--hero-dark); color: var(--hero-gold1); }
+.hero-tip.personal .hero-btn.round { background: rgba(30, 42, 46, .12); color: var(--hero-dark); }
+.hero-btn:disabled { opacity: .4; }
+.hero-tip :focus-visible { outline-color: currentColor; }
+.hero-swap { animation: hero-in .32s cubic-bezier(.2, .8, .2, 1); }
+.hero-swap.back { animation-name: hero-back; }
+@keyframes hero-in { from { opacity: 0; transform: translateX(26px); } to { opacity: 1; transform: none; } }
+@keyframes hero-back { from { opacity: 0; transform: translateX(-26px); } to { opacity: 1; transform: none; } }
+
+/* совет в списке */
 .tip { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; border-left: 4px solid var(--gold); }
 .tip.personal { border-left-color: var(--accent); }
-.tip-icon { font-size: 26px; line-height: 1.1; grid-row: span 3; }
+.tip-icon { font-size: 22px; line-height: 1; grid-row: span 3; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--gold-soft); }
+.tip.personal .tip-icon { background: var(--accent-soft); }
 .tip-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--gold-text); }
 .tip.personal .tip-label { color: var(--accent); }
 .tip-title { font-weight: 700; }
@@ -166,12 +219,28 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
 
   <!-- Обзор -->
   <section class="tab active" id="tab-overview" aria-label="Обзор">
-    <article class="card tip" id="tip" aria-live="polite">
-      <div class="tip-icon" id="tip-icon">💡</div>
-      <div class="tip-label" id="tip-label">Финансовый совет</div>
-      <div class="tip-title" id="tip-title">Сначала заплатите себе</div>
-      <p class="tip-text" id="tip-text">В день зарплаты сразу переводите 10–20% на депозит — до того, как начнёте тратить.</p>
-      <div class="tip-foot"><button class="btn ghost" id="tip-next">Ещё совет ›</button></div>
+    <article class="hero-tip" id="tip" aria-roledescription="совет дня">
+      <svg class="hero-hills" viewBox="0 0 400 120" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M0 62 Q90 22 190 52 T400 40 V120 H0Z"/><path d="M0 92 Q120 60 250 86 T400 78 V120 H0Z"/>
+      </svg>
+      <div class="hero-swap" id="tip-body" aria-live="polite">
+        <div class="hero-top">
+          <div class="hero-sun" aria-hidden="true"><span id="tip-icon">💰</span></div>
+          <div class="hero-meta">
+            <span class="hero-pill" id="tip-label">Совет дня</span>
+            <span class="hero-sub" id="tip-sub">Бюджет</span>
+          </div>
+        </div>
+        <h2 class="hero-title" id="tip-title">Сначала заплатите себе</h2>
+        <p class="hero-text" id="tip-text">В день зарплаты сразу переводите 10–20% на депозит — до того, как начнёте тратить.</p>
+      </div>
+      <div class="hero-foot">
+        <div class="hero-dots" id="tip-dots" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i></div>
+        <div class="hero-nav">
+          <button class="hero-btn round" id="tip-prev" aria-label="Предыдущий совет" disabled>‹</button>
+          <button class="hero-btn" id="tip-next">Ещё совет ›</button>
+        </div>
+      </div>
     </article>
 
     <div id="overview-empty" class="card empty" hidden>
@@ -727,21 +796,45 @@ function personalTips() {
   if (last3.length) { const avg = last3.reduce((a, b) => a + b, 0) / last3.length; add("cushion", "🛟", `Ваша подушка: ${money(avg * 3)} – ${money(avg * 6)}`, `Вы тратите в среднем ${money(avg)} в месяц. Запас на 3–6 месяцев на отдельном депозите защитит от кредитов в трудной ситуации.`); }
   return tips;
 }
-function nextTip() {
+const tipHistory = []; let tipPos = -1;
+function pickTip() {
   const seen = new Set(lsGet("aqsha.seenTips", []));
   const personal = personalTips().filter((t) => !seen.has(t.id)), general = GENERAL.filter((t) => !seen.has(t.id));
   let tip;
   if (personal.length && (!general.length || Math.random() < 0.5)) tip = personal[Math.floor(Math.random() * personal.length)];
   else if (general.length) tip = general[Math.floor(Math.random() * general.length)];
-  else { lsSet("aqsha.seenTips", []); return nextTip(); }
+  else { lsSet("aqsha.seenTips", []); return pickTip(); }
   lsSet("aqsha.seenTips", [...seen, tip.id].slice(-400));
-  $("#tip").classList.toggle("personal", tip.kind === "personal");
+  return tip;
+}
+function showTip(tip, back = false) {
+  const card = $("#tip"), body = $("#tip-body");
+  card.classList.toggle("personal", tip.kind === "personal");
   $("#tip-icon").textContent = tip.icon;
-  $("#tip-label").textContent = tip.kind === "personal" ? "По вашим расходам" : `Совет · ${TOPICS[tip.topic]}`;
+  $("#tip-label").textContent = tip.kind === "personal" ? "Про ваши деньги" : "Совет дня";
+  $("#tip-sub").textContent = tip.kind === "personal" ? "Посчитано по вашим операциям" : TOPICS[tip.topic];
   $("#tip-title").textContent = tip.title;
   $("#tip-text").textContent = tip.text;
+  $("#tip-prev").disabled = tipPos <= 0;
+  $$("#tip-dots i").forEach((d, i) => d.classList.toggle("on", i === tipPos % 5));
+  body.classList.remove("hero-swap", "back"); void body.offsetWidth; // перезапуск анимации
+  body.classList.add("hero-swap"); if (back) body.classList.add("back");
 }
+function nextTip() {
+  if (tipPos < tipHistory.length - 1) tipPos++;
+  else { tipHistory.push(pickTip()); tipPos = tipHistory.length - 1; }
+  showTip(tipHistory[tipPos]);
+}
+function prevTip() { if (tipPos > 0) { tipPos--; showTip(tipHistory[tipPos], true); } }
 $("#tip-next").addEventListener("click", nextTip);
+$("#tip-prev").addEventListener("click", prevTip);
+let touchX = null;
+$("#tip").addEventListener("touchstart", (e) => { touchX = e.touches[0].clientX; }, { passive: true });
+$("#tip").addEventListener("touchend", (e) => {
+  if (touchX === null) return;
+  const dx = e.changedTouches[0].clientX - touchX; touchX = null;
+  if (dx < -45) nextTip(); else if (dx > 45) prevTip();
+}, { passive: true });
 let topic = "";
 const tipCard = (t) => `<article class="card tip ${t.kind === "personal" ? "personal" : ""}"><div class="tip-icon">${esc(t.icon)}</div>
   <div class="tip-label">${t.kind === "personal" ? "По вашим расходам" : esc(TOPICS[t.topic])}</div><div class="tip-title">${esc(t.title)}</div><p class="tip-text">${esc(t.text)}</p></article>`;
