@@ -17,7 +17,8 @@ from .banks import BankError, available_providers, get_provider
 from .banks.importers import parse_statement
 from .categorize import categorize, load_rules
 from .sync import link_connection, save_transactions, sync_account
-from .tips import pick_tip
+from .tips import general_tips, has_data, personal_tips, pick_tip
+from .tips_library import TOPICS
 
 log = logging.getLogger("remedy")
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend")
@@ -306,6 +307,14 @@ def tip(seen: str = ""):
     """Случайный финансовый совет. seen — id уже показанных советов через запятую."""
     with db.get_conn() as conn:
         return pick_tip(conn, {s for s in seen.split(",") if s})
+
+
+@app.get("/api/tips")
+def all_tips():
+    """Все советы для вкладки «Советы»: личные (если есть операции) и вся подборка по темам."""
+    with db.get_conn() as conn:
+        return {"has_data": has_data(conn), "personal": personal_tips(conn),
+                "topics": TOPICS, "general": general_tips()}
 
 
 # --- Банки -------------------------------------------------------------------------------

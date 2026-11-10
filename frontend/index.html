@@ -14,6 +14,7 @@
     <button data-tab="overview" class="active">Обзор</button>
     <button data-tab="transactions">Операции</button>
     <button data-tab="accounts">Счета и банки</button>
+    <button data-tab="tips">Советы</button>
     <button data-tab="categories">Категории</button>
   </nav>
   <button id="sync-all" class="primary">⟳ Синхронизировать</button>
@@ -30,6 +31,7 @@
         <div class="tip-label" id="tip-label"></div>
         <b id="tip-title"></b>
         <p id="tip-text"></p>
+        <p id="tip-nodata" class="tip-nodata" hidden>Загрузите <a href="#" data-goto="accounts">выписку Kaspi</a> — появятся советы по вашим расходам.</p>
       </div>
       <button id="tip-next" class="link tip-next" title="Другой совет">Ещё совет ›</button>
     </div>
@@ -115,6 +117,26 @@
         </form>
       </div>
     </div>
+  </section>
+
+  <!-- Советы -->
+  <section id="tab-tips" class="tab">
+    <div id="tips-personal-block" hidden>
+      <h2 class="section-title">По вашим расходам</h2>
+      <div id="tips-personal" class="tips-grid"></div>
+    </div>
+    <div id="tips-nodata" class="tip tip-cta" hidden>
+      <div class="tip-icon">📥</div>
+      <div class="tip-body">
+        <b>Хотите советы именно про ваши деньги?</b>
+        <p>Загрузите PDF-выписку Kaspi — приложение посчитает, сколько вы откладываете, на что уходит больше всего
+          и где можно сэкономить. А пока — вся подборка ниже.</p>
+      </div>
+      <button class="primary" data-goto="accounts">Загрузить выписку</button>
+    </div>
+    <h2 class="section-title">Полезные советы</h2>
+    <div id="tips-topics" class="chips"></div>
+    <div id="tips-general" class="tips-grid"></div>
   </section>
 
   <!-- Категории -->

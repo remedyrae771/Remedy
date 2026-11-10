@@ -192,17 +192,24 @@ def test_kaspi_salary_beats_generic_topup(client):
     assert client.get("/api/transactions").json()[0]["category"] == "Зарплата"
 
 
-def test_tips_rotate_without_repeats(client):
+def test_tips_without_any_money_data(client):
+    """Пустое приложение: советы есть, все общие, без повторов, пока не покажутся все."""
     seen, ids = [], set()
-    for _ in range(40):
+    for _ in range(200):
         t = client.get("/api/tip", params={"seen": ",".join(seen)}).json()
-        assert t["title"] and t["text"]
+        assert t["title"] and t["text"] and t["kind"] == "general" and t["has_data"] is False
         if t["reset"]:
             break
         assert t["id"] not in ids  # пока не показаны все — без повторов
         ids.add(t["id"])
         seen.append(t["id"])
-    assert len(ids) >= 30
+    assert len(ids) >= 90
+    assert t["reset"]  # круг начался заново
+
+    d = client.get("/api/tips").json()
+    assert d["has_data"] is False and d["personal"] == []
+    assert len(d["general"]) >= 90 and len(d["topics"]) >= 8
+    assert all(t["topic"] in d["topics"] for t in d["general"])
 
 
 def test_personal_tips_from_data(tmp_path, monkeypatch):

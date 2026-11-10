@@ -55,6 +55,7 @@ async function refresh() {
   if (tab === "transactions") await loadTransactions();
   if (tab === "accounts") await loadAccounts();
   if (tab === "categories") await loadCategories();
+  if (tab === "tips") await loadAllTips();
 }
 
 // --- Справочники -------------------------------------------------------------------------
@@ -143,7 +144,7 @@ function seenTips() {
   try { return JSON.parse(localStorage.getItem(SEEN_KEY) || "[]"); } catch { return []; }
 }
 function saveSeen(list) {
-  try { localStorage.setItem(SEEN_KEY, JSON.stringify(list.slice(-80))); } catch { /* приватный режим */ }
+  try { localStorage.setItem(SEEN_KEY, JSON.stringify(list.slice(-300))); } catch { /* приватный режим */ }
 }
 let tipSeenThisSession = [];
 async function loadTip() {
@@ -153,13 +154,51 @@ async function loadTip() {
   tipSeenThisSession = next;
   saveSeen(next);
   $("#tip-icon").textContent = t.icon;
-  $("#tip-label").textContent = t.kind === "personal" ? "Совет по вашим расходам" : "Финансовый совет";
+  $("#tip-label").textContent = t.kind === "personal" ? "Совет по вашим расходам" : `Финансовый совет · ${t.topic_name}`;
+  $("#tip-nodata").hidden = t.has_data !== false;
   $("#tip").classList.toggle("personal", t.kind === "personal");
   $("#tip-title").textContent = t.title;
   $("#tip-text").textContent = t.text;
   $("#tip").hidden = false;
 }
 $("#tip-next").addEventListener("click", guard(loadTip));
+
+// переход на вкладку по ссылке/кнопке с data-goto
+document.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-goto]");
+  if (!el) return;
+  e.preventDefault();
+  $(`nav [data-tab=${el.dataset.goto}]`).click();
+  window.scrollTo(0, 0);
+});
+
+// --- Вкладка «Советы» --------------------------------------------------------------------
+let tipsTopic = "";
+const tipCard = (t) => `<div class="tip ${t.kind === "personal" ? "personal" : ""}">
+  <div class="tip-icon">${esc(t.icon)}</div>
+  <div class="tip-body">${t.topic_name ? `<div class="tip-label">${esc(t.topic_name)}</div>` : ""}
+    <b>${esc(t.title)}</b><p>${esc(t.text)}</p></div></div>`;
+
+async function loadAllTips() {
+  const d = await api("/api/tips");
+  $("#tips-personal-block").hidden = !d.personal.length;
+  $("#tips-personal").innerHTML = d.personal.map(tipCard).join("");
+  $("#tips-nodata").hidden = d.has_data;
+  const counts = {};
+  d.general.forEach((t) => (counts[t.topic] = (counts[t.topic] || 0) + 1));
+  $("#tips-topics").innerHTML = [["", `Все · ${d.general.length}`],
+    ...Object.entries(d.topics).map(([k, v]) => [k, `${v} · ${counts[k] || 0}`])]
+    .map(([k, label]) => `<button data-topic="${k}" class="${k === tipsTopic ? "active" : ""}">${esc(label)}</button>`).join("");
+  // в каждом открытии вкладки — новый порядок
+  const list = d.general.filter((t) => !tipsTopic || t.topic === tipsTopic).sort(() => Math.random() - 0.5);
+  $("#tips-general").innerHTML = list.map(tipCard).join("");
+}
+$("#tips-topics").addEventListener("click", guard(async (e) => {
+  const b = e.target.closest("[data-topic]");
+  if (!b) return;
+  tipsTopic = b.dataset.topic;
+  await loadAllTips();
+}));
 
 // --- Операции ----------------------------------------------------------------------------
 async function loadTransactions() {

@@ -42,6 +42,21 @@ button.tip-next:hover { color: var(--accent); text-decoration: underline; }
   button.tip-next { order: 3; flex-basis: 100%; text-align: right; padding: 4px 0 0; }
 }
 
+.tip-nodata { font-size: 13px; margin-top: 8px !important; }
+.tip-nodata a { color: var(--accent); }
+.section-title { font-size: 17px; margin: 4px 0 12px; }
+.tips-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.tips-grid .tip { margin: 0; }
+.tip-cta { align-items: center; border-left-color: var(--income); }
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 8px; scrollbar-width: none; }
+.chips button { white-space: nowrap; border-radius: 999px; padding: 6px 12px; font-size: 14px; }
+.chips button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+@media (max-width: 700px) {
+  .tips-grid { grid-template-columns: 1fr; }
+  .chips { margin: 0 -16px 8px; padding: 0 16px 8px; }
+  .tip-cta button { flex-basis: 100%; }
+}
+
 .period, .filters, .inline-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
