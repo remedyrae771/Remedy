@@ -61,6 +61,7 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 main.wrap { padding-block: 16px; }
 .tab { display: none; flex-direction: column; gap: 14px; }
 .tab.active { display: flex; }
+.tab > .card, .tab > section { scroll-margin-top: 76px; }
 .section-title { font-size: 17px; }
 .hint { color: var(--muted); font-size: 13px; margin: 0; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; box-shadow: var(--shadow); min-width: 0; }
@@ -158,14 +159,18 @@ input[type=text], input[type=search], input[type=number], input[type=date], sele
 .filters { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
 .day { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin: 6px 2px -4px; display: flex; justify-content: space-between; }
 .txs { display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden; }
-.tx { display: grid; grid-template-columns: 1fr auto auto; gap: 2px 10px; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--border); }
+.tx { display: grid; grid-template-columns: auto 1fr auto; gap: 1px 12px; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--border); }
+.tx .cat-ico { grid-row: span 2; }
 .tx:last-child { border-bottom: none; }
 .tx-desc { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .tx-amt { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.tx-meta { grid-column: 1 / 2; display: flex; gap: 8px; align-items: center; min-width: 0; }
-.tx-meta select { padding: 3px 8px; font-size: 13px; border-radius: 8px; max-width: 100%; }
+.tx-meta { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.cat-pick { position: relative; display: inline-flex; align-items: center; min-width: 0; color: var(--muted); font-size: 13px; }
+.cat-pick::after { content: "▾"; margin-left: 4px; font-size: 11px; }
+.cat-pick select { position: absolute; inset: 0; opacity: 0; width: 100%; font-size: 16px; cursor: pointer; }
+.cat-pick span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .badge { font-size: 11px; border-radius: 6px; padding: 1px 6px; background: var(--gold-soft); color: var(--gold-text); white-space: nowrap; }
-.del { border: none; background: none; color: var(--muted); padding: 4px 6px; border-radius: 8px; font-size: 14px; grid-row: span 2; }
+.del { border: none; background: none; color: var(--muted); padding: 2px 6px; border-radius: 8px; font-size: 12px; justify-self: end; }
 .del.armed { background: var(--danger-soft); color: var(--expense); font-weight: 600; font-size: 12px; }
 .empty { text-align: center; padding: 26px 16px; display: flex; flex-direction: column; gap: 10px; align-items: center; }
 .empty .big { font-size: 34px; }
@@ -186,6 +191,41 @@ input[type=text], input[type=search], input[type=number], input[type=date], sele
 .cats li .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-size: 14px; }
 
+/* сводка месяца */
+.month { background: linear-gradient(160deg, var(--surface) 30%, var(--accent-soft)); padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.month-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; }
+.month-big { font: 700 32px/1.1 var(--display); font-variant-numeric: tabular-nums; letter-spacing: -.02em; white-space: nowrap; }
+.net-pill { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+.net-pill.pos { background: color-mix(in srgb, var(--income) 14%, transparent); }
+.net-pill.neg { background: color-mix(in srgb, var(--expense) 14%, transparent); }
+.budget-bar { height: 10px; border-radius: 5px; background: var(--border); overflow: hidden; }
+.budget-bar i { display: block; height: 100%; border-radius: 5px; background: var(--income); transition: width .4s; }
+.budget-bar.warn i { background: var(--gold); } .budget-bar.over i { background: var(--expense); }
+.month-row { display: flex; gap: 6px 18px; flex-wrap: wrap; font-size: 14px; color: var(--muted); }
+.month-row b { font-variant-numeric: tabular-nums; }
+.alerts { display: flex; flex-direction: column; gap: 8px; }
+.alert { display: flex; gap: 12px; align-items: center; border-radius: 14px; padding: 12px 14px; background: var(--gold-soft); font-size: 14px; }
+.alert.over { background: var(--danger-soft); }
+.alert .a-ico { font-size: 22px; flex: none; }
+.alert .a-text { flex: 1; min-width: 0; }
+.alert .a-text b { display: block; }
+.chart-box.donut { height: 210px; }
+.donut-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none; }
+.donut-center span { font-size: 12px; color: var(--muted); }
+.donut-center b { font: 700 17px/1.2 var(--display); font-variant-numeric: tabular-nums; }
+.cat-ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 20px; line-height: 1; flex: none; }
+.cat-ico.sm { width: 28px; height: 28px; border-radius: 9px; font-size: 15px; }
+
+/* окно добавления */
+.sheet { position: fixed; inset: 0; z-index: 20; display: flex; align-items: flex-end; justify-content: center; background: rgba(10, 20, 24, .45); }
+.sheet-panel { width: 100%; max-width: 720px; background: var(--surface); border-radius: 22px 22px 0 0; display: flex; flex-direction: column; gap: 12px;
+  padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  animation: sheet-up .25s cubic-bezier(.2, .8, .2, 1); }
+.sheet-handle { width: 40px; height: 5px; border-radius: 3px; background: var(--border); align-self: center; }
+.sheet h2 { font: 700 18px/1.2 var(--display); }
+.examples { display: flex; gap: 6px; flex-wrap: wrap; }
+@keyframes sheet-up { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+
 /* нижняя панель */
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--surface); border-top: 1px solid var(--border);
   padding: 0 max(8px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(8px, env(safe-area-inset-left, 0px));
@@ -195,6 +235,10 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
 .tabbar svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .tabbar span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tabbar [aria-current="page"] { color: var(--accent); font-weight: 600; }
+.tabbar .fab { flex: 0 0 76px; padding-top: 0; }
+.tabbar .fab b { width: 58px; height: 58px; margin-top: -22px; border-radius: 50%; display: grid; place-items: center; font-size: 32px; font-weight: 400; line-height: 1;
+  color: var(--hero-dark); background: radial-gradient(circle at 35% 30%, #ffe27a, var(--gold) 70%); border: 4px solid var(--surface);
+  box-shadow: 0 6px 16px -4px rgba(190, 140, 0, .6); }
 .tabbar [aria-current="page"]::before { content: ""; position: absolute; top: 0; left: 28%; right: 28%; height: 3px; border-radius: 0 0 3px 3px; background: var(--gold); }
 
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); z-index: 9;
@@ -249,7 +293,7 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
       <b>Здесь появятся ваши доходы и расходы</b>
       <p class="hint">Добавьте операцию на вкладке «Операции» или загрузите PDF-выписку Kaspi.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
-        <button class="btn primary" data-goto="import">Загрузить выписку</button>
+        <button class="btn primary" data-goto="more" data-jump-after="sec-import">Загрузить выписку</button>
         <button class="btn" data-action="demo">Показать на примере</button>
       </div>
     </div>
@@ -262,16 +306,19 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
       <button class="chip" data-period="all" aria-pressed="false">Всё время</button>
     </div>
 
-    <div class="totals" id="totals">
-      <div class="card total"><span>Доходы</span><b class="pos" id="t-income">0 ₸</b></div>
-      <div class="card total"><span>Расходы</span><b class="neg" id="t-expense">0 ₸</b></div>
-      <div class="card total net"><span>Осталось</span><b id="t-net">0 ₸</b></div>
-    </div>
+    <section class="card month" id="totals" aria-label="Итоги периода">
+      <div class="month-head"><span id="m-label">Потрачено в этом месяце</span><span class="net-pill" id="t-net">0 ₸</span></div>
+      <b class="month-big" id="t-expense">0 ₸</b>
+      <div class="budget-bar" id="budget-bar" hidden><i></i></div>
+      <div class="month-row"><span>Доходы <b class="pos" id="t-income">0 ₸</b></span><span id="budget-line"></span></div>
+    </section>
+    <div class="alerts" id="alerts"></div>
 
 
     <div class="card" id="cat-card">
       <h2 class="section-title">Куда уходят деньги</h2>
-      <div class="chart-box"><canvas id="chart-cats" aria-label="Расходы по категориям"></canvas></div>
+      <div class="chart-box donut"><canvas id="chart-cats" aria-label="Расходы по категориям"></canvas>
+        <div class="donut-center"><span>Расходы</span><b id="donut-total">0 ₸</b></div></div>
       <ul class="bars" id="top-cats"></ul>
     </div>
     <div class="card" id="month-card">
@@ -282,11 +329,6 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
 
   <!-- Операции -->
   <section class="tab" id="tab-transactions" aria-label="Операции">
-    <form class="quick" id="quick">
-      <input type="text" id="quick-text" placeholder="кофе 1500 · +450000 зарплата" autocomplete="off" enterkeyhint="done" aria-label="Быстрый ввод">
-      <button class="btn primary" aria-label="Добавить">＋</button>
-    </form>
-    <p class="hint">Пишите как в заметках: сумма и что купили. Плюс перед суммой — доход. Категория подставится сама.</p>
     <div class="filters">
       <input type="search" id="search" placeholder="Поиск" aria-label="Поиск по описанию">
       <select id="filter-cat" aria-label="Категория"><option value="">Все категории</option></select>
@@ -294,9 +336,27 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
     <div id="tx-list"></div>
   </section>
 
-  <!-- Выписка -->
-  <section class="tab" id="tab-import" aria-label="Выписка">
-    <div class="card">
+  <!-- Советы -->
+  <section class="tab" id="tab-tips" aria-label="Советы">
+    <div id="personal-block" hidden>
+      <h2 class="section-title" style="margin-bottom:10px">По вашим расходам</h2>
+      <div class="tips" id="personal-tips"></div>
+    </div>
+    <h2 class="section-title">Полезные советы</h2>
+    <div class="chips" role="group" aria-label="Темы" id="topics"></div>
+    <div class="tips" id="general-tips"></div>
+  </section>
+
+  <!-- Ещё -->
+  <section class="tab" id="tab-more" aria-label="Ещё">
+    <div class="chips" role="group" aria-label="Разделы" id="more-nav">
+      <button class="chip" data-jump="sec-import">Выписка</button>
+      <button class="chip" data-jump="sec-budget">Бюджет</button>
+      <button class="chip" data-jump="sec-remind">Напоминания</button>
+      <button class="chip" data-jump="sec-cats">Категории</button>
+      <button class="chip" data-jump="sec-backup">Копия</button>
+    </div>
+    <div class="card" id="sec-import">
       <h2 class="section-title">Выписка Kaspi</h2>
       <ol class="steps">
         <li>Приложение <b>Kaspi.kz</b> → <b>Kaspi Gold</b> → <b>Выписка</b>.</li>
@@ -312,22 +372,43 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
       <p class="hint">Можно загружать выписки с пересекающимися периодами: операции, которые уже есть, не задвоятся.
         Файл не отправляется никуда — разбирается в браузере, сохраняются только операции.</p>
     </div>
-  </section>
 
-  <!-- Советы -->
-  <section class="tab" id="tab-tips" aria-label="Советы">
-    <div id="personal-block" hidden>
-      <h2 class="section-title" style="margin-bottom:10px">По вашим расходам</h2>
-      <div class="tips" id="personal-tips"></div>
+    <div class="card" id="sec-budget">
+      <h2 class="section-title">Бюджет на месяц</h2>
+      <p class="hint">Aqsha предупредит, когда потрачено 80% и когда лимит превышен — на главной и сразу при добавлении траты.</p>
+      <div class="budget-form">
+        <label for="budget-total" class="hint" style="margin-top:10px;display:block">Все расходы за месяц, ₸</label>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <input type="number" id="budget-total" inputmode="numeric" min="0" step="1000" placeholder="например, 300000" style="flex:1">
+          <button class="btn primary" id="budget-total-save">Сохранить</button>
+        </div>
+      </div>
+      <details style="margin-top:12px"><summary>Лимиты по категориям</summary><ul class="cats" id="budget-cats"></ul></details>
     </div>
-    <h2 class="section-title">Полезные советы</h2>
-    <div class="chips" role="group" aria-label="Темы" id="topics"></div>
-    <div class="tips" id="general-tips"></div>
-  </section>
 
-  <!-- Категории -->
-  <section class="tab" id="tab-categories" aria-label="Категории">
-    <div class="card">
+    <div class="card" id="sec-remind">
+      <h2 class="section-title">Напоминания</h2>
+      <p class="hint">Напоминание добавится в Календарь телефона и сработает, даже когда Aqsha закрыта.
+        Откройте ссылку → «Добавить» (на iPhone — «Добавить все»).</p>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span>🌙 Каждый вечер в</span>
+          <select id="remind-time" aria-label="Время напоминания">
+            <option value="1900">19:00</option><option value="2000">20:00</option>
+            <option value="2100" selected>21:00</option><option value="2200">22:00</option>
+          </select>
+          <a class="btn primary" id="remind-evening" target="_blank" rel="noopener" href="#">Добавить в Календарь</a>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span>📄 1-го числа: загрузить выписку и сохранить копию</span>
+          <a class="btn" id="remind-monthly" target="_blank" rel="noopener" href="#">Добавить</a>
+        </div>
+      </div>
+      <p class="hint" style="margin-top:8px">Убрать напоминание: Календарь → событие «Aqsha» → «Удалить событие» → «Все будущие».</p>
+    </div>
+
+
+    <div class="card" id="sec-cats">
       <h2 class="section-title">Категории за этот месяц</h2>
       <ul class="cats" id="cat-list"></ul>
     </div>
@@ -337,7 +418,7 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
       <ul class="cats" id="rule-list"></ul>
       <details style="margin-top:8px"><summary>Встроенные правила</summary><ul class="cats" id="builtin-list"></ul></details>
     </div>
-    <div class="card">
+    <div class="card" id="sec-backup">
       <h2 class="section-title">Резервная копия</h2>
       <p class="hint">Файл CSV со всеми операциями: открывается в Excel и Google Таблицах, из него же можно всё восстановить.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
@@ -364,10 +445,27 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
 <nav class="tabbar" aria-label="Разделы">
   <button data-tab="overview" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.3A9 9 0 0 1 20.7 9H15z"/></svg><span>Обзор</span></button>
   <button data-tab="transactions"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 20V4M7 20l-3-3M7 20l3-3"/><path d="M17 4v16M17 4l-3 3M17 4l3 3"/></svg><span>Операции</span></button>
-  <button data-tab="import"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 11v6M9 14l3 3 3-3"/></svg><span>Выписка</span></button>
+  <button class="fab" id="fab" aria-label="Добавить операцию"><b aria-hidden="true">+</b></button>
   <button data-tab="tips"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></svg><span>Советы</span></button>
-  <button data-tab="categories"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg><span>Категории</span></button>
+  <button data-tab="more"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span>Ещё</span></button>
 </nav>
+
+<div class="sheet" id="add-sheet" hidden>
+  <div class="sheet-panel" role="dialog" aria-modal="true" aria-labelledby="add-title">
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <h2 id="add-title">Новая операция</h2>
+    <form class="quick" id="quick">
+      <input type="text" id="quick-text" placeholder="кофе 1500 · +450000 зарплата" autocomplete="off" enterkeyhint="done" aria-label="Сумма и что это">
+      <button class="btn primary" aria-label="Добавить">＋</button>
+    </form>
+    <p class="hint">Пишите как в заметках: что и сколько. Плюс перед суммой — доход. Категория подставится сама.</p>
+    <div class="examples" id="examples">
+      <button class="chip" type="button">кофе 1500</button><button class="chip" type="button">такси 2000</button>
+      <button class="chip" type="button">продукты 8000</button><button class="chip" type="button">+ зарплата</button>
+    </div>
+    <button class="btn" type="button" data-goto="more" data-jump-after="sec-import">📄 Загрузить выписку Kaspi</button>
+  </div>
+</div>
 
 <div class="toast" id="toast" role="status" hidden><span id="toast-text"></span><button id="toast-action" hidden></button></div>
 
@@ -385,6 +483,11 @@ const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const CAT = Object.fromEntries(CATEGORIES.map((c) => [c.name, c]));
+const CAT_ICON = { "Зарплата": "💼", "Переводы входящие": "📥", "Прочие доходы": "💰", "Продукты": "🛒", "Кафе и рестораны": "☕",
+  "Транспорт": "🚕", "Жильё и ЖКХ": "🏠", "Связь и интернет": "📱", "Здоровье": "💊", "Развлечения": "🎬", "Покупки": "🛍️",
+  "Одежда": "👕", "Переводы исходящие": "📤", "Прочие расходы": "🧾" };
+const catIco = (name, sm = false) => `<span class="cat-ico${sm ? " sm" : ""}" style="background:${esc((CAT[name]?.color || "#999999") + "26")}" aria-hidden="true">${CAT_ICON[name] || "•"}</span>`;
+const SITE = window.claude ? "https://remedyrae771.github.io/Remedy/" : "./"; // где лежат файлы напоминаний
 const money = (n) => new Intl.NumberFormat("ru-RU", { style: "currency", currency: "KZT", currencyDisplay: "narrowSymbol", maximumFractionDigits: 0 }).format(Math.round(n));
 const signed = (n) => (n > 0 ? "+" : "") + money(n);
 const isoDay = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -412,8 +515,8 @@ function toast(text, { error = false, action, onAction, ms = 4000 } = {}) {
 
 // ─── Хранилище: личный раздел на claude.ai, иначе — этот браузер ─────────────────────────
 const Store = {
-  mode: "loading", loaded: false, tx: new Map(), rules: new Map(),
-  db: null, txCol: null, ruleCol: null,
+  mode: "loading", loaded: false, tx: new Map(), rules: new Map(), budgets: new Map(),
+  db: null, txCol: null, ruleCol: null, budgetCol: null,
   setSync(state, text) { const el = $("#sync"); el.dataset.state = state; el.textContent = text; },
   async init() {
     let db = null, uid = null;
@@ -433,9 +536,10 @@ const Store = {
     const base = db.doc(`data/users/${uid}/aqsha`);
     this.txCol = base.collection("tx");
     this.ruleCol = base.collection("rules");
+    this.budgetCol = base.collection("budgets");
     this.setSync("loading", "Загрузка…");
     const slow = setTimeout(() => this.setSync("error", "Нет связи"), 10000);
-    let first = 2;
+    let first = 3;
     const done = (snap) => { if (!snap.metadata.fromCache && --first <= 0) { clearTimeout(slow); this.setSync("cloud", "Сохранено"); } };
     this.unsubs.push(this.txCol.onSnapshot((snap) => {
       this.tx = new Map(snap.docs.map((d) => [d.id, d.data()]));
@@ -443,6 +547,10 @@ const Store = {
     }, (e) => { clearTimeout(slow); this.setSync("error", "Нет доступа"); console.warn(e); }));
     this.unsubs.push(this.ruleCol.onSnapshot((snap) => {
       this.rules = new Map(snap.docs.map((d) => [d.id, d.data()]));
+      done(snap); render();
+    }, (e) => console.warn(e)));
+    this.unsubs.push(this.budgetCol.onSnapshot((snap) => {
+      this.budgets = new Map(snap.docs.map((d) => [d.id, d.data()]));
       done(snap); render();
     }, (e) => console.warn(e)));
     this.slowTimer = slow;
@@ -456,22 +564,22 @@ const Store = {
   },
   initLocal() {
     this.mode = "local";
-    const saved = lsGet("aqsha.v1", { tx: {}, rules: {} });
+    const saved = lsGet("aqsha.v1", { tx: {}, rules: {}, budgets: {} });
     this.tx = new Map(Object.entries(saved.tx || {}));
     this.rules = new Map(Object.entries(saved.rules || {}));
+    this.budgets = new Map(Object.entries(saved.budgets || {}));
     this.loaded = true;
     this.setSync("local", "На телефоне");
-    showBanner('<span><b>Ваши данные хранятся только на этом телефоне.</b> Чтобы не потерять их, иногда сохраняйте резервную копию.</span><button class="btn small" data-goto="categories">Копия</button>');
     render();
   },
-  persistLocal() { lsSet("aqsha.v1", { tx: Object.fromEntries(this.tx), rules: Object.fromEntries(this.rules) }); },
+  persistLocal() { lsSet("aqsha.v1", { tx: Object.fromEntries(this.tx), rules: Object.fromEntries(this.rules), budgets: Object.fromEntries(this.budgets) }); },
   async write(kind, id, body) { // body = null → удалить
-    const map = kind === "tx" ? this.tx : this.rules;
+    const map = { tx: this.tx, rule: this.rules, budget: this.budgets }[kind];
     if (this.mode !== "cloud") {
       if (body) map.set(id, body); else map.delete(id);
       this.persistLocal(); render(); return;
     }
-    const ref = (kind === "tx" ? this.txCol : this.ruleCol).doc(id);
+    const ref = { tx: this.txCol, rule: this.ruleCol, budget: this.budgetCol }[kind].doc(id);
     this.setSync("loading", "Сохраняю…");
     try {
       if (body) await ref.set(body); else await ref.delete();
@@ -495,6 +603,8 @@ const Store = {
   delTx(id) { return this.write("tx", id, null); },
   putRule(id, r) { return this.write("rule", id, r); },
   delRule(id) { return this.write("rule", id, null); },
+  putBudget(id, b) { return this.write("budget", id, b); },
+  delBudget(id) { return this.write("budget", id, null); },
 };
 function showBanner(html) { const b = $("#banner"); b.innerHTML = html; b.hidden = false; }
 
@@ -663,8 +773,23 @@ function renderOverview() {
   $$("#periods [data-period]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.period === period)));
   const all = txList(), list = inRange(all, range(period));
   const inc = sumIncome(list), exp = sumExpense(list), net = inc - exp;
+  const monthName = new Date().toLocaleDateString("ru-RU", { month: "long" });
+  const prevName = new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toLocaleDateString("ru-RU", { month: "long" });
+  $("#m-label").textContent = { month: `Потрачено за ${monthName}`, prev: `Потрачено за ${prevName}`, "3m": "Потрачено за 3 месяца", year: "Потрачено за год", all: "Потрачено за всё время" }[period];
   $("#t-income").textContent = money(inc); $("#t-expense").textContent = money(exp);
-  $("#t-net").textContent = signed(net); $("#t-net").className = net >= 0 ? "pos" : "neg";
+  $("#t-net").textContent = (net >= 0 ? "в плюсе " : "в минусе ") + money(Math.abs(net)); $("#t-net").className = "net-pill " + (net >= 0 ? "pos" : "neg");
+  $("#donut-total").textContent = money(exp);
+  // бюджет — только для текущего месяца
+  const total = Store.budgets.get("total")?.limit || 0, bar = $("#budget-bar");
+  bar.hidden = !(total && period === "month");
+  if (total && period === "month") {
+    const share = exp / total, left = total - exp;
+    const daysLeft = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate() - new Date().getDate() + 1;
+    bar.className = "budget-bar" + (share >= 1 ? " over" : share >= 0.8 ? " warn" : "");
+    bar.firstElementChild.style.width = Math.min(100, share * 100) + "%";
+    $("#budget-line").textContent = left >= 0 ? `Из бюджета ${money(total)} осталось ${money(left)} · ~${money(left / daysLeft)} в день` : `Бюджет ${money(total)} превышен на ${money(-left)}`;
+  } else $("#budget-line").textContent = "";
+  renderAlerts(all);
   const empty = all.length === 0 && Store.loaded;
   $("#overview-empty").hidden = !empty;
   $("#cat-card").hidden = empty; $("#month-card").hidden = empty;
@@ -679,7 +804,7 @@ function renderOverview() {
     options: { maintainAspectRatio: false, cutout: "62%", plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${c.label}: ${money(c.raw)}` } } } },
   });
   $("#top-cats").innerHTML = cats.length ? cats.slice(0, 8).map(([name, v]) =>
-    `<li><span class="name"><i class="dot" style="background:${esc(CAT[name]?.color)}"></i><span>${esc(name)}</span></span>
+    `<li><span class="name">${catIco(name, true)}<span>${esc(name)}</span></span>
       <i class="bar" style="width:${(v / max) * 100}%;background:${esc(CAT[name]?.color)}"></i><span class="amt">${money(v)}</span></li>`).join("")
     : `<li class="hint">За этот период расходов нет.</li>`;
 
@@ -704,6 +829,31 @@ function renderOverview() {
   });
 }
 
+// Предупреждения на главной: бюджеты (80% и превышение) и давняя резервная копия
+function budgetStatus(all = txList()) {
+  const cur = inRange(all, range("month")), out = [];
+  for (const [id, b] of Store.budgets) {
+    if (!b.limit) continue;
+    const spent = id === "total" ? sumExpense(cur) : -cur.filter((t) => t.cat === b.cat && t.amount < 0).reduce((s, t) => s + t.amount, 0);
+    const share = spent / b.limit;
+    if (share >= 0.8) out.push({ id, name: id === "total" ? "Все расходы" : b.cat, cat: b.cat, spent, limit: b.limit, share });
+  }
+  return out.sort((a, b) => b.share - a.share);
+}
+function renderAlerts(all) {
+  const items = budgetStatus(all).map((a) => `<div class="alert${a.share >= 1 ? " over" : ""}">
+      ${a.id === "total" ? '<span class="a-ico">🎯</span>' : catIco(a.cat)}
+      <span class="a-text"><b>${esc(a.name)}: ${a.share >= 1 ? "бюджет превышен" : `потрачено ${Math.round(a.share * 100)}%`}</b>
+      ${money(a.spent)} из ${money(a.limit)}${a.share >= 1 ? ` · сверх лимита ${money(a.spent - a.limit)}` : ` · осталось ${money(a.limit - a.spent)}`}</span></div>`);
+  const last = lsGet("aqsha.lastBackup", null), mine = all.filter((t) => t.src !== "demo").length;
+  if (Store.mode === "local" && mine >= 5 && (!last || (Date.now() - Date.parse(last)) / 864e5 > 14)) {
+    items.push(`<div class="alert"><span class="a-ico">💾</span><span class="a-text"><b>${last ? "Давно не было резервной копии" : "Сделайте резервную копию"}</b>
+      Данные хранятся только на этом телефоне — копия спасёт их при смене телефона.</span>
+      <button class="btn small" data-goto="more" data-jump-after="sec-backup">Копия</button></div>`);
+  }
+  $("#alerts").innerHTML = items.join("");
+}
+
 // ─── Операции ──────────────────────────────────────────────────────────────────────────
 function catOptions(selected, kind) {
   return CATEGORIES.filter((c) => c.kind === kind).map((c) => `<option ${c.name === selected ? "selected" : ""}>${esc(c.name)}</option>`).join("");
@@ -718,7 +868,7 @@ function renderTransactions() {
   if (!list.length) {
     $("#tx-list").innerHTML = !Store.loaded ? `<div class="card empty"><span class="hint">Загружаю операции…</span></div>`
       : Store.tx.size ? `<div class="card empty"><b>Ничего не найдено</b></div>`
-      : `<div class="card empty"><div class="big">✍️</div><b>Пока нет операций</b><p class="hint">Напишите выше «кофе 1500» — и первая операция готова. Или загрузите выписку Kaspi.</p><button class="btn" data-action="demo">Показать на примере</button></div>`;
+      : `<div class="card empty"><div class="big">✍️</div><b>Пока нет операций</b><p class="hint">Нажмите золотую «+» внизу и напишите «кофе 1500» — первая операция готова. Или загрузите выписку Kaspi.</p><button class="btn" data-action="demo">Показать на примере</button></div>`;
     return;
   }
   const days = new Map();
@@ -732,10 +882,11 @@ function renderTransactions() {
     return `<div class="day"><span>${esc(dayName(d))}</span><span class="${total >= 0 ? "pos" : "neg"}">${signed(total)}</span></div>
       <div class="card txs">${items.map((t) => `
         <div class="tx" data-id="${esc(t.id)}">
+          ${catIco(t.cat)}
           <span class="tx-desc">${esc(t.desc)}</span>
           <span class="tx-amt ${t.amount > 0 ? "pos" : "neg"}">${signed(t.amount)}</span>
+          <span class="tx-meta"><label class="cat-pick"><span>${esc(t.cat)}</span><select aria-label="Категория операции «${esc(t.desc)}»">${catOptions(t.cat, t.amount > 0 ? "income" : "expense")}</select></label>${t.src === "demo" ? '<span class="badge">пример</span>' : ""}</span>
           <button class="del" aria-label="Удалить операцию">✕</button>
-          <span class="tx-meta"><select aria-label="Категория">${catOptions(t.cat, t.amount > 0 ? "income" : "expense")}</select>${t.src === "demo" ? '<span class="badge">пример</span>' : ""}</span>
         </div>`).join("")}</div>`;
   }).join("");
 }
@@ -749,7 +900,10 @@ $("#quick").addEventListener("submit", async (e) => {
   try {
     await Store.putTx("q-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), { date: todayISO(), amount: p.amount, desc: p.desc, cat, src: "quick", at: Date.now() });
     $("#quick-text").value = "";
-    toast(`${p.desc} ${signed(p.amount)} → ${cat}`);
+    closeAdd();
+    const hit = p.amount < 0 ? budgetStatus().find((b) => b.id === "total" || b.cat === cat) : null;
+    if (hit) toast(`${p.desc} ${signed(p.amount)}. ${hit.name}: ${hit.share >= 1 ? "бюджет превышен" : `потрачено ${Math.round(hit.share * 100)}% бюджета`}`, { error: hit.share >= 1 });
+    else toast(`${p.desc} ${signed(p.amount)} → ${cat}`);
   } catch (err) { toast(err.message, { error: true }); }
 });
 $("#tx-list").addEventListener("change", async (e) => {
@@ -930,6 +1084,7 @@ function copyBackupAsText(csv, count) {
   try {
     navigator.clipboard.writeText(text).then(() => {
       note.textContent = `Копия (${count} операций) скопирована. Вставьте её в Заметки или отправьте себе в WhatsApp или Telegram.`;
+      lsSet("aqsha.lastBackup", todayISO());
       note.hidden = false; area.hidden = true;
     }, shown);
   } catch { shown(); }
@@ -946,12 +1101,14 @@ $("#backup-save").addEventListener("click", async (e) => {
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 4000);
     note.textContent = `Файл копии (${count} операций) сохранён в «Загрузки».`; note.hidden = false;
+    lsSet("aqsha.lastBackup", todayISO());
     return;
   }
   if (!downloadsNs) { copyBackupAsText(csv, count); return; }
   e.target.disabled = true;
   try {
     await downloadsNs.save({ filename: `aqsha-${todayISO()}.csv`, data: csv });
+    lsSet("aqsha.lastBackup", todayISO());
     note.textContent = `Копия сохранена: ${count} операций.`; note.hidden = false;
   } catch (err) {
     if (err?.code === "declined") return;
@@ -1001,7 +1158,7 @@ async function loadDemo(btn) {
   try {
     for (let i = 0; i < items.length; i += 6) await Promise.all(items.slice(i, i + 6).map(([date, amount, desc], j) =>
       Store.putTx(`demo-${i + j}`, { date, amount, desc, cat: categorize(desc, amount, rules), src: "demo", at: i + j })));
-    toast("Добавлен пример за 3 месяца. Удалить его можно на вкладке «Категории».");
+    toast("Добавлен пример за 3 месяца. Удалить его можно на вкладке «Ещё».");
   } catch (err) { toast(err.message, { error: true }); }
   if (btn) btn.disabled = false;
 }
@@ -1016,8 +1173,55 @@ document.addEventListener("click", (e) => {
   if (a?.dataset.action === "demo") loadDemo(a);
   if (a?.dataset.action === "undemo") removeDemo(a);
   const g = e.target.closest("[data-goto]");
-  if (g) go(g.dataset.goto);
+  if (g) {
+    closeAdd(); go(g.dataset.goto);
+    if (g.dataset.jumpAfter) setTimeout(() => document.getElementById(g.dataset.jumpAfter)?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+  }
+  const j = e.target.closest("[data-jump]");
+  if (j) document.getElementById(j.dataset.jump)?.scrollIntoView({ behavior: "smooth", block: "start" });
 });
+
+// ─── Окно «+» ───────────────────────────────────────────────────────────────────────────
+function openAdd() { $("#add-sheet").hidden = false; setTimeout(() => $("#quick-text").focus(), 60); }
+function closeAdd() { $("#add-sheet").hidden = true; }
+$("#fab").addEventListener("click", openAdd);
+$("#add-sheet").addEventListener("click", (e) => { if (e.target.id === "add-sheet") closeAdd(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeAdd(); });
+$("#examples").addEventListener("click", (e) => {
+  const c = e.target.closest(".chip"); if (!c) return;
+  $("#quick-text").value = c.textContent.startsWith("+") ? "+" : c.textContent.replace(/\d+/, "").trim() + " ";
+  $("#quick-text").focus();
+});
+
+// ─── Бюджет ────────────────────────────────────────────────────────────────────────────
+function renderBudget() {
+  const totalInput = $("#budget-total");
+  if (document.activeElement !== totalInput) totalInput.value = Store.budgets.get("total")?.limit || "";
+  const spent = byCategory(inRange(txList(), range("month")));
+  const spentOf = Object.fromEntries(spent);
+  $("#budget-cats").innerHTML = CATEGORIES.filter((c) => c.kind === "expense").map((c) => {
+    const id = "c-" + hash(c.name), lim = Store.budgets.get(id)?.limit || "";
+    return `<li>${catIco(c.name, true)}<span class="grow">${esc(c.name)}<br><span class="hint">в этом месяце ${money(spentOf[c.name] || 0)}</span></span>
+      <input type="number" inputmode="numeric" min="0" step="1000" placeholder="лимит" value="${lim}" data-budget="${esc(c.name)}" aria-label="Лимит: ${esc(c.name)}" style="width:110px"></li>`;
+  }).join("");
+}
+async function saveBudget(id, body) {
+  try { if (body.limit > 0) await Store.putBudget(id, body); else await Store.delBudget(id); toast(body.limit > 0 ? "Бюджет сохранён" : "Лимит убран"); }
+  catch (err) { toast(err.message, { error: true }); }
+}
+$("#budget-total-save").addEventListener("click", () => saveBudget("total", { limit: Math.round(+$("#budget-total").value || 0) }));
+$("#budget-cats").addEventListener("change", (e) => {
+  const cat = e.target.dataset.budget; if (!cat) return;
+  saveBudget("c-" + hash(cat), { cat, limit: Math.round(+e.target.value || 0) });
+});
+
+// ─── Напоминания через Календарь ───────────────────────────────────────────────────────
+function renderReminders() {
+  $("#remind-evening").href = `${SITE}reminders/evening-${$("#remind-time").value}.ics`;
+  $("#remind-monthly").href = `${SITE}reminders/monthly-statement.ics`;
+}
+$("#remind-time").addEventListener("change", () => { lsSet("aqsha.remindTime", $("#remind-time").value); renderReminders(); });
+$("#remind-time").value = lsGet("aqsha.remindTime", "2100");
 
 // ─── Вкладки и отрисовка ───────────────────────────────────────────────────────────────
 let tab = "overview";
@@ -1036,7 +1240,7 @@ function render() { // перерисовываем только видимую 
     if (tab === "overview") renderOverview();
     if (tab === "transactions") renderTransactions();
     if (tab === "tips") renderTips();
-    if (tab === "categories") renderCategories();
+    if (tab === "more") { renderCategories(); renderBudget(); renderReminders(); }
   });
 }
 matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", render);
@@ -1045,4 +1249,7 @@ new MutationObserver(render).observe(document.documentElement, { attributes: tru
 nextTip();
 render();
 Store.init();
+// ссылка из напоминания в Календаре открывает сразу окно добавления
+const fromHash = () => { if (location.hash === "#add") openAdd(); };
+fromHash(); window.addEventListener("hashchange", fromHash);
 </script>

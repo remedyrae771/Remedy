@@ -1,0 +1,22 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Aqsha//Reminders//RU
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+UID:evening-2100@aqsha
+DTSTAMP:20260101T000000Z
+DTSTART:20260101T210000
+DURATION:PT10M
+RRULE:FREQ=DAILY
+SUMMARY:Aqsha: запишите расходы за сегодня
+DESCRIPTION:Пара секунд: откройте Aqsha и нажмите
+  «+». https://remedyrae771.github.io/Remedy/#add
+URL:https://remedyrae771.github.io/Remedy/#add
+BEGIN:VALARM
+ACTION:DISPLAY
+DESCRIPTION:Aqsha: запишите расходы за сегодня
+TRIGGER:PT0M
+END:VALARM
+END:VEVENT
+END:VCALENDAR
