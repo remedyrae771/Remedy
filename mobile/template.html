@@ -55,6 +55,7 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .sync::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
 .sync[data-state="cloud"]::before { background: var(--income); }
 .sync[data-state="local"]::before { background: var(--gold); }
+.banner span { flex: 1 1 200px; }
 .sync[data-state="error"]::before { background: var(--expense); }
 
 main.wrap { padding-block: 16px; }
@@ -345,6 +346,12 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
         <input type="file" id="backup-file" accept=".csv,text/csv" hidden>
       </div>
       <p class="hint" id="backup-note" hidden style="margin-top:8px"></p>
+      <textarea id="backup-text" readonly hidden rows="4" style="width:100%;margin-top:8px;font-size:12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);padding:8px"></textarea>
+      <details style="margin-top:10px"><summary>Восстановить из текста</summary>
+        <p class="hint" style="margin:6px 0">Если копия сохранена текстом (в Заметках или в чате) — вставьте её сюда.</p>
+        <textarea id="restore-text" rows="4" style="width:100%;font-size:12px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);padding:8px" aria-label="Текст резервной копии"></textarea>
+        <button class="btn" id="restore-go" style="margin-top:6px">Восстановить</button>
+      </details>
     </div>
     <div class="card" id="demo-card" hidden>
       <h2 class="section-title">Пример</h2>
@@ -405,7 +412,7 @@ function toast(text, { error = false, action, onAction, ms = 4000 } = {}) {
 
 // ─── Хранилище: личный раздел на claude.ai, иначе — этот браузер ─────────────────────────
 const Store = {
-  mode: "loading", loaded: false, tx: new Map(), rules: new Map(), readOnly: false,
+  mode: "loading", loaded: false, tx: new Map(), rules: new Map(),
   db: null, txCol: null, ruleCol: null,
   setSync(state, text) { const el = $("#sync"); el.dataset.state = state; el.textContent = text; },
   async init() {
@@ -416,9 +423,11 @@ const Store = {
         db = d; uid = u ? await u.id() : null;
       }
     } catch { db = null; }
-    if (db && uid) return this.initCloud(db, uid);
+    // этому посетителю claude.ai уже отказывал в сохранении — сразу работаем с телефоном
+    if (db && uid && lsGet("aqsha.localFor", null) !== uid) { this.uid = uid; return this.initCloud(db, uid); }
     return this.initLocal();
   },
+  unsubs: [],
   initCloud(db, uid) {
     this.mode = "cloud";
     const base = db.doc(`data/users/${uid}/aqsha`);
@@ -428,14 +437,22 @@ const Store = {
     const slow = setTimeout(() => this.setSync("error", "Нет связи"), 10000);
     let first = 2;
     const done = (snap) => { if (!snap.metadata.fromCache && --first <= 0) { clearTimeout(slow); this.setSync("cloud", "Сохранено"); } };
-    this.txCol.onSnapshot((snap) => {
+    this.unsubs.push(this.txCol.onSnapshot((snap) => {
       this.tx = new Map(snap.docs.map((d) => [d.id, d.data()]));
       this.loaded = true; done(snap); render();
-    }, (e) => { clearTimeout(slow); this.setSync("error", "Нет доступа"); console.warn(e); });
-    this.ruleCol.onSnapshot((snap) => {
+    }, (e) => { clearTimeout(slow); this.setSync("error", "Нет доступа"); console.warn(e); }));
+    this.unsubs.push(this.ruleCol.onSnapshot((snap) => {
       this.rules = new Map(snap.docs.map((d) => [d.id, d.data()]));
       done(snap); render();
-    }, (e) => console.warn(e));
+    }, (e) => console.warn(e)));
+    this.slowTimer = slow;
+  },
+  // Посетитель по публичной ссылке может читать, но не сохранять на claude.ai — тогда храним у него на телефоне.
+  switchToLocal() {
+    if (this.mode === "local") return;
+    if (this.uid) lsSet("aqsha.localFor", this.uid);
+    this.unsubs.forEach((u) => u()); this.unsubs = []; clearTimeout(this.slowTimer);
+    this.initLocal();
   },
   initLocal() {
     this.mode = "local";
@@ -443,8 +460,8 @@ const Store = {
     this.tx = new Map(Object.entries(saved.tx || {}));
     this.rules = new Map(Object.entries(saved.rules || {}));
     this.loaded = true;
-    this.setSync("local", "В браузере");
-    showBanner("<b>Данные хранятся только в этом браузере.</b> Откройте Aqsha по ссылке claude.ai, войдя в аккаунт, — тогда они будут в вашем личном разделе.");
+    this.setSync("local", "На телефоне");
+    showBanner('<span><b>Ваши данные хранятся только на этом телефоне.</b> Чтобы не потерять их, иногда сохраняйте резервную копию.</span><button class="btn small" data-goto="categories">Копия</button>');
     render();
   },
   persistLocal() { lsSet("aqsha.v1", { tx: Object.fromEntries(this.tx), rules: Object.fromEntries(this.rules) }); },
@@ -454,7 +471,6 @@ const Store = {
       if (body) map.set(id, body); else map.delete(id);
       this.persistLocal(); render(); return;
     }
-    if (this.readOnly) throw new Error("Только просмотр: в этом доступе нельзя сохранять");
     const ref = (kind === "tx" ? this.txCol : this.ruleCol).doc(id);
     this.setSync("loading", "Сохраняю…");
     try {
@@ -466,8 +482,11 @@ const Store = {
         if (body) await ref.set(body); else await ref.delete();
         this.setSync("cloud", "Сохранено"); return;
       }
+      if (e && e.code === "invalid_argument") { // claude.ai не даёт этому посетителю сохранять — переходим на телефон
+        this.switchToLocal();
+        return this.write(kind, id, body);
+      }
       this.setSync("error", "Не сохранено");
-      if (e && e.code === "invalid_argument") { this.readOnly = true; throw new Error("Сохранять здесь нельзя: у этой ссылки доступ только для просмотра"); }
       if (e && e.code === "quota_exceeded") throw new Error("Место в хранилище закончилось — удалите старые операции");
       throw new Error("Не удалось сохранить, попробуйте ещё раз");
     }
@@ -901,39 +920,58 @@ function parseCSV(text) {
   if (cell || row.length) { row.push(cell); rows.push(row); }
   return rows;
 }
+let downloadsNs = null; // узнаём заранее, чтобы копирование сработало прямо в момент нажатия
+window.claude?.use?.("downloads").then((d) => (downloadsNs = d)).catch(() => {});
+function copyBackupAsText(csv, count) {
+  const note = $("#backup-note"), area = $("#backup-text");
+  const text = csv.replace(/^\ufeff/, "");
+  const shown = () => { area.value = text; area.hidden = false; area.focus(); area.select();
+    note.textContent = "Выделите текст ниже, скопируйте и сохраните в Заметках или отправьте себе в чат."; note.hidden = false; };
+  try {
+    navigator.clipboard.writeText(text).then(() => {
+      note.textContent = `Копия (${count} операций) скопирована. Вставьте её в Заметки или отправьте себе в WhatsApp или Telegram.`;
+      note.hidden = false; area.hidden = true;
+    }, shown);
+  } catch { shown(); }
+}
 $("#backup-save").addEventListener("click", async (e) => {
   const note = $("#backup-note");
   const count = txList().filter((t) => t.src !== "demo").length;
   if (!count) { toast("Пока нечего сохранять — добавьте операции"); return; }
+  const csv = toCSV();
+  if (!downloadsNs) { copyBackupAsText(csv, count); return; }
   e.target.disabled = true;
   try {
-    const dl = window.claude?.use ? await window.claude.use("downloads") : null;
-    if (!dl) { note.textContent = "Сохранение файла доступно, когда Aqsha открыта по ссылке claude.ai."; note.hidden = false; return; }
-    await dl.save({ filename: `aqsha-${todayISO()}.csv`, data: toCSV() });
-    lsSet("aqsha.lastBackup", todayISO());
+    await downloadsNs.save({ filename: `aqsha-${todayISO()}.csv`, data: csv });
     note.textContent = `Копия сохранена: ${count} операций.`; note.hidden = false;
   } catch (err) {
     if (err?.code === "declined") return;
-    toast(err?.code === "rate_limited" ? "Окно сохранения уже открыто" : "Не удалось сохранить файл", { error: true });
+    if (err?.code === "rate_limited") { toast("Окно сохранения уже открыто"); return; }
+    downloadsNs = null; copyBackupAsText(csv, count); // сохранение файлов здесь недоступно — даём текст
   } finally { e.target.disabled = false; }
 });
+async function restoreFromText(text) {
+  const rows = parseCSV(text.trim());
+  const head = rows.shift() || [];
+  if (head[0] !== CSV_HEAD[0] || head[1] !== CSV_HEAD[1]) throw new Error("Это не копия Aqsha: первая строка должна начинаться с «Дата;Сумма»");
+  const items = rows.filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r[0]) && r[1]).map((r) => {
+    const amount = parseFloat(r[1].replace(",", "."));
+    return { id: "b-" + hash(r.join("|")), date: r[0], amount, desc: r[2] || "", cat: CAT[r[3]] ? r[3] : categorize(r[2], amount), src: r[4] || "backup" };
+  }).filter((t) => t.amount && !Store.tx.has(t.id));
+  // операция могла уже быть с другим id (из выписки) — сверяем по дате, сумме и описанию
+  const known = new Set(txList().map((t) => `${t.date}|${t.amount}|${t.desc}`));
+  const fresh = items.filter((t) => !known.has(`${t.date}|${t.amount}|${t.desc}`));
+  for (let i = 0; i < fresh.length; i += 6) await Promise.all(fresh.slice(i, i + 6).map(({ id, ...t }) => Store.putTx(id, { ...t, at: Date.now() })));
+  toast(fresh.length ? `Восстановлено операций: ${fresh.length}` : "Все операции из копии уже есть");
+}
 $("#backup-file").addEventListener("change", async (e) => {
   const file = e.target.files[0]; if (!file) return;
-  try {
-    const rows = parseCSV(await file.text());
-    const head = rows.shift() || [];
-    if (head[0] !== CSV_HEAD[0] || head[1] !== CSV_HEAD[1]) throw new Error("Это не файл копии Aqsha");
-    const items = rows.filter((r) => /^\d{4}-\d{2}-\d{2}$/.test(r[0]) && r[1]).map((r) => {
-      const amount = parseFloat(r[1].replace(",", "."));
-      return { id: "b-" + hash(r.join("|")), date: r[0], amount, desc: r[2] || "", cat: CAT[r[3]] ? r[3] : categorize(r[2], amount), src: r[4] || "backup" };
-    }).filter((t) => t.amount && !Store.tx.has(t.id));
-    // операция могла уже быть с другим id (из выписки) — сверяем по дате, сумме и описанию
-    const known = new Set(txList().map((t) => `${t.date}|${t.amount}|${t.desc}`));
-    const fresh = items.filter((t) => !known.has(`${t.date}|${t.amount}|${t.desc}`));
-    for (let i = 0; i < fresh.length; i += 6) await Promise.all(fresh.slice(i, i + 6).map(({ id, ...t }) => Store.putTx(id, { ...t, at: Date.now() })));
-    toast(fresh.length ? `Восстановлено операций: ${fresh.length}` : "Все операции из копии уже есть");
-  } catch (err) { toast(err.message || "Не удалось прочитать файл", { error: true }); }
+  try { await restoreFromText(await file.text()); } catch (err) { toast(err.message || "Не удалось прочитать файл", { error: true }); }
   e.target.value = "";
+});
+$("#restore-go").addEventListener("click", async () => {
+  try { await restoreFromText($("#restore-text").value); $("#restore-text").value = ""; }
+  catch (err) { toast(err.message || "Не удалось прочитать копию", { error: true }); }
 });
 
 // ─── Пример данных ─────────────────────────────────────────────────────────────────────
