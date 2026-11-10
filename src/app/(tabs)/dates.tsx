@@ -1,6 +1,6 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, Switch, Text, View } from 'react-native';
+import { Pressable, Switch, Text, View } from 'react-native';
 import { Button, Card, Chip, ErrorText, Input, Muted, Screen, SectionLabel, Title, styles } from '../../components/ui';
 import {
   daysBetween,
@@ -11,6 +11,7 @@ import {
   relativeDays,
   today,
 } from '../../lib/dates';
+import { confirmAction } from '../../lib/platform';
 import { errorText, supabase } from '../../lib/supabase';
 import type { CoupleEvent } from '../../lib/types';
 import { useCouple } from '../../providers/AuthProvider';
@@ -60,6 +61,7 @@ export default function Dates() {
     };
   }, [coupleId, load]);
 
+  const startedOn = couple?.started_on ?? null;
   const rows = useMemo<Row[]>(() => {
     const now = today();
     const list: Row[] = events.map((event) => {
@@ -76,28 +78,28 @@ export default function Dates() {
       };
     });
 
-    if (couple?.started_on) {
-      const next = nextOccurrence(couple.started_on, true, now);
-      const years = next.getFullYear() - parseISODate(couple.started_on).getFullYear();
+    if (startedOn) {
+      const next = nextOccurrence(startedOn, true, now);
+      const years = next.getFullYear() - parseISODate(startedOn).getFullYear();
       if (years > 0) {
         list.push({
           key: 'anniversary',
           emoji: '💞',
           title: 'Наша годовщина',
-          date: couple.started_on,
+          date: startedOn,
           days: daysBetween(now, next),
           subtitle: `${years}-я годовщина — `,
         });
       }
       // Круглые даты: 100, 500, 1000… дней вместе.
-      const together = daysBetween(parseISODate(couple.started_on), now);
+      const together = daysBetween(parseISODate(startedOn), now);
       const milestone = [100, 200, 300, 500, 1000, 1500, 2000, 2500, 3000, 5000, 10000].find((m) => m >= together);
       if (milestone) {
         list.push({
           key: 'milestone',
           emoji: '✨',
           title: `${milestone} дней вместе`,
-          date: couple.started_on,
+          date: startedOn,
           days: milestone - together,
           subtitle: '',
         });
@@ -110,7 +112,7 @@ export default function Dates() {
       if (aPast !== bPast) return aPast ? 1 : -1;
       return aPast ? b.days - a.days : a.days - b.days;
     });
-  }, [events, couple?.started_on]);
+  }, [events, startedOn]);
 
   const add = async () => {
     setError(null);
@@ -130,17 +132,10 @@ export default function Dates() {
   };
 
   const remove = (event: CoupleEvent) => {
-    Alert.alert('Удалить дату?', event.title, [
-      { text: 'Отмена', style: 'cancel' },
-      {
-        text: 'Удалить',
-        style: 'destructive',
-        onPress: async () => {
-          await supabase.from('events').delete().eq('id', event.id);
-          load();
-        },
-      },
-    ]);
+    confirmAction('Удалить дату?', event.title, 'Удалить', async () => {
+      await supabase.from('events').delete().eq('id', event.id);
+      load();
+    });
   };
 
   return (

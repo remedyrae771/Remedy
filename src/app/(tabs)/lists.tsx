@@ -1,7 +1,8 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { Button, Card, Chip, ErrorText, Input, Muted, Screen, Title, styles } from '../../components/ui';
+import { confirmAction } from '../../lib/platform';
 import { errorText, supabase } from '../../lib/supabase';
 import type { List } from '../../lib/types';
 import { useCouple } from '../../providers/AuthProvider';
@@ -58,17 +59,10 @@ export default function Lists() {
   };
 
   const remove = (list: List) => {
-    Alert.alert('Удалить список?', `«${list.title}» и все его пункты будут удалены у вас обоих.`, [
-      { text: 'Отмена', style: 'cancel' },
-      {
-        text: 'Удалить',
-        style: 'destructive',
-        onPress: async () => {
-          await supabase.from('lists').delete().eq('id', list.id);
-          load();
-        },
-      },
-    ]);
+    confirmAction('Удалить список?', `«${list.title}» и все его пункты будут удалены у вас обоих.`, 'Удалить', async () => {
+      await supabase.from('lists').delete().eq('id', list.id);
+      load();
+    });
   };
 
   return (

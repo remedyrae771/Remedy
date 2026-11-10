@@ -1,12 +1,15 @@
 import * as Haptics from 'expo-haptics';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, Share, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
+import InviteCard from '../../components/InviteCard';
+import Pet, { petMoodText } from '../../components/Pet';
 import { Button, Card, Chip, ErrorText, Input, Muted, Screen, SectionLabel, styles } from '../../components/ui';
 import { daysBetween, nextOccurrence, parseISODate, pluralDays, relativeDays, today } from '../../lib/dates';
 import { MOODS, moodLabel } from '../../lib/moods';
 import { errorText, supabase } from '../../lib/supabase';
 import type { CoupleEvent } from '../../lib/types';
+import { usePetMood } from '../../lib/usePetMood';
 import { useAuth, useCouple } from '../../providers/AuthProvider';
 import { colors, spacing } from '../../theme';
 
@@ -20,13 +23,19 @@ function timeAgo(iso: string | null): string {
   return `${Math.round(hours / 24)} дн назад`;
 }
 
+const haptic = (fn: () => Promise<void>) => {
+  if (Platform.OS !== 'web') fn().catch(() => {});
+};
+
 export default function Home() {
   const { updateProfile } = useAuth();
-  const { coupleId, profile, couple, partner } = useCouple();
+  const { userId, coupleId, profile, couple, partner } = useCouple();
+  const pet = usePetMood(coupleId, userId, profile, partner);
   const [nextEvent, setNextEvent] = useState<{ event: CoupleEvent; days: number } | null>(null);
   const [note, setNote] = useState(profile.mood_note ?? '');
   const [error, setError] = useState<string | null>(null);
   const [sentThinking, setSentThinking] = useState(false);
+  const [pats, setPats] = useState<number | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -48,10 +57,12 @@ export default function Home() {
   );
 
   const daysTogether = couple?.started_on ? daysBetween(parseISODate(couple.started_on), today()) : null;
+  const petName = couple?.pet_name || 'Пушок';
+  const petPats = pats ?? couple?.pet_pats ?? 0;
 
   const setMood = async (emoji: string) => {
     setError(null);
-    Haptics.selectionAsync();
+    haptic(() => Haptics.selectionAsync());
     try {
       await updateProfile({ mood: emoji, mood_note: note.trim() || null, mood_updated_at: new Date().toISOString() });
     } catch (e) {
@@ -69,21 +80,29 @@ export default function Home() {
   };
 
   const sendThinking = async () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    haptic(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success));
     const { error: e } = await supabase
       .from('messages')
       .insert({ couple_id: coupleId, body: 'Думаю о тебе 💭', kind: 'thinking' });
     if (e) setError(errorText(e));
     else {
       setSentThinking(true);
+      pet.reload();
       setTimeout(() => setSentThinking(false), 3000);
     }
+  };
+
+  const patPet = async () => {
+    haptic(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light));
+    setPats(petPats + 1);
+    const { data } = await supabase.rpc('pet_pat');
+    if (typeof data === 'number') setPats(data);
   };
 
   return (
     <Screen>
       <View style={[styles.row, { justifyContent: 'space-between' }]}>
-        <Text style={styles.title}>
+        <Text style={[styles.title, { flex: 1 }]}>
           {profile.display_name || 'Я'} {partner ? `& ${partner.display_name || 'партнёр'}` : ''}
         </Text>
         <Pressable onPress={() => router.push('/settings')} hitSlop={12} accessibilityLabel="Настройки">
@@ -91,20 +110,28 @@ export default function Home() {
         </Pressable>
       </View>
 
-      {!partner && couple && (
-        <Card style={{ backgroundColor: colors.primarySoft, borderColor: colors.primarySoft }}>
-          <Text style={styles.body}>Ждём партнёра! Отправьте этот код:</Text>
-          <Text style={{ fontSize: 36, fontWeight: '800', letterSpacing: 6, color: colors.primary, textAlign: 'center' }}>
-            {couple.invite_code}
+      <Card style={{ alignItems: 'center', backgroundColor: colors.primarySoft, borderColor: colors.primarySoft }}>
+        <Pet kind={couple?.pet_kind ?? 'cat'} mood={pet.mood} size={170} onPat={patPet} />
+        <Text style={[styles.body, { fontWeight: '700', fontSize: 20 }]}>{petName}</Text>
+        <Text style={[styles.body, { textAlign: 'center' }]}>{petMoodText(petName, pet.mood)}</Text>
+        <Muted>
+          Нажмите, чтобы погладить · {petPats > 0 ? `погладили ${petPats} раз` : 'ещё никто не гладил'}
+        </Muted>
+        <View style={{ alignSelf: 'stretch', gap: spacing.xs, marginTop: spacing.sm }}>
+          <Text style={[styles.muted, { fontWeight: '600' }]}>
+            Чтобы {petName} был счастлив сегодня ({pet.score}/{pet.tasks.length}):
           </Text>
-          <Button
-            title="Поделиться кодом"
-            onPress={() =>
-              Share.share({ message: `Присоединяйся ко мне в Remedy 💞 Код пары: ${couple.invite_code}` })
-            }
-          />
-        </Card>
-      )}
+          {pet.tasks
+            .filter((t) => partner || !t.key.endsWith('partner'))
+            .map((t) => (
+              <Text key={t.key} style={[styles.body, { fontSize: 15 }, t.done && { color: colors.muted, textDecorationLine: 'line-through' }]}>
+                {t.done ? '✅' : '⬜'} {t.label}
+              </Text>
+            ))}
+        </View>
+      </Card>
+
+      {!partner && couple ? <InviteCard code={couple.invite_code} inviterName={profile.display_name} /> : null}
 
       <Card style={{ alignItems: 'center' }}>
         {daysTogether !== null && daysTogether >= 0 ? (
@@ -158,6 +185,7 @@ export default function Home() {
           value={note}
           onChangeText={setNote}
           onEndEditing={saveNote}
+          onBlur={saveNote}
           maxLength={140}
         />
         <ErrorText>{error}</ErrorText>

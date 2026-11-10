@@ -1,15 +1,21 @@
 import { useState } from 'react';
-import { Alert, Share, Text } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import InviteCard from '../components/InviteCard';
+import { PET_KINDS, PetArt } from '../components/Pet';
 import { Button, Card, ErrorText, Input, Muted, Screen, SectionLabel, styles } from '../components/ui';
 import { formatUserDate, parseUserDate } from '../lib/dates';
+import { confirmAction } from '../lib/platform';
 import { errorText, supabase } from '../lib/supabase';
+import type { PetKind } from '../lib/types';
 import { useAuth, useCouple } from '../providers/AuthProvider';
+import { colors, radius, spacing } from '../theme';
 
 export default function Settings() {
   const { updateProfile, updateCouple, signOut, refresh, session } = useAuth();
   const { profile, couple, partner } = useCouple();
   const [name, setName] = useState(profile.display_name);
   const [startedOn, setStartedOn] = useState(couple?.started_on ? formatUserDate(couple.started_on) : '');
+  const [petName, setPetName] = useState(couple?.pet_name ?? 'Пушок');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -23,6 +29,7 @@ export default function Settings() {
     try {
       if (name.trim() !== profile.display_name) await updateProfile({ display_name: name.trim() });
       if (iso !== (couple?.started_on ?? null)) await updateCouple({ started_on: iso });
+      if (petName.trim() && petName.trim() !== couple?.pet_name) await updateCouple({ pet_name: petName.trim() });
       setSaved(true);
     } catch (e) {
       setError(errorText(e));
@@ -31,27 +38,55 @@ export default function Settings() {
     }
   };
 
-  const leave = () => {
-    Alert.alert(
-      'Выйти из пары?',
-      'Вы перестанете видеть общие данные. Чтобы вернуться, понадобится код пары.',
-      [
-        { text: 'Отмена', style: 'cancel' },
-        {
-          text: 'Выйти',
-          style: 'destructive',
-          onPress: async () => {
-            const { error: e } = await supabase.rpc('leave_couple');
-            if (e) setError(errorText(e));
-            else await refresh();
-          },
-        },
-      ],
-    );
+  const pickKind = async (kind: PetKind) => {
+    try {
+      await updateCouple({ pet_kind: kind });
+    } catch (e) {
+      setError(errorText(e));
+    }
   };
+
+  const leave = () =>
+    confirmAction('Выйти из пары?', 'Вы перестанете видеть общие данные. Чтобы вернуться, понадобится новое приглашение.', 'Выйти', async () => {
+      const { error: e } = await supabase.rpc('leave_couple');
+      if (e) setError(errorText(e));
+      else await refresh();
+    });
 
   return (
     <Screen edges={['bottom']}>
+      <SectionLabel>Питомец</SectionLabel>
+      <Card>
+        <Muted>Кто живёт у вас дома</Muted>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'space-between' }}>
+          {PET_KINDS.map(({ kind, label }) => {
+            const selected = (couple?.pet_kind ?? 'cat') === kind;
+            return (
+              <Pressable
+                key={kind}
+                onPress={() => pickKind(kind)}
+                accessibilityRole="button"
+                accessibilityState={{ selected }}
+                style={{
+                  alignItems: 'center',
+                  padding: spacing.xs,
+                  borderRadius: radius.md,
+                  borderWidth: 2,
+                  borderColor: selected ? colors.primary : colors.border,
+                  backgroundColor: selected ? colors.primarySoft : colors.surface,
+                  minWidth: 72,
+                }}
+              >
+                <PetArt kind={kind} mood="happy" size={60} />
+                <Text style={[styles.muted, selected && { color: colors.primary, fontWeight: '600' }]}>{label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <Muted>Имя питомца</Muted>
+        <Input value={petName} onChangeText={setPetName} placeholder="Пушок" maxLength={24} />
+      </Card>
+
       <SectionLabel>Профиль</SectionLabel>
       <Card>
         <Muted>Ваше имя</Muted>
@@ -70,24 +105,17 @@ export default function Settings() {
       </Card>
 
       <SectionLabel>Пара</SectionLabel>
-      <Card>
-        <Text style={styles.body}>
-          {partner ? `Вы вместе с ${partner.display_name || 'партнёром'} 💞` : 'Партнёр ещё не присоединился'}
-        </Text>
-        {couple ? (
-          <>
-            <Muted>Код пары: {couple.invite_code}</Muted>
-            {!partner ? (
-              <Button
-                title="Поделиться кодом"
-                variant="secondary"
-                onPress={() => Share.share({ message: `Присоединяйся ко мне в Remedy 💞 Код пары: ${couple.invite_code}` })}
-              />
-            ) : null}
-          </>
-        ) : null}
-        <Button title="Выйти из пары" variant="danger" onPress={leave} />
-      </Card>
+      {partner ? (
+        <Card>
+          <Text style={styles.body}>Вы вместе с {partner.display_name || 'партнёром'} 💞</Text>
+          <Button title="Выйти из пары" variant="danger" onPress={leave} />
+        </Card>
+      ) : (
+        <>
+          {couple ? <InviteCard code={couple.invite_code} inviterName={profile.display_name} /> : null}
+          <Button title="Выйти из пары" variant="danger" onPress={leave} />
+        </>
+      )}
 
       <SectionLabel>Аккаунт</SectionLabel>
       <Card>

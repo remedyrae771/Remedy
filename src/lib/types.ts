@@ -4,7 +4,12 @@ export type Couple = {
   started_on: string | null;
   created_by: string;
   created_at: string;
+  pet_name: string;
+  pet_kind: PetKind;
+  pet_pats: number;
 };
+
+export type PetKind = 'cat' | 'dog' | 'bunny' | 'bear';
 
 export type Profile = {
   id: string;

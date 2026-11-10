@@ -28,6 +28,8 @@ function RootNavigator() {
         headerBackButtonDisplayMode: 'minimal',
       }}
     >
+      <Stack.Screen name="join" />
+
       <Stack.Protected guard={!signedIn}>
         <Stack.Screen name="sign-in" />
       </Stack.Protected>

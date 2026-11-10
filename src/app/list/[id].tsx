@@ -27,7 +27,7 @@ export default function ListScreen() {
   }, [id]);
 
   useEffect(() => {
-    load();
+    void Promise.resolve().then(load);
     const channel = supabase
       .channel(`list-${id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'list_items', filter: `list_id=eq.${id}` }, load)
@@ -51,7 +51,7 @@ export default function ListScreen() {
   };
 
   const toggle = async (item: ListItem) => {
-    Haptics.selectionAsync();
+    Haptics.selectionAsync().catch(() => {});
     setItems((prev) => prev.map((x) => (x.id === item.id ? { ...x, done: !x.done } : x)));
     await supabase.from('list_items').update({ done: !item.done }).eq('id', item.id);
   };

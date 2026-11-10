@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Text, View } from 'react-native';
 import { Button, Card, ErrorText, Input, Screen, Title, styles } from '../components/ui';
+import { getPendingInvite } from '../lib/invite';
 import { errorText, supabase } from '../lib/supabase';
-import { spacing } from '../theme';
+import { colors, spacing } from '../theme';
 
 export default function SignIn() {
   const [mode, setMode] = useState<'signIn' | 'signUp'>('signIn');
@@ -12,6 +13,16 @@ export default function SignIn() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [invited, setInvited] = useState(false);
+
+  useEffect(() => {
+    getPendingInvite().then((code) => {
+      if (code) {
+        setInvited(true);
+        setMode('signUp');
+      }
+    });
+  }, []);
 
   const submit = async () => {
     setError(null);
@@ -52,6 +63,14 @@ export default function SignIn() {
           <Text style={{ fontSize: 64 }}>💞</Text>
         </View>
         <Title subtitle="Пространство только для вас двоих">Remedy</Title>
+        {invited ? (
+          <Card style={{ backgroundColor: colors.primarySoft, borderColor: colors.primarySoft }}>
+            <Text style={[styles.body, { fontWeight: '700' }]}>Вас пригласили в пару 💌</Text>
+            <Text style={styles.body}>
+              Создайте аккаунт или войдите — и вы сразу окажетесь вместе с тем, кто прислал ссылку.
+            </Text>
+          </Card>
+        ) : null}
         <Card>
           {mode === 'signUp' && (
             <Input placeholder="Ваше имя" value={name} onChangeText={setName} autoComplete="name" />

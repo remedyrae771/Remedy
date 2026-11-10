@@ -11,7 +11,7 @@ type AuthState = {
   loading: boolean;
   refresh: () => Promise<void>;
   updateProfile: (patch: Partial<Pick<Profile, 'display_name' | 'mood' | 'mood_note' | 'mood_updated_at'>>) => Promise<void>;
-  updateCouple: (patch: Partial<Pick<Couple, 'started_on'>>) => Promise<void>;
+  updateCouple: (patch: Partial<Pick<Couple, 'started_on' | 'pet_name' | 'pet_kind'>>) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -23,7 +23,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [couple, setCouple] = useState<Couple | null>(null);
   const [partner, setPartner] = useState<Profile | null>(null);
   const [sessionLoaded, setSessionLoaded] = useState(false);
-  const [dataLoaded, setDataLoaded] = useState(false);
+  // Для какого пользователя уже загружены профиль и пара (undefined — ещё ни для какого).
+  const [loadedFor, setLoadedFor] = useState<string | null | undefined>(undefined);
 
   const userId = session?.user.id ?? null;
 
@@ -41,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null);
       setCouple(null);
       setPartner(null);
-      setDataLoaded(true);
+      setLoadedFor(null);
       return;
     }
 
@@ -59,12 +60,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCouple(null);
       setPartner(null);
     }
-    setDataLoaded(true);
+    setLoadedFor(userId);
   }, [userId]);
 
   useEffect(() => {
-    setDataLoaded(false);
-    refresh();
+    void Promise.resolve().then(refresh);
   }, [refresh]);
 
   // Следим за изменениями профилей пары (партнёр присоединился, сменил настроение).
@@ -119,13 +119,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       couple,
       partner,
-      loading: !sessionLoaded || (Boolean(session) && !dataLoaded),
+      loading: !sessionLoaded || (Boolean(session) && loadedFor !== userId),
       refresh,
       updateProfile,
       updateCouple,
       signOut,
     }),
-    [session, profile, couple, partner, sessionLoaded, dataLoaded, refresh, updateProfile, updateCouple, signOut],
+    [session, profile, couple, partner, sessionLoaded, loadedFor, userId, refresh, updateProfile, updateCouple, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

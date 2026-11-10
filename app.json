@@ -21,11 +21,18 @@
       "package": "com.remedy.couples"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "output": "single",
+      "name": "Remedy",
+      "themeColor": "#E8577E",
+      "backgroundColor": "#FFF7F5"
     },
     "plugins": [
       "expo-router"
     ],
-    "scheme": "remedy"
+    "scheme": "remedy",
+    "experiments": {
+      "baseUrl": "/Remedy"
+    }
   }
 }
