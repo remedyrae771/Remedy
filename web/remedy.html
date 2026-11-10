@@ -1,0 +1,645 @@
+<title>Remedy</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#b8325c">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700&family=Caveat:wght@600;700&display=swap">
+<style>
+/* Remedy — пространство на двоих. Одна колонка под телефон, нижняя панель вкладок,
+   «записки» рукописным шрифтом для того, что пишут друг другу. */
+:root {
+  --bg: #f9f3f4; --surface: #ffffff; --text: #2b1d27; --muted: #7c6a74; --border: #eddde2;
+  --accent: #b8325c; --on-accent: #ffffff; --accent-soft: #fbe4ea;
+  --apricot: #f0955f; --apricot-soft: #fdeadd; --ok: #2f8f63; --danger: #c43d3d;
+  --bubble-them: #f1e8ee; --shadow: 0 1px 2px rgba(60, 20, 40, .06);
+  --hero1: #b8325c; --hero2: #7d2350; --hero-ink: #ffffff; --hero-soft: rgba(255,255,255,.86);
+  --font: "Rubik", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --hand: "Caveat", "Segoe Print", "Bradley Hand", cursive;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1a1218; --surface: #251a22; --text: #f4e9ee; --muted: #b29faa; --border: #3a2a34;
+    --accent: #f06b93; --on-accent: #1a1218; --accent-soft: #3e2230;
+    --apricot: #f5a77a; --apricot-soft: #3a2a20; --ok: #55c08c; --danger: #f07a7a;
+    --bubble-them: #33252e; --shadow: none;
+    --hero1: #8f2448; --hero2: #521636; --hero-ink: #ffffff; --hero-soft: rgba(255,255,255,.82);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1a1218; --surface: #251a22; --text: #f4e9ee; --muted: #b29faa; --border: #3a2a34;
+  --accent: #f06b93; --on-accent: #1a1218; --accent-soft: #3e2230;
+  --apricot: #f5a77a; --apricot-soft: #3a2a20; --ok: #55c08c; --danger: #f07a7a;
+  --bubble-them: #33252e; --shadow: none;
+  --hero1: #8f2448; --hero2: #521636; --hero-ink: #ffffff; --hero-soft: rgba(255,255,255,.82);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--text); font: 15px/1.45 var(--font); -webkit-text-size-adjust: 100%;
+  padding-bottom: calc(74px + env(safe-area-inset-bottom, 0px)); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+p { margin: 0; }
+.wrap { max-width: 640px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+main.wrap { padding-block: 16px 24px; }
+
+.tab { display: none; flex-direction: column; gap: 14px; }
+.tab.active { display: flex; }
+.head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.head h1 { font-size: 24px; font-weight: 700; letter-spacing: -.01em; }
+.sub { color: var(--muted); font-size: 14px; }
+.label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-top: 4px; }
+.hint { color: var(--muted); font-size: 13px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 14px 16px; box-shadow: var(--shadow);
+  display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.grow { flex: 1; min-width: 0; }
+.big-emoji { font-size: 30px; line-height: 1; flex: none; }
+.hand { font-family: var(--hand); font-size: 22px; line-height: 1.15; }
+
+.btn { border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: 10px 16px; font-weight: 500; min-height: 44px; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+.btn.soft { background: var(--accent-soft); border-color: transparent; color: var(--accent); font-weight: 600; }
+.btn.ghost { background: none; border-color: transparent; color: var(--muted); }
+.btn.danger { color: var(--danger); border-color: transparent; background: none; }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.block { width: 100%; }
+input[type=text], input[type=date], textarea, select {
+  width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; font-size: 16px; min-width: 0; }
+textarea { resize: vertical; min-height: 84px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--border); background: var(--surface); border-radius: 999px; padding: 6px 12px; font-size: 14px; min-height: 36px; }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 3px; }
+.seg button { border: none; background: none; border-radius: 11px; padding: 8px 4px; font-weight: 500; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+
+.banner { border-radius: 14px; padding: 10px 14px; font-size: 14px; background: var(--apricot-soft); margin-bottom: 14px; }
+[hidden] { display: none !important; }
+
+/* главная: счётчик дней */
+.hero { border-radius: 22px; padding: 20px 18px; color: var(--hero-ink); background: linear-gradient(150deg, var(--hero1), var(--hero2));
+  display: flex; flex-direction: column; gap: 6px; position: relative; overflow: hidden; }
+.hero::after { content: "♥"; position: absolute; right: -10px; bottom: -42px; font-size: 150px; line-height: 1; opacity: .08; pointer-events: none; }
+.hero .names { font-size: 15px; color: var(--hero-soft); }
+.hero .days { font-size: 52px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.hero .days-word { font-size: 16px; color: var(--hero-soft); }
+.hero .btn { align-self: flex-start; background: rgba(255,255,255,.18); border-color: transparent; color: var(--hero-ink); }
+.hero input[type=date] { background: rgba(255,255,255,.95); color: #2b1d27; }
+
+.mood-now { display: flex; gap: 12px; align-items: center; }
+.mood-now .big-emoji { font-size: 40px; }
+.note { font-family: var(--hand); font-size: 23px; line-height: 1.15; color: var(--accent); }
+
+.qcard { background: var(--accent-soft); border-color: transparent; }
+.qcard .q { font-size: 20px; font-weight: 600; line-height: 1.3; }
+.answer { border-left: 3px solid var(--accent); padding-left: 10px; }
+.answer.them { border-left-color: var(--apricot); }
+.answer .who { font-size: 12px; color: var(--muted); }
+
+.deck { border-radius: 22px; padding: 26px 20px; min-height: 200px; display: flex; flex-direction: column; justify-content: center; gap: 10px; text-align: center;
+  background: linear-gradient(150deg, var(--hero1), var(--hero2)); color: var(--hero-ink); }
+.deck .card-text { font-size: 22px; font-weight: 600; line-height: 1.3; }
+.deck .count { color: var(--hero-soft); font-size: 13px; font-variant-numeric: tabular-nums; }
+
+.item { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+.item:last-child { border-bottom: none; }
+.check { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border); background: none; flex: none; display: grid; place-items: center; padding: 0; color: #fff; font-size: 14px; }
+.check.on { background: var(--ok); border-color: var(--ok); }
+.item.done .grow { color: var(--muted); text-decoration: line-through; }
+.by { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.x { border: none; background: none; color: var(--muted); padding: 6px 8px; border-radius: 8px; font-size: 13px; min-height: 32px; }
+.x.armed { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger); font-weight: 600; }
+.list-link { display: flex; align-items: center; gap: 12px; text-align: left; width: 100%; border: 1px solid var(--border); background: var(--surface); border-radius: 16px; padding: 14px 16px; }
+.when { font-size: 13px; font-weight: 600; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.when.today { color: var(--accent); }
+.past { opacity: .6; }
+
+/* чат */
+#tab-chat.active { min-height: calc(100vh - 140px); }
+.msgs { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.day-sep { text-align: center; font-size: 12px; color: var(--muted); margin: 10px 0 4px; }
+.bubble { max-width: 80%; padding: 8px 12px; border-radius: 18px; font-size: 16px; overflow-wrap: anywhere; display: flex; flex-direction: column; }
+.bubble.me { align-self: flex-end; background: var(--accent); color: var(--on-accent); border-bottom-right-radius: 6px; }
+.bubble.them { align-self: flex-start; background: var(--bubble-them); border-bottom-left-radius: 6px; }
+.bubble time { font-size: 11px; opacity: .7; align-self: flex-end; font-variant-numeric: tabular-nums; }
+.thinking { align-self: center; text-align: center; color: var(--accent); font-family: var(--hand); font-size: 22px; padding: 4px 0; }
+.thinking time { display: block; font-family: var(--font); font-size: 11px; color: var(--muted); }
+.composer { position: sticky; bottom: calc(66px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 8px; align-items: flex-end;
+  background: var(--bg); padding-block: 8px; }
+.composer textarea { min-height: 44px; max-height: 120px; border-radius: 22px; padding: 10px 14px; }
+.composer .btn { flex: none; width: 48px; padding: 0; font-size: 18px; }
+
+/* нижняя панель */
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--surface); border-top: 1px solid var(--border); display: flex; justify-content: center;
+  padding: 0 max(4px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(4px, env(safe-area-inset-left, 0px)); }
+.tabbar button { position: relative; flex: 0 1 110px; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 8px 2px 8px; border: none; background: none; color: var(--muted); font-size: 11px; }
+.tabbar .ico { font-size: 21px; line-height: 1; filter: grayscale(.9); opacity: .7; }
+.tabbar [aria-current="page"] { color: var(--accent); font-weight: 600; }
+.tabbar [aria-current="page"] .ico { filter: none; opacity: 1; }
+.tabbar .dot { position: absolute; top: 6px; left: calc(50% + 8px); width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); z-index: 9; background: var(--text); color: var(--bg);
+  border-radius: 12px; padding: 10px 14px; max-width: calc(100% - 32px); font-size: 14px; box-shadow: 0 6px 20px rgba(0,0,0,.2); }
+.toast.error { background: var(--danger); color: #fff; }
+.empty { text-align: center; color: var(--muted); padding: 18px 8px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<main class="wrap">
+  <div id="banner" class="banner" hidden></div>
+
+  <!-- Мы -->
+  <section class="tab active" id="tab-home" aria-label="Мы">
+    <div class="hero" id="hero">
+      <span class="names" id="hero-names">Вы вдвоём</span>
+      <div id="hero-days" hidden><div class="days" id="days-num">0</div><div class="days-word" id="days-word">дней вместе</div></div>
+      <div id="hero-set" class="row" style="flex-wrap:wrap">
+        <span class="days-word" style="flex-basis:100%">Когда начались ваши отношения?</span>
+        <input type="date" id="start-date" aria-label="Дата начала отношений" style="flex:1 1 160px">
+        <button class="btn" id="start-save">Сохранить</button>
+      </div>
+      <button class="btn" id="start-edit" hidden>Изменить дату</button>
+    </div>
+
+    <div class="card" id="invite-card" hidden>
+      <b>Пригласите партнёра</b>
+      <p class="hint">Партнёр открывает эту же страницу и сразу видит ваши общие даты, списки и чат. Пригласите его через кнопку «Поделиться» вверху страницы и выберите доступ с правом редактирования. Тогда он сможет отмечать настроение и писать вам.</p>
+    </div>
+
+    <div class="label" id="partner-label">Партнёр</div>
+    <div class="card" id="partner-card">
+      <div class="mood-now"><span class="big-emoji" id="p-mood">💭</span>
+        <div class="grow"><b id="p-mood-label">Пока без отметки</b><div class="note" id="p-note" hidden></div><div class="hint" id="p-when"></div></div></div>
+      <button class="btn soft" id="thinking">Думаю о тебе 💭</button>
+    </div>
+
+    <div class="label">Моё настроение</div>
+    <div class="card">
+      <div class="chips" id="moods" role="group" aria-label="Настроение"></div>
+      <input type="text" id="mood-note" maxlength="140" placeholder="Пара слов о том, как прошёл день…" aria-label="Заметка к настроению">
+      <div class="row"><input type="text" id="nickname" maxlength="30" placeholder="Как вас называть" aria-label="Ваше имя"><button class="btn" id="nick-save">ОК</button></div>
+    </div>
+
+    <div id="next-event"></div>
+    <button class="list-link" data-goto="questions" style="background:var(--accent);border-color:var(--accent);color:var(--on-accent)">
+      <span class="big-emoji">💬</span><span class="grow"><b>Вопрос дня</b><br><span id="q-teaser" style="opacity:.9"></span></span><span>›</span></button>
+  </section>
+
+  <!-- Даты -->
+  <section class="tab" id="tab-dates" aria-label="Даты">
+    <div class="head"><h1>Важные даты</h1></div>
+    <p class="sub">Годовщины, дни рождения и планы. Годовщина и круглые даты считаются сами.</p>
+    <form class="card" id="event-form">
+      <input type="text" id="ev-title" maxlength="80" placeholder="Например, день рождения Ани" aria-label="Название">
+      <input type="date" id="ev-date" aria-label="Дата">
+      <div class="chips" id="ev-emojis" role="group" aria-label="Значок"></div>
+      <label class="row"><input type="checkbox" id="ev-yearly" checked style="width:20px;height:20px;accent-color:var(--accent)"> Повторять каждый год</label>
+      <button class="btn primary">Добавить дату</button>
+    </form>
+    <div id="events"></div>
+  </section>
+
+  <!-- Вопросы -->
+  <section class="tab" id="tab-questions" aria-label="Вопросы">
+    <div class="head"><h1>Вопросы и игры</h1></div>
+    <div class="seg" role="group" aria-label="Раздел">
+      <button data-qtab="daily" aria-pressed="true">Вопрос дня</button>
+      <button data-qtab="games" aria-pressed="false">Игры</button>
+      <button data-qtab="archive" aria-pressed="false">Архив</button>
+    </div>
+    <div id="q-daily" class="tab active" style="gap:12px">
+      <div class="card qcard"><span class="label" id="q-cat" style="margin:0"></span><div class="q" id="q-text"></div></div>
+      <div id="q-answer-form" class="card">
+        <p id="q-locked" class="hint" hidden></p>
+        <textarea id="q-input" maxlength="1000" placeholder="Ваш ответ…" aria-label="Ваш ответ"></textarea>
+        <button class="btn primary" id="q-send">Ответить</button>
+      </div>
+      <div id="q-answers" class="card" hidden></div>
+      <p class="hint">Новый вопрос каждый день, у вас обоих он одинаковый. Ответ партнёра откроется, когда ответите вы.</p>
+    </div>
+    <div id="q-games" class="tab" style="gap:12px"></div>
+    <div id="q-archive" class="tab" style="gap:12px"></div>
+  </section>
+
+  <!-- Списки -->
+  <section class="tab" id="tab-lists" aria-label="Списки">
+    <div id="lists-index" style="display:flex;flex-direction:column;gap:12px">
+      <div class="head"><h1>Списки</h1></div>
+      <p class="sub">Желания, идеи для свиданий, фильмы — общие на двоих.</p>
+      <div id="lists" style="display:flex;flex-direction:column;gap:10px"></div>
+      <form class="card" id="list-form">
+        <div class="row"><input type="text" id="list-title" maxlength="60" placeholder="Новый список" aria-label="Название списка"><button class="btn primary">Создать</button></div>
+        <div class="chips" id="list-templates"></div>
+      </form>
+    </div>
+    <div id="list-view" hidden style="display:flex;flex-direction:column;gap:12px">
+      <div class="head"><button class="btn ghost" id="list-back">‹ Списки</button><button class="x" id="list-del">Удалить список</button></div>
+      <h1 id="list-name" style="font-size:24px"></h1>
+      <div class="card" id="items" style="gap:0;padding-block:4px"></div>
+      <form class="row" id="item-form"><input type="text" id="item-text" maxlength="200" placeholder="Новый пункт…" aria-label="Новый пункт"><button class="btn primary" style="width:48px;padding:0">＋</button></form>
+    </div>
+  </section>
+
+  <!-- Чат -->
+  <section class="tab" id="tab-chat" aria-label="Чат">
+    <div class="head"><h1 id="chat-title">Чат</h1><span class="sub" id="chat-mood"></span></div>
+    <div class="msgs" id="msgs"></div>
+    <form class="composer" id="chat-form">
+      <textarea id="chat-input" rows="1" maxlength="2000" placeholder="Сообщение…" aria-label="Сообщение"></textarea>
+      <button class="btn primary" aria-label="Отправить">➤</button>
+    </form>
+  </section>
+</main>
+
+<nav class="tabbar" aria-label="Разделы">
+  <button data-tab="home" aria-current="page"><span class="ico">💞</span><span>Мы</span></button>
+  <button data-tab="dates"><span class="ico">📅</span><span>Даты</span></button>
+  <button data-tab="questions"><span class="ico">💬</span><span>Вопросы</span></button>
+  <button data-tab="lists"><span class="ico">📝</span><span>Списки</span></button>
+  <button data-tab="chat"><span class="ico">💌</span><span>Чат</span><i class="dot" id="chat-dot" hidden></i></button>
+</nav>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+"use strict";
+// ─── Контент ────────────────────────────────────────────────────────────────
+const QUESTIONS = [
+  ["Знакомство","Что ты подумал(а) обо мне при первой встрече?"],["Знакомство","Какой момент наших отношений ты вспоминаешь чаще всего?"],
+  ["Знакомство","Когда ты понял(а), что я тебе по-настоящему нравлюсь?"],["Глубокие","Что для тебя значит чувствовать себя любимым(ой)?"],
+  ["Глубокие","Чего ты боишься больше всего в отношениях?"],["Глубокие","За что ты благодарен(на) мне на этой неделе?"],
+  ["Глубокие","Какая моя привычка тебя больше всего умиляет?"],["Глубокие","Есть ли что-то, о чём тебе сложно со мной говорить?"],
+  ["Глубокие","Как мне лучше поддержать тебя, когда тебе плохо?"],["Будущее","Где ты видишь нас через пять лет?"],
+  ["Будущее","Какое путешествие ты хочешь совершить вместе?"],["Будущее","Какую традицию ты хотел(а) бы завести вместе?"],
+  ["Будущее","Каким был бы наш идеальный выходной через 10 лет?"],["Будущее","Чему новому ты хочешь научиться вместе со мной?"],
+  ["Весёлые","Если бы мы были героями фильма, какой это был бы жанр?"],["Весёлые","Какую суперсилу ты бы мне дал(а)?"],
+  ["Весёлые","Какое блюдо описывает наши отношения?"],["Весёлые","Какая песня — «наша»?"],
+  ["Весёлые","Что бы ты сделал(а), если бы мы поменялись телами на день?"],["Весёлые","Какое самое странное свидание ты хочешь устроить?"],
+  ["Близость","Какой мой жест заботы тебе особенно приятен?"],["Близость","Когда ты чувствуешь себя ближе всего ко мне?"],
+  ["Близость","Какой комплимент от меня ты запомнил(а) надолго?"],["Близость","Что тебе хочется чаще делать вместе?"],
+  ["Ценности","Что для тебя самое важное в семье?"],["Ценности","Как ты хочешь, чтобы мы решали ссоры?"],
+  ["Ценности","Какой совет ты дал(а) бы паре, которая только начала встречаться?"],["Ценности","Что ты хотел(а) бы, чтобы я знал(а) о тебе лучше?"],
+  ["Ценности","Какое наше общее достижение ты ценишь больше всего?"],["Ценности","За что ты гордишься нами?"],
+];
+const DECKS = [
+  { id: "tot", title: "Это или то", emoji: "⚖️", cards: ["Море или горы?","Завтрак в постель или ужин при свечах?","Кино дома или поход в кино?","Сюрприз или заранее спланированный отдых?","Кошка или собака?","Рассвет или закат?","Путешествие на машине или на самолёте?","Готовить вместе или заказать доставку?","Танцевать или петь караоке?","Письмо от руки или голосовое сообщение?","Зима или лето?","Настолки или видеоигры?"] },
+  { id: "who", title: "Кто из нас скорее…", emoji: "👉", cards: ["…опоздает на свидание?","…заплачет на фильме?","…съест последний кусочек торта?","…потеряет ключи?","…первым скажет «прости»?","…устроит спонтанное путешествие?","…заснёт во время фильма?","…заведёт разговор с незнакомцем?","…забудет важную дату?","…купит что-то ненужное на распродаже?","…станет знаменитым?","…выиграет в споре?"] },
+  { id: "never", title: "Я никогда не…", emoji: "🙊", cards: ["…не ревновал(а) тебя к другу или подруге.","…не притворялся(ась), что мне нравится твой подарок.","…не перечитывал(а) нашу переписку.","…не рассказывал(а) о нас маме подробнее, чем ты думаешь.","…не планировал(а) нашу свадьбу в голове.","…не ел(а) твою еду тайком.","…не смотрел(а) сериал дальше без тебя.","…не хотел(а) сказать «люблю» раньше, чем сказал(а)."] },
+  { id: "dreams", title: "Мечты", emoji: "🌠", cards: ["Если бы у нас был год без работы — что бы мы делали?","Опиши дом нашей мечты.","Какое безумное приключение ты хочешь пережить вместе?","Чему мы могли бы научиться вместе в этом году?","Какой праздник мы устроим через 10 лет?","В какой стране ты хотел(а) бы пожить вместе?","Каким будет наше идеальное утро в старости?","Какой навык ты хочешь, чтобы я тебе преподал(а)?"] },
+];
+const MOODS = [["🥰","Влюблён(а)"],["😊","Хорошо"],["😌","Спокойно"],["😴","Устал(а)"],["😔","Грустно"],["😤","Злюсь"],["🤒","Болею"],["🤗","Хочу обнимашек"]];
+const EVENT_EMOJIS = ["📅","💍","🎂","❤️","✈️","🍷","🎁","🎉"];
+const LIST_TEMPLATES = [["🎁","Список желаний"],["💡","Идеи для свиданий"],["🎬","Фильмы посмотреть"],["✈️","Куда поехать"],["🛒","Покупки"],["🏡","Дела по дому"]];
+
+// ─── Даты ───────────────────────────────────────────────────────────────────
+const pad = (n) => String(n).padStart(2, "0");
+const parseISO = (s) => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+const toISO = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const today = () => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate()); };
+const daysBetween = (a, b) => Math.round((Date.UTC(b.getFullYear(), b.getMonth(), b.getDate()) - Date.UTC(a.getFullYear(), a.getMonth(), a.getDate())) / 864e5);
+function plural(n, one, few, many) { const a = Math.abs(n) % 100, l = a % 10; if (a > 10 && a < 20) return many; if (l === 1) return one; if (l >= 2 && l <= 4) return few; return many; }
+const pluralDays = (n) => plural(n, "день", "дня", "дней");
+function relDays(n) { if (n === 0) return "сегодня"; if (n === 1) return "завтра"; if (n > 0) return `через ${n} ${pluralDays(n)}`; return `${-n} ${pluralDays(-n)} назад`; }
+function nextOcc(iso, yearly, from = today()) {
+  const d = parseISO(iso); if (!yearly) return d;
+  const c = new Date(from.getFullYear(), d.getMonth(), d.getDate()); if (c < from) c.setFullYear(from.getFullYear() + 1); return c;
+}
+const fmtDate = (iso) => parseISO(iso).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
+const fmtTime = (ms) => new Date(ms).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+function dayLabel(ms) {
+  const d = new Date(ms), t = today(), dd = new Date(d.getFullYear(), d.getMonth(), d.getDate()), diff = daysBetween(dd, t);
+  if (diff === 0) return "Сегодня"; if (diff === 1) return "Вчера"; return d.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+}
+function ago(ms) {
+  if (!ms) return ""; const m = Math.round((Date.now() - ms) / 6e4);
+  if (m < 1) return "только что"; if (m < 60) return `${m} мин назад`; const h = Math.round(m / 60); if (h < 24) return `${h} ч назад`; return `${Math.round(h / 24)} дн назад`;
+}
+const dayKey = () => toISO(today());
+const dayIndex = () => daysBetween(new Date(2024, 0, 1), today());
+const todaysQ = () => dayIndex() % QUESTIONS.length;
+
+// ─── DOM-помощники (пользовательский текст только через textContent) ────────
+const $ = (id) => document.getElementById(id);
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k === "class") el.className = v; else if (k === "text") el.textContent = v;
+    else if (k.startsWith("on")) el.addEventListener(k.slice(2), v); else el.setAttribute(k, v === true ? "" : v);
+  }
+  for (const k of kids.flat()) if (k != null && k !== false) el.append(k.nodeType ? k : document.createTextNode(String(k)));
+  return el;
+}
+let toastTimer;
+function toast(msg, error) { const t = $("toast"); t.textContent = msg; t.className = "toast" + (error ? " error" : ""); t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.hidden = true), 3200); }
+// Двойное нажатие вместо confirm(): первое «взводит», второе выполняет.
+function armed(btn, label, action) {
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (btn.classList.contains("armed")) { action(); return; }
+    btn.classList.add("armed"); const old = btn.textContent; btn.textContent = label;
+    setTimeout(() => { btn.classList.remove("armed"); btn.textContent = old; }, 3000);
+  });
+}
+
+// ─── Состояние ──────────────────────────────────────────────────────────────
+const S = { db: null, user: null, me: null, canWrite: true, loaded: false, couple: {}, people: {}, names: {}, events: [], answers: [], lists: [], items: [], messages: [],
+  tab: "home", qtab: "daily", openList: null, deck: null, deckOrder: [], deckIdx: 0, seenChat: 0 };
+const partnerId = () => Object.keys(S.people).find((id) => id !== S.me) || null;
+const personName = (id) => (id && S.people[id]?.nickname) || (id && S.names[id]) || (id === S.me ? "Я" : "Партнёр");
+
+async function resolveNames() {
+  if (!S.user) return;
+  const ids = [...new Set([...Object.keys(S.people), S.me].filter(Boolean))];
+  if (!ids.length) return;
+  const ps = await S.user.profiles(ids);
+  let changed = false;
+  for (const id of ids) { const n = ps[id]?.name || ""; if (S.names[id] !== n) { S.names[id] = n; changed = true; } }
+  if (changed) render();
+}
+
+async function write(fn) {
+  if (!S.db) { toast("Нет подключения к общей базе. Откройте страницу в claude.ai и войдите.", true); return false; }
+  if (!S.canWrite) { toast("У вас доступ только для просмотра. Попросите владельца дать право редактирования.", true); return false; }
+  try { await fn(S.db); return true; }
+  catch (e) {
+    if (e && e.code === "invalid_argument") { S.canWrite = false; showBanner(); toast("Не получилось сохранить: у вас доступ только для просмотра.", true); }
+    else if (e && e.code === "quota_exceeded") toast("Место в базе закончилось. Удалите старые списки или сообщения.", true);
+    else toast("Не получилось сохранить. Проверьте интернет и попробуйте ещё раз.", true);
+    return false;
+  }
+}
+async function savePerson(patch) {
+  const cur = S.people[S.me] || {};
+  return write((db) => db.doc("people/" + S.me).set({ ...cur, ...patch }));
+}
+function showBanner() {
+  const b = $("banner");
+  if (!S.db) { b.textContent = S.loaded ? "Общая база недоступна. Откройте страницу по ссылке в claude.ai и войдите в аккаунт." : ""; b.hidden = !S.loaded; return; }
+  if (!S.canWrite) { b.textContent = "Вы можете только смотреть. Чтобы отмечать настроение и писать, попросите владельца пригласить вас с правом редактирования."; b.hidden = false; return; }
+  b.hidden = true;
+}
+
+// ─── Отрисовка ──────────────────────────────────────────────────────────────
+function render() {
+  renderHome(); renderEvents(); renderQuestions(); renderLists(); renderChat(); showBanner();
+}
+
+function renderHome() {
+  const pid = partnerId(), me = S.people[S.me] || {}, p = pid ? S.people[pid] : null;
+  $("hero-names").textContent = pid ? `${personName(S.me)} и ${personName(pid)}` : personName(S.me) === "Я" ? "Вы вдвоём" : `${personName(S.me)} и ♥`;
+  const start = S.couple.startedOn, editing = $("hero-set").dataset.editing === "1";
+  $("hero-days").hidden = !start || editing; $("start-edit").hidden = !start || editing; $("hero-set").hidden = !!start && !editing;
+  if (start) { const n = daysBetween(parseISO(start), today()); $("days-num").textContent = Math.max(n, 0).toLocaleString("ru-RU"); $("days-word").textContent = `${pluralDays(n)} вместе`; }
+  if (!$("start-date").value && start) $("start-date").value = start;
+
+  $("invite-card").hidden = !S.loaded || !!pid;
+  $("partner-label").textContent = pid ? `Настроение: ${personName(pid)}` : "Партнёр";
+  $("partner-card").hidden = !pid;
+  if (p) {
+    $("p-mood").textContent = p.mood || "💭";
+    $("p-mood-label").textContent = p.mood ? (MOODS.find((m) => m[0] === p.mood)?.[1] || "") : "Пока без отметки";
+    $("p-note").hidden = !p.note; $("p-note").textContent = p.note ? `«${p.note}»` : "";
+    $("p-when").textContent = ago(p.moodAt);
+  }
+  const moods = $("moods"); moods.replaceChildren(...MOODS.map(([e, l]) => h("button", { class: "chip", type: "button", "aria-pressed": String(me.mood === e), onclick: () => setMood(e) }, `${e} ${l}`)));
+  if (document.activeElement !== $("mood-note") && $("mood-note").dataset.dirty !== "1") $("mood-note").value = me.note || "";
+  if (document.activeElement !== $("nickname")) $("nickname").value = me.nickname || "";
+
+  const up = upcoming().filter((r) => r.days >= 0)[0];
+  $("next-event").replaceChildren(...(up ? [h("div", { class: "label" }, "Ближайшая дата"),
+    h("button", { class: "list-link", onclick: () => go("dates") }, h("span", { class: "big-emoji" }, up.emoji), h("span", { class: "grow" }, h("b", { text: up.title }), h("br"), h("span", { class: "hint" }, relDays(up.days)))) ] : []));
+  const mine = S.answers.find((a) => a.day === dayKey() && a.by === S.me);
+  $("q-teaser").textContent = mine ? "Вы уже ответили сегодня" : QUESTIONS[todaysQ()][1];
+}
+
+function upcoming() {
+  const now = today();
+  const rows = S.events.map((e) => {
+    const next = nextOcc(e.date, e.yearly, now), years = next.getFullYear() - parseISO(e.date).getFullYear();
+    return { id: e.id, emoji: e.emoji || "📅", title: e.title, sub: (e.yearly && years > 0 ? `${years}-я годовщина · ` : "") + fmtDate(e.date), days: daysBetween(now, next), ev: e };
+  });
+  if (S.couple.startedOn) {
+    const s = S.couple.startedOn, next = nextOcc(s, true, now), years = next.getFullYear() - parseISO(s).getFullYear();
+    if (years > 0) rows.push({ id: "anniv", emoji: "💞", title: "Наша годовщина", sub: `${years} ${plural(years, "год", "года", "лет")} вместе`, days: daysBetween(now, next) });
+    const together = daysBetween(parseISO(s), now), m = [100, 200, 300, 500, 1000, 1500, 2000, 2500, 3000, 5000, 10000].find((x) => x >= together);
+    if (m) rows.push({ id: "ms", emoji: "✨", title: `${m.toLocaleString("ru-RU")} дней вместе`, sub: fmtDate(toISO(new Date(now.getTime() + (m - together) * 864e5))), days: m - together });
+  }
+  return rows.sort((a, b) => (a.days < 0) !== (b.days < 0) ? (a.days < 0 ? 1 : -1) : a.days < 0 ? b.days - a.days : a.days - b.days);
+}
+
+function renderEvents() {
+  const rows = upcoming(), box = $("events");
+  if (!rows.length) { box.replaceChildren(h("div", { class: "card empty" }, S.loaded ? "Добавьте первую дату: годовщину, день рождения или ближайшее свидание." : "Загружаем даты…")); return; }
+  const out = []; let pastShown = false;
+  for (const r of rows) {
+    if (r.days < 0 && !pastShown) { out.push(h("div", { class: "label" }, "Прошедшие")); pastShown = true; }
+    const del = r.ev ? h("button", { class: "x", type: "button", "aria-label": "Удалить" }, "✕") : null;
+    if (del) armed(del, "Удалить?", () => write((db) => db.doc("events/" + r.ev.id).delete()));
+    out.push(h("div", { class: "card" + (r.days < 0 ? " past" : "") }, h("div", { class: "row" }, h("span", { class: "big-emoji" }, r.emoji),
+      h("div", { class: "grow" }, h("b", { text: r.title }), h("div", { class: "hint", text: r.sub })),
+      h("span", { class: "when" + (r.days === 0 ? " today" : "") }, relDays(r.days)), del)));
+  }
+  box.replaceChildren(h("div", { style: "display:flex;flex-direction:column;gap:10px" }, out));
+}
+
+function renderQuestions() {
+  for (const b of document.querySelectorAll("[data-qtab]")) b.setAttribute("aria-pressed", String(b.dataset.qtab === S.qtab));
+  for (const id of ["daily", "games", "archive"]) $("q-" + id).classList.toggle("active", S.qtab === id);
+  const [cat, text] = QUESTIONS[todaysQ()], pid = partnerId();
+  $("q-cat").textContent = cat; $("q-text").textContent = text;
+  const todays = S.answers.filter((a) => a.day === dayKey());
+  const mine = todays.find((a) => a.by === S.me), theirs = todays.find((a) => a.by !== S.me);
+  $("q-answer-form").hidden = !!mine;
+  $("q-locked").hidden = !theirs; $("q-locked").textContent = theirs ? `🔒 ${personName(theirs.by)} уже ответил(а). Ответьте, чтобы увидеть ответ.` : "";
+  $("q-answers").hidden = !mine;
+  if (mine) $("q-answers").replaceChildren(
+    h("div", { class: "answer" }, h("div", { class: "who" }, "Ваш ответ"), h("div", { text: mine.body })),
+    h("div", { class: "answer them" }, h("div", { class: "who", text: pid ? `Ответ: ${personName(pid)}` : "Партнёр" }),
+      theirs ? h("div", { text: theirs.body }) : h("div", { class: "hint" }, pid ? "Ждём ответа 💭" : "Партнёр ещё не присоединился.")));
+
+  // Игры
+  const g = $("q-games");
+  if (!S.deck) {
+    g.replaceChildren(h("p", { class: "hint" }, "Играйте вместе вживую или по видеосвязи: один читает карточку, оба отвечают."),
+      ...DECKS.map((d) => h("button", { class: "list-link", onclick: () => startDeck(d.id) }, h("span", { class: "big-emoji" }, d.emoji),
+        h("span", { class: "grow" }, h("b", {}, d.title), h("br"), h("span", { class: "hint" }, `${d.cards.length} карточек`)), h("span", {}, "›"))));
+  } else {
+    const d = DECKS.find((x) => x.id === S.deck), done = S.deckIdx >= S.deckOrder.length;
+    g.replaceChildren(h("div", { class: "label" }, `${d.emoji} ${d.title}`),
+      h("div", { class: "deck", "aria-live": "polite" }, h("div", { class: "card-text" }, done ? "Колода закончилась 🎉" : S.deckOrder[S.deckIdx]),
+        done ? null : h("div", { class: "count" }, `${S.deckIdx + 1} из ${S.deckOrder.length}`)),
+      done ? h("button", { class: "btn primary block", onclick: () => startDeck(d.id) }, "Перемешать и сыграть ещё")
+           : h("button", { class: "btn primary block", onclick: () => { S.deckIdx++; renderQuestions(); } }, "Следующая карточка"),
+      h("button", { class: "btn ghost", onclick: () => { S.deck = null; renderQuestions(); } }, "‹ Все игры"));
+  }
+
+  // Архив: только дни, где вы ответили
+  const byDay = new Map();
+  for (const a of S.answers) { const e = byDay.get(a.day) || { day: a.day, q: a.q }; if (a.by === S.me) e.mine = a; else e.theirs = a; byDay.set(a.day, e); }
+  const arch = [...byDay.values()].filter((e) => e.mine).sort((a, b) => b.day.localeCompare(a.day));
+  $("q-archive").replaceChildren(...(arch.length ? arch.map((e) => h("div", { class: "card" }, h("div", { class: "hint", text: fmtDate(e.day) }),
+    h("b", { text: QUESTIONS[e.q]?.[1] || "" }), h("div", { class: "answer" }, h("div", { class: "who" }, "Вы"), h("div", { text: e.mine.body })),
+    h("div", { class: "answer them" }, h("div", { class: "who", text: e.theirs ? personName(e.theirs.by) : "Партнёр" }), h("div", { class: e.theirs ? "" : "hint", text: e.theirs ? e.theirs.body : "ещё не ответил(а)" }))))
+    : [h("div", { class: "card empty" }, "Здесь появятся вопросы, на которые вы ответили.")]));
+}
+function startDeck(id) {
+  const cards = [...DECKS.find((d) => d.id === id).cards];
+  for (let i = cards.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [cards[i], cards[j]] = [cards[j], cards[i]]; }
+  S.deck = id; S.deckOrder = cards; S.deckIdx = 0; renderQuestions();
+}
+
+function renderLists() {
+  const open = S.openList && S.lists.find((l) => l.id === S.openList);
+  if (S.openList && !open && S.loaded) S.openList = null;
+  $("lists-index").hidden = !!open; $("list-view").hidden = !open;
+  if (!open) {
+    $("lists").replaceChildren(...(S.lists.length ? S.lists.map((l) => {
+      const its = S.items.filter((i) => i.list === l.id), done = its.filter((i) => i.done).length;
+      return h("button", { class: "list-link", onclick: () => { S.openList = l.id; renderLists(); } }, h("span", { class: "big-emoji" }, l.emoji || "📝"),
+        h("span", { class: "grow" }, h("b", { text: l.title }), h("br"), h("span", { class: "hint" }, its.length ? `${done} из ${its.length} выполнено` : "пусто")), h("span", {}, "›"));
+    }) : [h("div", { class: "card empty" }, S.loaded ? "Пока нет списков. Создайте свой или начните с готового ниже." : "Загружаем списки…")]));
+    $("list-templates").replaceChildren(...LIST_TEMPLATES.filter(([, t]) => !S.lists.some((l) => l.title === t))
+      .map(([e, t]) => h("button", { class: "chip", type: "button", onclick: () => createList(t, e) }, `${e} ${t}`)));
+    return;
+  }
+  $("list-name").textContent = `${open.emoji || "📝"} ${open.title}`;
+  const its = S.items.filter((i) => i.list === open.id).sort((a, b) => (a.done - b.done) || (a.at - b.at));
+  $("items").replaceChildren(...(its.length ? its.map((it) => {
+    const del = h("button", { class: "x", type: "button", "aria-label": "Удалить пункт" }, "✕");
+    armed(del, "Удалить?", () => write((db) => db.doc("items/" + it.id).delete()));
+    return h("div", { class: "item" + (it.done ? " done" : "") },
+      h("button", { class: "check" + (it.done ? " on" : ""), type: "button", "aria-label": it.done ? "Снять отметку" : "Отметить", onclick: () => write((db) => db.doc("items/" + it.id).update({ done: !it.done })) }, it.done ? "✓" : ""),
+      h("span", { class: "grow", text: it.text }), h("span", { class: "by", text: it.by === S.me ? "я" : personName(it.by) }), del);
+  }) : [h("p", { class: "empty" }, "Список пуст. Добавьте первый пункт ниже.")]));
+}
+async function createList(title, emoji) {
+  const ref = S.db && S.db.collection("lists").doc();
+  if (await write(() => ref.set({ title, emoji, at: Date.now(), by: S.me }))) { S.openList = ref.id; renderLists(); }
+}
+
+function renderChat() {
+  const pid = partnerId();
+  $("chat-title").textContent = pid ? personName(pid) : "Чат";
+  $("chat-mood").textContent = pid && S.people[pid]?.mood ? `сейчас ${S.people[pid].mood}` : "";
+  const msgs = [...S.messages].sort((a, b) => a.at - b.at), box = $("msgs");
+  const nearBottom = window.innerHeight + window.scrollY >= document.body.scrollHeight - 120;
+  const out = []; let lastDay = "";
+  for (const m of msgs) {
+    const dl = dayLabel(m.at); if (dl !== lastDay) { out.push(h("div", { class: "day-sep" }, dl)); lastDay = dl; }
+    if (m.kind === "thinking") out.push(h("div", { class: "thinking" }, m.by === S.me ? "Вы думаете о партнёре 💭" : `${personName(m.by)} думает о вас 💭`, h("time", {}, fmtTime(m.at))));
+    else out.push(h("div", { class: "bubble " + (m.by === S.me ? "me" : "them") }, h("span", { text: m.body }), h("time", {}, fmtTime(m.at))));
+  }
+  box.replaceChildren(...(out.length ? out : [h("div", { class: "empty" }, S.loaded ? "Напишите что-нибудь приятное 💌" : "Загружаем сообщения…")]));
+  const lastTheirs = msgs.filter((m) => m.by !== S.me).pop();
+  if (S.tab === "chat") { S.seenChat = lastTheirs?.at || S.seenChat; try { localStorage.setItem("remedy-seen", String(S.seenChat)); } catch {} }
+  $("chat-dot").hidden = !(lastTheirs && lastTheirs.at > S.seenChat);
+  if (S.tab === "chat" && nearBottom) requestAnimationFrame(() => window.scrollTo(0, document.body.scrollHeight));
+}
+
+// ─── Действия ───────────────────────────────────────────────────────────────
+function go(tab) {
+  S.tab = tab;
+  for (const b of document.querySelectorAll("[data-tab]")) {
+    if (b.dataset.tab === tab) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+  }
+  for (const s of document.querySelectorAll("main > .tab")) s.classList.toggle("active", s.id === "tab-" + tab);
+  try { localStorage.setItem("remedy-tab", tab); } catch {}
+  window.scrollTo(0, tab === "chat" ? document.body.scrollHeight : 0);
+  if (tab === "chat") renderChat();
+}
+async function setMood(e) { const note = $("mood-note").value.trim(); if (await savePerson({ mood: e, note, moodAt: Date.now() })) { $("mood-note").dataset.dirty = ""; toast("Настроение отмечено"); } }
+
+document.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => go(b.dataset.tab)));
+document.querySelectorAll("[data-goto]").forEach((b) => b.addEventListener("click", () => go(b.dataset.goto)));
+document.querySelectorAll("[data-qtab]").forEach((b) => b.addEventListener("click", () => { S.qtab = b.dataset.qtab; renderQuestions(); }));
+
+$("start-save").addEventListener("click", async () => {
+  const v = $("start-date").value; if (!v) return toast("Выберите дату", true);
+  if (parseISO(v) > today()) return toast("Дата не может быть в будущем", true);
+  if (await write((db) => db.doc("couple/main").set({ ...S.couple, startedOn: v }))) { $("hero-set").dataset.editing = ""; render(); }
+});
+$("start-edit").addEventListener("click", () => { $("hero-set").dataset.editing = "1"; renderHome(); });
+$("mood-note").addEventListener("input", () => ($("mood-note").dataset.dirty = "1"));
+$("mood-note").addEventListener("change", async () => {
+  const me = S.people[S.me] || {}; const note = $("mood-note").value.trim();
+  if (note === (me.note || "")) return;
+  if (await savePerson({ note, moodAt: Date.now() })) { $("mood-note").dataset.dirty = ""; toast("Заметка сохранена"); }
+});
+$("nick-save").addEventListener("click", async () => { if (await savePerson({ nickname: $("nickname").value.trim() })) toast("Имя сохранено"); });
+$("thinking").addEventListener("click", async () => {
+  if (await write((db) => db.collection("messages").add({ body: "Думаю о тебе 💭", kind: "thinking", by: S.me, at: Date.now() }))) toast("Отправлено 💕");
+});
+
+$("ev-emojis").replaceChildren(...EVENT_EMOJIS.map((e, i) => h("button", { class: "chip", type: "button", "aria-pressed": String(i === 0), "data-emoji": e,
+  onclick: (ev) => { for (const c of $("ev-emojis").children) c.setAttribute("aria-pressed", String(c === ev.currentTarget)); } }, e)));
+$("event-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const title = $("ev-title").value.trim(), date = $("ev-date").value;
+  if (!title) return toast("Введите название", true); if (!date) return toast("Выберите дату", true);
+  const emoji = $("ev-emojis").querySelector('[aria-pressed="true"]')?.dataset.emoji || "📅";
+  if (await write((db) => db.collection("events").add({ title, date, emoji, yearly: $("ev-yearly").checked, by: S.me, at: Date.now() }))) {
+    $("ev-title").value = ""; $("ev-date").value = ""; toast("Дата добавлена");
+  }
+});
+
+$("q-send").addEventListener("click", async () => {
+  const body = $("q-input").value.trim(); if (!body) return toast("Напишите ответ", true);
+  const day = dayKey();
+  if (await write((db) => db.doc(`answers/${day}_${S.me}`).set({ day, q: todaysQ(), by: S.me, body, at: Date.now() }))) $("q-input").value = "";
+});
+
+$("list-form").addEventListener("submit", (ev) => { ev.preventDefault(); const t = $("list-title").value.trim(); if (!t) return toast("Введите название", true); $("list-title").value = ""; createList(t, "📝"); });
+$("list-back").addEventListener("click", () => { S.openList = null; renderLists(); });
+armed($("list-del"), "Точно удалить?", async () => {
+  const id = S.openList, its = S.items.filter((i) => i.list === id);
+  if (await write(async (db) => { for (const i of its) await db.doc("items/" + i.id).delete(); await db.doc("lists/" + id).delete(); })) { S.openList = null; renderLists(); toast("Список удалён"); }
+});
+$("item-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault(); const text = $("item-text").value.trim(); if (!text) return;
+  $("item-text").value = "";
+  if (!(await write((db) => db.collection("items").add({ list: S.openList, text, done: false, by: S.me, at: Date.now() })))) $("item-text").value = text;
+});
+
+$("chat-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault(); const body = $("chat-input").value.trim(); if (!body) return;
+  $("chat-input").value = "";
+  if (!(await write((db) => db.collection("messages").add({ body, kind: "text", by: S.me, at: Date.now() })))) $("chat-input").value = body;
+});
+$("chat-input").addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); $("chat-form").requestSubmit(); } });
+
+// ─── Подключение к общей базе ───────────────────────────────────────────────
+try { S.seenChat = Number(localStorage.getItem("remedy-seen")) || 0; const t = localStorage.getItem("remedy-tab"); if (t && $("tab-" + t)) go(t); } catch {}
+render();
+
+(async () => {
+  const claude = window.claude;
+  const [db, user] = claude?.use ? await Promise.all([claude.use("db"), claude.use("user")]) : [null, null];
+  S.db = db; S.user = user;
+  S.me = user ? await user.id() : null;
+  if (!db || !S.me) { S.db = null; S.loaded = true; render(); return; }
+  const cw = await user.can("data.write"); if (cw === false) S.canWrite = false;
+
+  const timer = setTimeout(() => { if (!S.loaded) { S.loaded = true; toast("Данные пока не загрузились. Проверьте интернет.", true); render(); } }, 10000);
+  const loadedOnce = () => { if (!S.loaded) { S.loaded = true; clearTimeout(timer); } };
+  const onErr = (e) => { if (e?.code !== "revoked") toast("Связь с базой прервалась. Обновите страницу.", true); };
+  const docs = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+  db.doc("couple/main").onSnapshot((d) => { S.couple = d.exists ? d.data() : {}; if (!d.metadata.fromCache) loadedOnce(); render(); }, onErr);
+  db.collection("people").onSnapshot((s) => { const p = {}; for (const d of s.docs) p[d.id] = d.data(); S.people = p; render(); resolveNames(); }, onErr);
+  db.collection("events").onSnapshot((s) => { S.events = docs(s); renderEvents(); renderHome(); }, onErr);
+  db.collection("answers").onSnapshot((s) => { S.answers = docs(s); renderQuestions(); renderHome(); }, onErr);
+  db.collection("lists").orderBy("at").onSnapshot((s) => { S.lists = docs(s); renderLists(); }, onErr);
+  db.collection("items").onSnapshot((s) => { S.items = docs(s); renderLists(); }, onErr);
+  db.collection("messages").orderBy("at", "desc").limit(300).onSnapshot((s) => { S.messages = docs(s); renderChat(); }, onErr);
+
+  // Регистрируем себя в паре, чтобы партнёр видел ваше имя и настроение.
+  const meRef = db.doc("people/" + S.me), mine = await meRef.get().catch(() => null);
+  if (mine && !mine.exists && S.canWrite) { try { await meRef.set({ joinedAt: Date.now() }); } catch (e) { if (e?.code === "invalid_argument") { S.canWrite = false; showBanner(); } } }
+  resolveNames();
+})();
+</script>
