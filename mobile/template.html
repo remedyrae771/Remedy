@@ -939,6 +939,15 @@ $("#backup-save").addEventListener("click", async (e) => {
   const count = txList().filter((t) => t.src !== "demo").length;
   if (!count) { toast("Пока нечего сохранять — добавьте операции"); return; }
   const csv = toCSV();
+  if (!window.claude) { // отдельный сайт (не claude.ai): обычное скачивание файла
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    a.download = `aqsha-${todayISO()}.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    note.textContent = `Файл копии (${count} операций) сохранён в «Загрузки».`; note.hidden = false;
+    return;
+  }
   if (!downloadsNs) { copyBackupAsText(csv, count); return; }
   e.target.disabled = true;
   try {
