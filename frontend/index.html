@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Remedy — учёт финансов</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+<header>
+  <h1>Remedy</h1>
+  <nav>
+    <button data-tab="overview" class="active">Обзор</button>
+    <button data-tab="transactions">Операции</button>
+    <button data-tab="accounts">Счета и банки</button>
+    <button data-tab="categories">Категории</button>
+  </nav>
+  <button id="sync-all" class="primary">⟳ Синхронизировать</button>
+</header>
+
+<div id="toast" hidden></div>
+
+<main>
+  <!-- Обзор -->
+  <section id="tab-overview" class="tab active">
+    <div class="period">
+      <label>С <input type="date" id="ov-from"></label>
+      <label>По <input type="date" id="ov-to"></label>
+      <button data-period="month">Этот месяц</button>
+      <button data-period="prev">Прошлый месяц</button>
+      <button data-period="year">Год</button>
+    </div>
+    <div class="cards">
+      <div class="card income"><span>Доходы</span><b id="sum-income">0</b></div>
+      <div class="card expense"><span>Расходы</span><b id="sum-expense">0</b></div>
+      <div class="card net"><span>Итого</span><b id="sum-net">0</b></div>
+    </div>
+    <div class="charts">
+      <div class="chart-box"><h3>Расходы по категориям</h3><canvas id="chart-categories"></canvas></div>
+      <div class="chart-box"><h3>Доходы и расходы по месяцам</h3><canvas id="chart-months"></canvas></div>
+    </div>
+    <div class="chart-box"><h3>Топ категорий расходов</h3><ul id="top-categories"></ul></div>
+  </section>
+
+  <!-- Операции -->
+  <section id="tab-transactions" class="tab">
+    <form id="tx-form" class="inline-form">
+      <select name="account_id" required></select>
+      <input type="date" name="date" required>
+      <select name="sign"><option value="-1">Расход</option><option value="1">Доход</option></select>
+      <input type="number" name="amount" step="0.01" min="0.01" placeholder="Сумма" required>
+      <input name="description" placeholder="Описание">
+      <select name="category_id"><option value="">Авто-категория</option></select>
+      <button class="primary">Добавить</button>
+    </form>
+    <div class="filters">
+      <input id="f-q" placeholder="Поиск по описанию">
+      <select id="f-account"><option value="">Все счета</option></select>
+      <select id="f-category"><option value="">Все категории</option></select>
+      <select id="f-kind"><option value="">Все</option><option value="income">Доходы</option><option value="expense">Расходы</option></select>
+      <input type="date" id="f-from"> <input type="date" id="f-to">
+    </div>
+    <table>
+      <thead><tr><th>Дата</th><th>Описание</th><th>Счёт</th><th>Категория</th><th class="num">Сумма</th><th></th></tr></thead>
+      <tbody id="tx-body"></tbody>
+    </table>
+  </section>
+
+  <!-- Счета -->
+  <section id="tab-accounts" class="tab">
+    <table>
+      <thead><tr><th>Счёт</th><th>Источник</th><th>Операций</th><th class="num">Баланс*</th><th>Синхронизация</th><th></th></tr></thead>
+      <tbody id="acc-body"></tbody>
+    </table>
+    <p class="hint">* сумма загруженных операций, а не фактический остаток в банке.</p>
+
+    <div class="panels">
+      <div class="panel">
+        <h3>🏦 Подключить банк</h3>
+        <p class="hint">Вы авторизуетесь на сайте банка, после чего операции будут подтягиваться автоматически.</p>
+        <select id="bank-provider"></select>
+        <input id="bank-country" value="DE" maxlength="2" size="3" title="Код страны (ISO)">
+        <button id="bank-load">Найти банки</button>
+        <input id="bank-search" placeholder="Фильтр по названию" hidden>
+        <ul id="bank-list" class="bank-list"></ul>
+      </div>
+      <div class="panel">
+        <h3>📄 Импорт выписки</h3>
+        <p class="hint">CSV или OFX из интернет-банка (Т-Банк, Сбер, Альфа и др.). Повторный импорт не создаёт дублей.</p>
+        <form id="import-form">
+          <input type="file" name="file" accept=".csv,.ofx,.qfx,.txt" required>
+          <select name="account_id"><option value="">➕ Новый счёт</option></select>
+          <button class="primary">Загрузить</button>
+        </form>
+      </div>
+      <div class="panel">
+        <h3>✍️ Счёт вручную</h3>
+        <form id="account-form">
+          <input name="name" placeholder="Наличные" required>
+          <input name="currency" value="RUB" maxlength="3" size="4">
+          <button>Создать</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Категории -->
+  <section id="tab-categories" class="tab">
+    <div class="panels">
+      <div class="panel">
+        <h3>Категории</h3>
+        <form id="cat-form" class="inline-form">
+          <input name="name" placeholder="Название" required>
+          <select name="kind"><option value="expense">Расход</option><option value="income">Доход</option></select>
+          <input type="color" name="color" value="#4a90d9">
+          <button>Добавить</button>
+        </form>
+        <ul id="cat-list" class="simple-list"></ul>
+      </div>
+      <div class="panel">
+        <h3>Правила автокатегоризации</h3>
+        <p class="hint">Если описание операции содержит текст — ей назначается категория.</p>
+        <form id="rule-form" class="inline-form">
+          <input name="pattern" placeholder="Текст в описании" required>
+          <select name="category_id" required></select>
+          <button>Добавить</button>
+        </form>
+        <button id="recategorize">Применить правила ко всем операциям</button>
+        <ul id="rule-list" class="simple-list"></ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
