@@ -160,6 +160,7 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     gap: spacing.sm,
+    boxShadow: '0px 2px 8px rgba(122, 46, 72, 0.05)',
   },
   sectionLabel: {
     fontSize: 13,

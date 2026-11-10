@@ -35,7 +35,10 @@ export function parseUserDate(input: string): string | null {
 }
 
 export function formatDate(iso: string): string {
-  return parseISODate(iso).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+  // «3 июня 2023», без «г.» в конце — короче и не переносится на отдельную строку.
+  return parseISODate(iso)
+    .toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+    .replace(/\s*г\.?$/, '');
 }
 
 export function formatUserDate(iso: string): string {

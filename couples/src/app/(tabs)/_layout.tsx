@@ -1,19 +1,50 @@
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
-import { colors } from '../../theme';
+import { Platform, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colors, radius } from '../../theme';
 
 function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
-  return <Text style={{ fontSize: 22, opacity: focused ? 1 : 0.5 }}>{emoji}</Text>;
+  return (
+    <View
+      style={{
+        width: 52,
+        height: 32,
+        borderRadius: radius.pill,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: focused ? colors.primarySoft : 'transparent',
+      }}
+    >
+      <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.55 }}>{emoji}</Text>
+    </View>
+  );
 }
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
+  // Под полоской жестов iPhone оставляем её высоту плюс воздух; без неё — просто воздух.
+  const bottomPad = Math.max(insets.bottom, 0) + (Platform.OS === 'web' ? 14 : 8);
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.muted,
-        tabBarStyle: { backgroundColor: colors.surface, borderTopColor: colors.border },
+        tabBarStyle: {
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+          borderTopWidth: 1,
+          height: 72 + bottomPad,
+          paddingTop: 6,
+          paddingBottom: bottomPad,
+          shadowColor: '#7A2E48',
+          shadowOpacity: 0.06,
+          shadowRadius: 12,
+          shadowOffset: { width: 0, height: -4 },
+          elevation: 8,
+        },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600', marginTop: 2, lineHeight: 14 },
         sceneStyle: { backgroundColor: colors.background },
       }}
     >
