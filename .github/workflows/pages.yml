@@ -1,0 +1,76 @@
+name: Deploy sites to GitHub Pages
+
+# Один сайт на два приложения:
+#   /Remedy/          — Aqsha (статические файлы из docs/)
+#   /Remedy/couples/  — Remedy, приложение для пар (сборка Expo из couples/)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: couples/package-lock.json
+
+      - name: Install couples app
+        working-directory: couples
+        run: npm ci
+
+      - name: Typecheck couples app
+        working-directory: couples
+        run: npx tsc --noEmit
+
+      - name: Build couples app for the web
+        working-directory: couples
+        run: npx expo export --platform web --output-dir dist
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+
+      - name: Assemble site
+        run: |
+          mkdir -p site
+          cp -r docs/. site/
+          cp -r couples/dist site/couples
+          touch site/.nojekyll
+          # Обновили страницу на внутреннем адресе приложения для пар — вернуть на его главную.
+          cat > site/404.html <<'HTML'
+          <!doctype html><meta charset="utf-8"><title>Страница не найдена</title>
+          <script>
+            var p = location.pathname;
+            if (p.indexOf('/Remedy/couples/') === 0) location.replace('/Remedy/couples/' + location.search);
+            else location.replace('/Remedy/');
+          </script>
+          <p>Страница не найдена. <a href="/Remedy/">На главную</a></p>
+          HTML
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

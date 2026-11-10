@@ -1,0 +1,8 @@
+/**
+ * Публичные ключи Supabase для собранного сайта.
+ * anon key не секретный: он предназначен для клиента, доступ к данным
+ * защищают RLS-политики в базе. Значения из .env (EXPO_PUBLIC_*) важнее этих.
+ * Заполните после создания проекта: Supabase → Project Settings → API.
+ */
+export const SUPABASE_URL = 'https://ksuamdunohzzstukmktj.supabase.co';
+export const SUPABASE_ANON_KEY = 'sb_publishable_5RcpnXjh5OkRuJOoi5qIfg_X1ZYxvLZ';
