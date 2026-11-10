@@ -390,6 +390,12 @@ async def import_statement(file: UploadFile = File(...),
 app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
 
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon():
+    # браузеры по старинке запрашивают /favicon.ico — отдаём PNG-иконку
+    return FileResponse(os.path.join(FRONTEND_DIR, "icons", "favicon-32.png"), media_type="image/png")
+
+
 @app.get("/")
 def index():
     return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))

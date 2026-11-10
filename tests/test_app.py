@@ -244,3 +244,13 @@ def test_env_new_and_old_names(monkeypatch):
     assert db.env("CURRENCY") == "RUB"           # старое имя ещё работает
     monkeypatch.setenv("AQSHA_CURRENCY", "KZT")
     assert db.env("CURRENCY") == "KZT"           # новое имя важнее
+
+
+def test_icons_are_served(client):
+    html = client.get("/").text
+    assert "/static/icons/icon.svg" in html and "apple-touch-icon" in html and "manifest.json" in html
+    for path in ["/static/icons/icon.svg", "/static/icons/apple-touch-icon.png", "/static/icons/icon-192.png",
+                 "/static/icons/icon-512.png", "/static/icons/icon-maskable-512.png", "/static/manifest.json", "/favicon.ico"]:
+        assert client.get(path).status_code == 200, path
+    m = client.get("/static/manifest.json").json()
+    assert m["short_name"] == "Aqsha" and len(m["icons"]) == 3

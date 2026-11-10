@@ -23,9 +23,7 @@
 body { margin: 0; font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
 header { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 12px 20px; background: var(--surface); border-bottom: 3px solid var(--gold); position: sticky; top: 0; z-index: 5; }
 header h1 { margin: 0; font-size: 21px; letter-spacing: -.01em; color: var(--accent); display: flex; align-items: center; gap: 8px; }
-/* золотое «солнце» перед названием — временно, до настоящей иконки */
-header h1::before { content: ""; width: 14px; height: 14px; border-radius: 50%; background: var(--gold);
-  box-shadow: 0 0 0 3px var(--gold-soft); }
+header h1 img { display: block; border-radius: 7px; }
 nav { display: flex; gap: 4px; flex: 1; flex-wrap: wrap; }
 nav button { background: none; border: none; padding: 8px 12px; border-radius: 8px; color: var(--muted); }
 nav button.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
