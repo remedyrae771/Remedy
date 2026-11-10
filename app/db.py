@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     description TEXT NOT NULL DEFAULT '',
     category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
     external_id TEXT,                          -- id операции в банке (для дедупликации)
+    source TEXT,                               -- push | quick | NULL (выписка, банк, вручную)
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     UNIQUE (account_id, external_id)
 );
@@ -95,8 +96,8 @@ DEFAULT_RULES = {
     "Развлечения": ["kinopark", "chaplin", "kino.kz", "ticketon", "кино", "netflix", "spotify", "кинопоиск", "steam", "театр", "cinema"],
     "Покупки": ["kaspi магазин", "kaspi.kz магазин", "technodom", "sulpak", "mechta", "zara", "h&m", "uniqlo", "wildberries", "ozon", "lamoda"],
     "Зарплата": ["зарплата", "заработная плата", "salary", "аванс"],
-    "Переводы входящие": ["входящий перевод", "пополнение", "переводы:"],
-    "Переводы исходящие": ["переводы:", "перевод по сбп", "перевод на карту", "исходящий перевод", "внешний перевод"],
+    "Переводы входящие": ["входящий перевод", "пополнение", "переводы:", "перевод:"],
+    "Переводы исходящие": ["переводы:", "перевод:", "перевод по сбп", "перевод на карту", "исходящий перевод", "внешний перевод"],
 }
 
 
@@ -123,7 +124,7 @@ def get_conn():
 
 
 # увеличивайте при изменении DEFAULT_RULES — новые правила добавятся и в существующие базы
-SEED_VERSION = 3
+SEED_VERSION = 4
 
 
 def _seed_rules(conn: sqlite3.Connection) -> None:
@@ -136,10 +137,22 @@ def _seed_rules(conn: sqlite3.Connection) -> None:
     )
 
 
+def get_setting(conn: sqlite3.Connection, key: str) -> str | None:
+    row = conn.execute("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
+    return row["value"] if row else None
+
+
+def set_setting(conn: sqlite3.Connection, key: str, value: str) -> None:
+    conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (key, value))
+
+
 def init_db() -> None:
     with get_conn() as conn:
         conn.executescript(SCHEMA)
         conn.execute("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+        # миграция: колонка source появилась вместе с импортом из уведомлений
+        if "source" not in {r["name"] for r in conn.execute("PRAGMA table_info(transactions)")}:
+            conn.execute("ALTER TABLE transactions ADD COLUMN source TEXT")
         if conn.execute("SELECT COUNT(*) FROM categories").fetchone()[0] == 0:
             conn.executemany("INSERT INTO categories (name, kind, color) VALUES (?, ?, ?)", DEFAULT_CATEGORIES)
         row = conn.execute("SELECT value FROM settings WHERE key = 'seed_version'").fetchone()

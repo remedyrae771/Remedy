@@ -258,6 +258,49 @@ $("#tx-form").addEventListener("submit", guard(async (e) => {
   loadTransactions();
 }));
 
+// --- Быстрый ввод -------------------------------------------------------------------------
+const signed = (n) => (n > 0 ? "+" : "") + fmt(n);
+$("#quick-form").addEventListener("submit", guard(async (e) => {
+  e.preventDefault();
+  const r = await api("/api/quick", { method: "POST", json: { text: e.target.text.value } });
+  toast(`Добавлено: ${r.description} ${signed(r.amount)} → ${r.category || "без категории"}`);
+  e.target.reset();
+  await loadRefs();
+  loadTransactions();
+}));
+
+// --- Уведомления Kaspi → Aqsha -------------------------------------------------------------
+async function loadPushPanel() {
+  const c = await api("/api/ingest/config");
+  fillSelect($("#push-account"), state.accounts);
+  $("#push-account").value = String(c.account_id);
+  $("#push-url").value = c.url;
+  $("#push-count").textContent = c.received ? `Получено из уведомлений: ${c.received}` : "Пока ни одного уведомления";
+}
+$("#push-account").addEventListener("change", guard(async (e) => {
+  await api("/api/ingest/account", { method: "POST", json: { account_id: +e.target.value } });
+  toast("Счёт для уведомлений сохранён");
+}));
+$("#push-copy").addEventListener("click", guard(async () => {
+  try { await navigator.clipboard.writeText($("#push-url").value); toast("Адрес скопирован"); }
+  catch { $("#push-url").select(); toast("Выделите адрес и скопируйте вручную"); }
+}));
+$("#push-reset").addEventListener("click", guard(async () => {
+  if (!confirm("Сделать новый ключ? Старый адрес перестанет работать — его нужно будет заменить на телефоне.")) return;
+  await api("/api/ingest/token/reset", { method: "POST" });
+  await loadPushPanel();
+  toast("Новый адрес готов — обновите его на телефоне");
+}));
+$("#push-test").addEventListener("submit", guard(async (e) => {
+  e.preventDefault();
+  const out = $("#push-test-result");
+  try {
+    const r = await api("/api/ingest/preview", { method: "POST", json: { text: e.target.text.value } });
+    out.textContent = `✓ Распознано: ${r.description} · ${signed(r.amount)} · ${r.date.split("-").reverse().join(".")} · ${r.category || "без категории"}`;
+  } catch (err) { out.textContent = "✗ " + err.message; }
+  out.hidden = false;
+}));
+
 // --- Счета и банки -----------------------------------------------------------------------
 const PROVIDERS = { manual: "Вручную", file: "Выписка", demo: "Демо-банк", gocardless: "Open Banking" };
 
@@ -271,6 +314,7 @@ async function loadAccounts() {
       <td class="c-del"><button class="link acc-del" title="Удалить счёт и его операции">✕</button></td></tr>`;
   }).join("") : '<tr><td colspan="6" class="hint">Счетов пока нет — подключите банк, загрузите выписку или создайте счёт вручную.</td></tr>';
 
+  await loadPushPanel();
   const providers = await api("/api/banks/providers");
   fillSelect($("#bank-provider"), providers.map((p) => ({ id: p.id, name: p.name + (p.configured ? "" : " — не настроен") })));
 }

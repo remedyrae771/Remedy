@@ -55,6 +55,10 @@
 
   <!-- Операции -->
   <section id="tab-transactions" class="tab">
+    <form id="quick-form" class="quick">
+      <input name="text" placeholder="кофе 1500 · +450000 зарплата" autocomplete="off" required>
+      <button class="primary" aria-label="Добавить">＋</button>
+    </form>
     <details id="add-tx" class="add-tx"><summary>＋ Добавить операцию</summary>
     <form id="tx-form" class="inline-form">
       <select name="account_id" required></select>
@@ -88,6 +92,50 @@
     <p class="hint">* сумма загруженных операций, а не фактический остаток в банке.</p>
 
     <div class="panels">
+      <div class="panel panel-wide" id="push-panel">
+        <h3>📲 Автоматически из уведомлений Kaspi</h3>
+        <p class="hint">Обход без банковского API: телефон пересылает уведомления о покупках в Aqsha, и операции
+          появляются сразу. В конце месяца загрузите выписку — операции из уведомлений сольются с ней без дублей.</p>
+        <div class="push-row">
+          <label>Счёт для операций <select id="push-account"></select></label>
+          <span class="hint" id="push-count"></span>
+        </div>
+        <label class="hint" for="push-url">Ваш адрес для телефона (держите в секрете — это как пароль):</label>
+        <div class="push-row">
+          <input id="push-url" readonly>
+          <button id="push-copy" type="button">Копировать</button>
+          <button id="push-reset" type="button" class="link" title="Старый адрес перестанет работать">Новый ключ</button>
+        </div>
+        <p class="hint">Телефон должен «видеть» Aqsha: быть в одной Wi-Fi сети с компьютером, где запущено приложение
+          (откройте Aqsha на телефоне по адресу вида http://192.168…:8000 — тогда и адрес выше будет таким),
+          или Aqsha должна работать на сервере.</p>
+        <details class="howto"><summary>Android: MacroDroid (бесплатно)</summary>
+          <ol>
+            <li>Установите <b>MacroDroid</b> из Google Play и дайте ему доступ к уведомлениям.</li>
+            <li>Добавить макрос → <b>Триггер</b>: «Уведомление» → «Уведомление получено» → приложение <b>Kaspi.kz</b>.</li>
+            <li><b>Действие</b>: «Подключение» → «HTTP-запрос». Метод <b>POST</b>, URL — адрес выше.</li>
+            <li>Тело запроса — тип «Текст», содержимое: волшебный текст «Текст уведомления»
+              (можно добавить и «Заголовок уведомления» перед ним).</li>
+            <li>Сохраните макрос и сделайте тестовую покупку — операция появится в «Операциях».</li>
+          </ol>
+          <p class="hint">Вместо MacroDroid подойдёт Tasker или Automate — главное, отправить текст уведомления POST-запросом на адрес выше.</p>
+        </details>
+        <details class="howto"><summary>iPhone: «Команды» + Apple Wallet</summary>
+          <ol>
+            <li>Карта должна быть добавлена в <b>Apple Wallet</b>, а платить нужно телефоном или часами.</li>
+            <li>«Команды» → «Автоматизация» → «+» → <b>«Транзакция»</b> → выберите карту → «Запускать сразу».</li>
+            <li>Действие <b>«Получить содержимое URL»</b>: URL — адрес выше, метод <b>POST</b>,
+              тело запроса <b>JSON</b>: поле <code>amount</code> = «Сумма», поле <code>merchant</code> = «Продавец».</li>
+          </ol>
+          <p class="hint">iPhone не даёт читать уведомления других приложений, поэтому переводы и оплаты картой без Apple Pay
+            так не попадут — для них остаётся быстрый ввод на вкладке «Операции» и выписка в конце месяца.</p>
+        </details>
+        <form id="push-test" class="push-row">
+          <input name="text" placeholder="Проверка: вставьте текст уведомления Kaspi" required>
+          <button>Проверить</button>
+        </form>
+        <p id="push-test-result" class="hint" hidden></p>
+      </div>
       <div class="panel">
         <h3>📄 Импорт выписки</h3>
         <p class="hint"><b>Kaspi:</b> приложение Kaspi.kz → Kaspi Gold → «Выписка» → период → «Поделиться» → сохраните PDF и выберите его здесь.<br>

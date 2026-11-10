@@ -254,3 +254,72 @@ def test_icons_are_served(client):
         assert client.get(path).status_code == 200, path
     m = client.get("/static/manifest.json").json()
     assert m["short_name"] == "Aqsha" and len(m["icons"]) == 3
+
+
+def test_parse_notification_variants():
+    from datetime import date
+    from app.ingest import parse_notification as pn, parse_quick as pq
+    T = date(2026, 11, 10)
+    p = pn("Kaspi Gold *1234. Покупка: 1 850 ₸, Coffee Boom. Доступно: 98 000 ₸", T)
+    assert (p.amount, p.description, p.date) == (-1850.0, "Покупка: Coffee Boom", "2026-11-10")
+    assert pn("Пополнение 450 000 ₸ от ТОО Алем. Доступно 543 000 ₸", T).amount == 450000
+    assert pn("Вам перевели 15 000 ₸ от Даурен С.", T).amount == 15000
+    assert pn("Возврат 3 200 ₸ Wildberries", T).amount == 3200
+    assert pn("Оплата 4 990 ₸ Kcell 09.11.26", T).date == "2026-11-09"
+    assert pn("Доступно 50 000 ₸", T) is None and pn("Привет", T) is None
+    assert pq("кофе 1500", T).amount == -1500 and pq("1500 кофе", T).description == "кофе"
+    assert pq("+450000 зарплата", T).amount == 450000 and pq("зарплата 300000", T).amount == 300000
+    assert pq("такси 1 200 ₸", T).amount == -1200 and pq("просто текст", T) is None
+
+
+def test_push_ingest_flow_and_merge_with_statement(client):
+    cfg = client.get("/api/ingest/config").json()
+    token = cfg["token"]
+    assert cfg["url"].endswith(f"/api/ingest?token={token}") and cfg["account"] == "Kaspi Gold"
+    assert client.post("/api/ingest?token=wrong", json={"text": "Покупка 100 ₸ X"}).status_code == 403
+
+    # Android: текст уведомления (JSON, форма и просто текст)
+    r = client.post(f"/api/ingest?token={token}", json={"text": "Покупка 12 450 ₸ Magnum Cash&Carry. Доступно 90 000 ₸"}).json()
+    assert r["saved"] and r["amount"] == -12450 and r["category"] == "Продукты"
+    # то же уведомление пришло второй раз — дубля нет
+    assert client.post(f"/api/ingest?token={token}", json={"text": "Покупка 12 450 ₸ Magnum Cash&Carry. Доступно 90 000 ₸"}).json()["duplicate"]
+    assert client.post(f"/api/ingest?token={token}", data={"text": "Покупка 330 ₸ ONAY"}).json()["category"] == "Транспорт"
+    assert client.post("/api/ingest", content="Перевод 5 000 ₸ Айгерим К.".encode(),
+                       headers={"X-Aqsha-Token": token, "Content-Type": "text/plain"}).json()["amount"] == -5000
+    # iPhone: Apple Wallet присылает сумму и продавца отдельно
+    r = client.post(f"/api/ingest?token={token}", json={"amount": "₸1,250.00", "merchant": "Coffee Boom"}).json()
+    assert r["amount"] == -1250 and r["description"] == "Покупка: Coffee Boom"
+    assert client.post(f"/api/ingest?token={token}", json={"text": "Привет"}).status_code == 422
+
+    # быстрый ввод
+    q = client.post("/api/quick", json={"text": "такси 2 000"}).json()
+    assert q["amount"] == -2000
+
+    # пользователь поправил категорию у операции из уведомления
+    cats = {c["name"]: c["id"] for c in client.get("/api/categories").json()}
+    magnum = next(t for t in client.get("/api/transactions").json() if t["amount"] == -12450)
+    client.patch(f"/api/transactions/{magnum['id']}", json={"category_id": cats["Кафе и рестораны"]})
+
+    before = len(client.get("/api/transactions").json())
+    assert before == 5
+    # в конце месяца — выписка Kaspi с теми же покупками
+    from datetime import date
+    d = date.today().strftime("%d.%m.%y")
+    pdf_text = (f"АО «Kaspi Bank» ВЫПИСКА\n{d}   - 12 450,00 ₸   Покупки   Magnum Cash&Carry\n"
+                f"{d}   - 330,00 ₸   Покупки   ONAY\n{d}   - 7 000,00 ₸   Покупки   Galmart\n")
+    from app.banks.kaspi import parse_kaspi_text
+    from app.sync import save_transactions
+    txs, _ = parse_kaspi_text(pdf_text)
+    with db.get_conn() as conn:
+        added = save_transactions(conn, cfg["account_id"] or r["account_id"], txs)
+    assert added == 1  # новая только Galmart, две другие слились с уведомлениями
+    after = client.get("/api/transactions").json()
+    assert len(after) == before + 1
+    merged = next(t for t in after if t["amount"] == -12450)
+    assert merged["description"] == "Покупки: Magnum Cash&Carry"   # описание из выписки
+    assert merged["category"] == "Кафе и рестораны"                # ручная категория сохранилась
+    # повторный импорт той же выписки ничего не добавляет
+    with db.get_conn() as conn:
+        assert save_transactions(conn, r["account_id"], txs) == 0
+    assert client.post("/api/ingest/token/reset").json()["ok"]
+    assert client.get("/api/ingest/config").json()["token"] != token

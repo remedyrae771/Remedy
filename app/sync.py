@@ -6,6 +6,7 @@ from typing import Iterable
 from .banks import get_provider
 from .banks.base import BankTransaction
 from .categorize import categorize, load_rules
+from .ingest import merge_with_pushed
 
 # при повторной синхронизации берём операции с запасом — банки иногда проводят их задним числом
 OVERLAP_DAYS = 5
@@ -17,6 +18,11 @@ def save_transactions(conn: sqlite3.Connection, account_id: int, txs: Iterable[B
     rules = load_rules(conn)
     added = 0
     for t in txs:
+        if conn.execute("SELECT 1 FROM transactions WHERE account_id = ? AND external_id = ?",
+                        (account_id, t.external_id)).fetchone():
+            continue  # уже загружена раньше
+        if merge_with_pushed(conn, account_id, t):
+            continue  # уже пришла уведомлением — привязали к выписке, дубля нет
         cur = conn.execute(
             "INSERT OR IGNORE INTO transactions (account_id, date, amount, description, category_id, external_id)"
             " VALUES (?, ?, ?, ?, ?, ?)",

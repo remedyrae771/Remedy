@@ -1,7 +1,10 @@
 """Aqsha — учёт доходов и расходов с синхронизацией с банком. HTTP API + веб-интерфейс."""
 import asyncio
+import json
 import logging
 import os
+import re
+import secrets
 import uuid
 from contextlib import asynccontextmanager
 from datetime import date
@@ -14,9 +17,10 @@ from pydantic import BaseModel, Field
 
 from . import db
 from .banks import BankError, available_providers, get_provider
-from .banks.importers import parse_statement
+from .banks.importers import parse_amount, parse_statement
 from .categorize import categorize, load_rules
 from .sync import link_connection, save_transactions, sync_account
+from .ingest import Parsed, parse_notification, parse_quick, push_external_id
 from .tips import general_tips, has_data, personal_tips, pick_tip
 from .tips_library import TOPICS
 
@@ -315,6 +319,137 @@ def all_tips():
     with db.get_conn() as conn:
         return {"has_data": has_data(conn), "personal": personal_tips(conn),
                 "topics": TOPICS, "general": general_tips()}
+
+
+# --- Операции без выписки: уведомления банка, Apple Wallet, быстрый ввод -------------------
+def ingest_token(conn) -> str:
+    token = db.get_setting(conn, "ingest_token")
+    if not token:
+        token = secrets.token_urlsafe(18)
+        db.set_setting(conn, "ingest_token", token)
+    return token
+
+
+def ingest_account(conn) -> int:
+    """Счёт для операций из уведомлений: выбранный в настройках, иначе «Kaspi Gold» (создаётся при необходимости)."""
+    chosen = db.get_setting(conn, "ingest_account_id")
+    if chosen and conn.execute("SELECT 1 FROM accounts WHERE id = ?", (chosen,)).fetchone():
+        return int(chosen)
+    row = conn.execute("SELECT id FROM accounts WHERE name LIKE 'Kaspi%' ORDER BY id LIMIT 1").fetchone()
+    if row:
+        return row["id"]
+    return conn.execute("INSERT INTO accounts (name, provider, currency) VALUES ('Kaspi Gold', 'file', ?)",
+                        (DEFAULT_CURRENCY,)).lastrowid
+
+
+def _save_parsed(conn, p, source: str, external_id: Optional[str]) -> dict:
+    account_id = ingest_account(conn)
+    if external_id and conn.execute("SELECT 1 FROM transactions WHERE external_id = ?", (external_id,)).fetchone():
+        return {"saved": False, "duplicate": True, "amount": p.amount, "description": p.description, "date": p.date}
+    cur = conn.execute(
+        "INSERT INTO transactions (account_id, date, amount, description, category_id, external_id, source)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (account_id, p.date, p.amount, p.description, categorize(conn, p.description, p.amount), external_id, source))
+    cat = conn.execute("SELECT name FROM categories c JOIN transactions t ON t.category_id = c.id WHERE t.id = ?",
+                       (cur.lastrowid,)).fetchone()
+    return {"saved": True, "id": cur.lastrowid, "amount": p.amount, "description": p.description, "date": p.date,
+            "category": cat["name"] if cat else None, "account_id": account_id}
+
+
+@app.get("/api/ingest/config")
+def ingest_config(request: Request):
+    with db.get_conn() as conn:
+        token = ingest_token(conn)
+        account_id = ingest_account(conn)
+        name = conn.execute("SELECT name FROM accounts WHERE id = ?", (account_id,)).fetchone()["name"]
+        pushed = conn.execute("SELECT COUNT(*) FROM transactions WHERE source = 'push'").fetchone()[0]
+    return {"url": str(request.url_for("ingest")) + f"?token={token}", "token": token,
+            "account_id": account_id, "account": name, "received": pushed}
+
+
+@app.post("/api/ingest/token/reset")
+def ingest_token_reset():
+    with db.get_conn() as conn:
+        db.set_setting(conn, "ingest_token", secrets.token_urlsafe(18))
+    return {"ok": True}
+
+
+class IngestAccountIn(BaseModel):
+    account_id: int
+
+
+@app.post("/api/ingest/account")
+def ingest_set_account(body: IngestAccountIn):
+    with db.get_conn() as conn:
+        if not conn.execute("SELECT 1 FROM accounts WHERE id = ?", (body.account_id,)).fetchone():
+            raise HTTPException(404, "Счёт не найден")
+        db.set_setting(conn, "ingest_account_id", str(body.account_id))
+    return {"ok": True}
+
+
+@app.post("/api/ingest", name="ingest")
+async def ingest(request: Request, token: str = ""):
+    """Принимает уведомление банка с телефона (MacroDroid/Tasker на Android, «Команды» на iPhone).
+
+    Тело: JSON {"text": "..."} или {"amount": 2500, "merchant": "Magnum"}, форма text=..., или просто текст.
+    Ключ: ?token=... или заголовок X-Aqsha-Token.
+    """
+    token = token or request.headers.get("x-aqsha-token", "")
+    raw = (await request.body()).decode("utf-8", errors="replace")
+    ctype = request.headers.get("content-type", "")
+    data: dict = {}
+    if "json" in ctype:
+        try:
+            data = json.loads(raw or "{}")
+            data = data if isinstance(data, dict) else {"text": str(data)}
+        except ValueError:
+            data = {"text": raw}
+    elif "form" in ctype:
+        data = dict((await request.form()).items())
+    else:
+        data = {"text": raw}
+    with db.get_conn() as conn:
+        if not secrets.compare_digest(token, ingest_token(conn)):
+            raise HTTPException(403, "Неверный ключ")
+        if data.get("amount") not in (None, ""):
+            # Apple Wallet: сумма и магазин приходят отдельно; сумма может быть «₸2 500», «2,500.00»
+            value = parse_amount(re.sub(r"[^\d.,\-+−\s]", "", str(data["amount"])))
+            merchant = str(data.get("merchant") or data.get("name") or "").strip()
+            text = f"wallet|{data['amount']}|{merchant}|{data.get('date', '')}"
+            p = Parsed(amount=-abs(value), description=f"Покупка: {merchant}" if merchant else "Покупка",
+                       date=date.today().isoformat()) if value else None
+        else:
+            text = str(data.get("text") or (str(data.get("title", "")) + " " + str(data.get("body", "")))).strip()
+            p = parse_notification(text)
+        if not p:
+            raise HTTPException(422, "Не нашёл в тексте сумму в тенге")
+        return _save_parsed(conn, p, "push", push_external_id(text, p.date))
+
+
+class TextIn(BaseModel):
+    text: str = Field(min_length=1, max_length=1000)
+
+
+@app.post("/api/ingest/preview")
+def ingest_preview(body: TextIn):
+    """Проверить, как будет разобрано уведомление, ничего не сохраняя."""
+    p = parse_notification(body.text)
+    if not p:
+        raise HTTPException(422, "Не нашёл в тексте сумму в тенге")
+    with db.get_conn() as conn:
+        cat = categorize(conn, p.description, p.amount)
+        name = conn.execute("SELECT name FROM categories WHERE id = ?", (cat,)).fetchone() if cat else None
+    return {"amount": p.amount, "description": p.description, "date": p.date, "category": name["name"] if name else None}
+
+
+@app.post("/api/quick")
+def quick_add(body: TextIn):
+    """Быстрый ввод из приложения: «кофе 1500», «+450000 зарплата»."""
+    p = parse_quick(body.text)
+    if not p:
+        raise HTTPException(422, "Напишите, например: «кофе 1500» или «+450000 зарплата»")
+    with db.get_conn() as conn:
+        return _save_parsed(conn, p, "quick", None)
 
 
 # --- Банки -------------------------------------------------------------------------------
