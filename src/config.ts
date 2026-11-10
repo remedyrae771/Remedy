@@ -5,4 +5,4 @@
  * Заполните после создания проекта: Supabase → Project Settings → API.
  */
 export const SUPABASE_URL = 'https://ksuamdunohzzstukmktj.supabase.co';
-export const SUPABASE_ANON_KEY = '';
+export const SUPABASE_ANON_KEY = 'sb_publishable_5RcpnXjh5OkRuJOoi5qIfg_X1ZYxvLZ';
