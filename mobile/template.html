@@ -257,6 +257,45 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
 .tx:active { background: var(--bg); }
 .sheet-panel { max-height: 92vh; overflow-y: auto; }
 
+/* финансовая грамотность */
+.lit-banner { position: relative; overflow: hidden; border-radius: 20px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px;
+  color: #fff7df; background: linear-gradient(150deg, #213a41 0%, #10242a 100%); box-shadow: 0 10px 24px -14px rgba(10, 30, 36, .8); text-align: left; border: none; width: 100%; }
+.lit-banner .lit-kicker { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--hero-gold1); }
+.lit-banner .lit-title { font: 700 19px/1.25 var(--display); color: #ffffff; }
+.lit-banner .lit-text { font-size: 14px; color: rgba(255, 247, 223, .9); margin: 0; max-width: 52ch; }
+.lit-banner .lit-match { background: rgba(242, 183, 5, .16); border: 1px solid rgba(242, 183, 5, .45); border-radius: 12px; padding: 8px 10px; font-size: 14px; color: #fff7df; }
+.lit-banner .lit-match b { color: var(--hero-gold1); }
+.lit-banner .lit-go { align-self: flex-start; margin-top: 2px; background: var(--hero-gold1); color: #10242a; border-radius: 999px; padding: 8px 16px; font-weight: 700; font-size: 14px; }
+.seg.wide { margin-bottom: 2px; }
+.seg.wide button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+.case { padding: 0; overflow: hidden; }
+.case summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: auto 1fr auto; gap: 4px 12px; align-items: center; padding: 14px 16px; }
+.case summary::-webkit-details-marker { display: none; }
+.case summary .c-ico { grid-row: span 2; width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; font-size: 24px; background: var(--gold-soft); }
+.case summary .c-title { font: 700 16px/1.25 var(--display); }
+.case summary .c-sub { font-size: 13px; color: var(--muted); grid-column: 2; }
+.case summary .c-progress { grid-row: span 2; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.case summary .c-progress.done { color: var(--income); font-weight: 700; }
+.case[open] summary { border-bottom: 1px solid var(--border); }
+.case.match summary .c-ico { background: var(--accent-soft); box-shadow: 0 0 0 2px var(--accent); }
+.case-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+.case-body h4 { margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--gold-text); }
+.case-body ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; font-size: 14px; }
+.story { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--bg); border-left: 3px solid var(--gold); font-size: 14.5px; line-height: 1.5; }
+.plan { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; counter-reset: step; }
+.plan label { display: grid; grid-template-columns: auto auto 1fr; gap: 10px; align-items: start; font-size: 14.5px; line-height: 1.45; cursor: pointer; }
+.plan label::before { counter-increment: step; content: counter(step); width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 12px; font-weight: 700; background: var(--accent-soft); color: var(--accent); margin-top: 1px; }
+.plan input { width: 18px; height: 18px; margin-top: 3px; accent-color: var(--income); }
+.plan input:checked + span { color: var(--muted); text-decoration: line-through; }
+.result { margin: 0; padding: 10px 12px; border-radius: 12px; background: color-mix(in srgb, var(--income) 12%, transparent); font-size: 14px; }
+.case-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.quiz { display: flex; flex-direction: column; gap: 10px; }
+.quiz-q { display: flex; justify-content: space-between; gap: 10px; align-items: center; font-size: 14.5px; }
+.quiz-q .yn { display: flex; gap: 6px; flex: none; }
+.quiz-q .yn .chip { padding: 5px 12px; }
+.quiz-result { border-radius: 12px; padding: 12px 14px; background: var(--accent-soft); font-size: 14px; }
+
 /* нижняя панель */
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--surface); border-top: 1px solid var(--border);
   padding: 0 max(8px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(8px, env(safe-area-inset-left, 0px));
@@ -319,6 +358,14 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
       </div>
     </article>
 
+    <button class="lit-banner" id="lit-banner" type="button" data-lit="">
+      <span class="lit-kicker">📚 Финансовая грамотность</span>
+      <span class="lit-title">10 жизненных ситуаций и как из них выйти</span>
+      <p class="lit-text">Рассрочки, долги, жизнь от зарплаты до зарплаты, подушка, квартира — с примерами в тенге и пошаговым планом.</p>
+      <span class="lit-match" id="lit-match" hidden></span>
+      <span class="lit-go">Разобрать →</span>
+    </button>
+
     <div id="overview-empty" class="card empty" hidden>
       <div class="big">🌾</div>
       <b>Здесь появятся ваши доходы и расходы</b>
@@ -373,7 +420,26 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
   </section>
 
   <!-- Советы -->
-  <section class="tab" id="tab-tips" aria-label="Советы">
+  <section class="tab" id="tab-tips" aria-label="Знания">
+    <div class="seg wide" role="group" aria-label="Раздел">
+      <button type="button" data-know="lit" aria-pressed="true">📚 Финграмотность</button>
+      <button type="button" data-know="tips" aria-pressed="false">💡 Советы</button>
+    </div>
+    <div id="know-lit" class="tips">
+      <div class="card">
+        <h2 class="section-title">Финансовая грамотность</h2>
+        <p class="hint" style="margin-top:4px">Частые денежные ситуации: как понять, что это про вас, пример с реальными цифрами и пошаговый выход.
+          Отмечайте выполненные шаги — прогресс сохранится.</p>
+      </div>
+      <div class="card" id="lit-diag" hidden></div>
+      <details class="card case" id="quiz-card">
+        <summary><span class="c-ico">🧭</span><span class="c-title">Какая ситуация у вас?</span><span class="c-progress">7 вопросов</span>
+          <span class="c-sub">Ответьте «да» или «нет» — подскажем, с чего начать</span></summary>
+        <div class="case-body quiz" id="quiz"></div>
+      </details>
+      <div class="tips" id="cases"></div>
+    </div>
+    <div id="know-tips" class="tips" hidden>
     <div id="personal-block" hidden>
       <h2 class="section-title" style="margin-bottom:10px">По вашим расходам</h2>
       <div class="tips" id="personal-tips"></div>
@@ -381,6 +447,7 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
     <h2 class="section-title">Полезные советы</h2>
     <div class="chips" role="group" aria-label="Темы" id="topics"></div>
     <div class="tips" id="general-tips"></div>
+    </div>
   </section>
 
   <!-- Ещё -->
@@ -484,7 +551,7 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
   <button data-tab="overview" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.3A9 9 0 0 1 20.7 9H15z"/></svg><span>Обзор</span></button>
   <button data-tab="transactions"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 20V4M7 20l-3-3M7 20l3-3"/><path d="M17 4v16M17 4l-3 3M17 4l3 3"/></svg><span>Операции</span></button>
   <button class="fab" id="fab" aria-label="Добавить операцию"><b aria-hidden="true">+</b></button>
-  <button data-tab="tips"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1 2V16h5.2v-.2c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></svg><span>Советы</span></button>
+  <button data-tab="tips"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c2 2 10 2 12 0v-5"/><path d="M22 9v6"/></svg><span>Знания</span></button>
   <button data-tab="more"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span>Ещё</span></button>
 </nav>
 
@@ -559,6 +626,8 @@ const BUILTIN_RULES = /*__RULES__*/[];
 const LOW_PRIORITY = new Set(/*__LOW_PRIORITY__*/[]);
 const TOPICS = /*__TOPICS__*/{};
 const TIPS = /*__TIPS__*/[];
+const CASES = /*__CASES__*/[];
+const QUIZ = /*__QUIZ__*/[];
 
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => document.querySelectorAll(s);
@@ -1009,6 +1078,7 @@ function renderOverview() {
   } else $("#budget-line").textContent = "";
   renderAlerts(all);
   renderAccounts(all);
+  renderLitBanner();
   const empty = all.length === 0 && Store.loaded;
   $("#overview-empty").hidden = !empty;
   $("#cat-card").hidden = empty; $("#month-card").hidden = empty;
@@ -1257,6 +1327,106 @@ function renderTips() {
 }
 $("#topics").addEventListener("click", (e) => { const b = e.target.closest("[data-topic]"); if (b) { topic = b.dataset.topic; renderTips(); } });
 
+// ─── Финансовая грамотность ─────────────────────────────────────────────────────────────
+const CASE = Object.fromEntries(CASES.map((c) => [c.id, c]));
+let know = "lit";
+function setKnow(k) {
+  know = k;
+  $$("[data-know]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.know === k)));
+  $("#know-lit").hidden = k !== "lit"; $("#know-tips").hidden = k !== "tips";
+  if (k === "tips") renderTips(); else renderLiteracy();
+}
+$$("[data-know]").forEach((b) => b.addEventListener("click", () => setKnow(b.dataset.know)));
+// по операциям: на какую ситуацию похоже (если данных достаточно)
+function diagnose() {
+  const all = txList().filter((t) => t.src !== "demo"); if (all.length < 5) return null;
+  const now = new Date(), prevM = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prev = inRange(all, monthBounds(prevM)), inc = sumIncome(prev), exp = sumExpense(prev);
+  if (inc > 0 && exp > inc) return { id: "overspend", why: `в прошлом месяце расходы (${money(exp)}) больше доходов (${money(inc)})` };
+  if (inc > 0 && (inc - exp) / inc < 0.05) return { id: "paycheck", why: `в прошлом месяце осталось всего ${money(inc - exp)} из ${money(inc)}` };
+  const months = {}; for (const t of all) if (t.amount < 0) months[t.date.slice(0, 7)] = (months[t.date.slice(0, 7)] || 0) - t.amount;
+  const vals = Object.values(months); const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+  const total = accounts().reduce((s, a) => s + balance(a.id), 0);
+  if (Store.accounts.size && avg > 0 && total < avg * 3) return { id: "cushion", why: `на счетах ${money(total)} — это меньше трёх месяцев ваших расходов (${money(avg * 3)})` };
+  return null;
+}
+function renderLitBanner() {
+  const d = diagnose(), m = $("#lit-match");
+  m.hidden = !d; $("#lit-banner").dataset.lit = d ? d.id : "";
+  if (d) m.innerHTML = `Похоже на вашу ситуацию: <b>«${esc(CASE[d.id].title)}»</b>`;
+}
+const planKey = (id) => "aqsha.plan." + id;
+function caseCard(c, match) {
+  const done = lsGet(planKey(c.id), []);
+  const n = done.filter(Boolean).length;
+  return `<details class="card case${match ? " match" : ""}" id="case-${c.id}">
+    <summary><span class="c-ico">${esc(c.icon)}</span><span class="c-title">${esc(c.title)}</span>
+      <span class="c-progress${n === c.steps.length ? " done" : ""}">${n ? `${n}/${c.steps.length}` : ""}</span>
+      <span class="c-sub">${esc(c.signs[0])}</span></summary>
+    <div class="case-body">
+      <div><h4>Признаки</h4><ul>${c.signs.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>
+      <div><h4>Пример</h4><p class="story">${esc(c.story)}</p></div>
+      <div><h4>Как выйти</h4><ol class="plan">${c.steps.map((x, i) => `<li><label><input type="checkbox" data-plan="${c.id}" data-step="${i}" ${done[i] ? "checked" : ""}><span>${esc(x)}</span></label></li>`).join("")}</ol></div>
+      <p class="result">✅ ${esc(c.result)}</p>
+      <div class="case-actions">${c.actions.map(([label, to]) => `<button class="btn${to === c.actions[0][1] ? " primary" : ""}" type="button" data-case-act="${esc(to)}">${esc(label)}</button>`).join("")}</div>
+    </div></details>`;
+}
+function renderLiteracy() {
+  const d = diagnose(), diag = $("#lit-diag");
+  diag.hidden = !d;
+  if (d) diag.innerHTML = `<h2 class="section-title">🎯 Ваша ситуация</h2><p class="hint" style="margin-top:4px">По операциям в Aqsha: ${esc(d.why)}.</p>
+    <button class="btn primary" type="button" data-open-case="${d.id}" style="margin-top:10px">${esc(CASE[d.id].icon)} ${esc(CASE[d.id].title)} →</button>`;
+  const open = new Set([...$$("#cases details[open]")].map((x) => x.id));
+  $("#cases").innerHTML = CASES.map((c) => caseCard(c, d && d.id === c.id)).join("");
+  open.forEach((id) => { const el = document.getElementById(id); if (el) el.open = true; });
+  renderQuiz();
+}
+let quizAnswers = {};
+function renderQuiz() {
+  const rows = QUIZ.map(([q], i) => `<div class="quiz-q"><span>${esc(q)}</span><span class="yn">
+      <button type="button" class="chip" data-q="${i}" data-a="yes" aria-pressed="${quizAnswers[i] === "yes"}">Да</button>
+      <button type="button" class="chip" data-q="${i}" data-a="no" aria-pressed="${quizAnswers[i] === "no"}">Нет</button></span></div>`).join("");
+  let result = "";
+  if (Object.keys(quizAnswers).length === QUIZ.length) {
+    const hits = QUIZ.filter(([, when], i) => quizAnswers[i] === when).map(([, , id]) => id);
+    result = hits.length
+      ? `<div class="quiz-result"><b>Начните с этого (по порядку важности):</b><div class="case-actions" style="margin-top:8px">${hits.map((id) => `<button class="btn" type="button" data-open-case="${id}">${esc(CASE[id].icon)} ${esc(CASE[id].title)}</button>`).join("")}</div></div>`
+      : `<div class="quiz-result"><b>Отличная база!</b> Срочных проблем нет — время для больших целей.<div class="case-actions" style="margin-top:8px">
+          <button class="btn" type="button" data-open-case="home">🏠 Коплю на квартиру</button><button class="btn" type="button" data-open-case="invest">📈 Инвестиции</button></div></div>`;
+  }
+  $("#quiz").innerHTML = rows + result;
+}
+$("#quiz").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-q]"); if (!b) return;
+  quizAnswers[b.dataset.q] = b.dataset.a; renderQuiz();
+});
+function openCase(id) {
+  go("tips"); setKnow("lit");
+  setTimeout(() => { const el = document.getElementById("case-" + id); if (el) { el.open = true; el.scrollIntoView({ behavior: "smooth", block: "start" }); } }, 60);
+}
+$("#lit-banner").addEventListener("click", (e) => {
+  const id = e.currentTarget.dataset.lit;
+  if (id) openCase(id); else { go("tips"); setKnow("lit"); }
+});
+document.addEventListener("click", (e) => {
+  const oc = e.target.closest("[data-open-case]"); if (oc) { openCase(oc.dataset.openCase); return; }
+  const a = e.target.closest("[data-case-act]"); if (!a) return;
+  const to = a.dataset.caseAct;
+  if (to === "add") openAdd();
+  else if (to === "overview") go("overview");
+  else if (to.startsWith("acc:")) { openAcc(null); $("#a-name").value = to.slice(4); }
+  else if (to.startsWith("more#")) { go("more"); setTimeout(() => document.getElementById(to.slice(5))?.scrollIntoView({ behavior: "smooth", block: "start" }), 80); }
+  else if (to.startsWith("tips:")) { setKnow("tips"); topic = to.slice(5); renderTips(); window.scrollTo(0, 0); }
+});
+$("#cases").addEventListener("change", (e) => {
+  const cb = e.target.closest("[data-plan]"); if (!cb) return;
+  const key = planKey(cb.dataset.plan), done = lsGet(key, []);
+  done[+cb.dataset.step] = cb.checked; lsSet(key, done);
+  const c = CASE[cb.dataset.plan], n = done.filter(Boolean).length, prog = cb.closest(".case").querySelector(".c-progress");
+  prog.textContent = n ? `${n}/${c.steps.length}` : ""; prog.classList.toggle("done", n === c.steps.length);
+  if (n === c.steps.length) toast(`План «${c.title}» выполнен! 🎉`);
+});
+
 // ─── Категории ─────────────────────────────────────────────────────────────────────────
 function renderCategories() {
   const cur = inRange(txList(), range("month")), sums = {};
@@ -1494,7 +1664,7 @@ function render() { // перерисовываем только видимую 
   raf = requestAnimationFrame(() => {
     if (tab === "overview") renderOverview();
     if (tab === "transactions") renderTransactions();
-    if (tab === "tips") renderTips();
+    if (tab === "tips") (know === "lit" ? renderLiteracy() : renderTips());
     if (tab === "more") { renderCategories(); renderBudget(); renderReminders(); fillAccSelect($("#import-acc")); }
   });
 }

@@ -7,6 +7,7 @@
 """
 import json
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -14,11 +15,26 @@ sys.path.insert(0, ROOT)
 
 from app.categorize import LOW_PRIORITY  # noqa: E402
 from app.db import DEFAULT_CATEGORIES, DEFAULT_RULES  # noqa: E402
+from app.literacy_library import CASES, QUIZ  # noqa: E402
 from app.tips_library import TIPS, TOPICS  # noqa: E402
 
 
 def js(value) -> str:
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+
+
+def nbsp(value):
+    """Неразрывные пробелы внутри сумм («80 000 ₸» не должно переноситься посреди числа)."""
+    if isinstance(value, str):
+        prev = None
+        while prev != value:
+            prev, value = value, re.sub(r"(\d) (\d{3})(?!\d)", "\\1\u00a0\\2", value)
+        return value.replace(" ₸", "\u00a0₸")
+    if isinstance(value, list):
+        return [nbsp(v) for v in value]
+    if isinstance(value, dict):
+        return {k: nbsp(v) for k, v in value.items()}
+    return value
 
 
 def build() -> str:
@@ -32,7 +48,9 @@ def build() -> str:
         "/*__RULES__*/[]": js([[p, cat] for cat, patterns in DEFAULT_RULES.items() for p in patterns]),
         "/*__LOW_PRIORITY__*/[]": js(sorted(LOW_PRIORITY)),
         "/*__TOPICS__*/{}": js(TOPICS),
-        "/*__TIPS__*/[]": js([[t, i, title, text] for t, i, title, text in TIPS]),
+        "/*__TIPS__*/[]": js(nbsp([[t, i, title, text] for t, i, title, text in TIPS])),
+        "/*__CASES__*/[]": js(nbsp(CASES)),
+        "/*__QUIZ__*/[]": js(QUIZ),
         "<!--__ICON__-->": icon.replace('<svg ', '<svg class="logo" aria-hidden="true" ', 1),
     }
     for key, value in data.items():

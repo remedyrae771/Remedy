@@ -323,3 +323,22 @@ def test_push_ingest_flow_and_merge_with_statement(client):
         assert save_transactions(conn, r["account_id"], txs) == 0
     assert client.post("/api/ingest/token/reset").json()["ok"]
     assert client.get("/api/ingest/config").json()["token"] != token
+
+
+def test_literacy_cases_are_complete_and_numbers_add_up():
+    from app.literacy_library import CASES, QUIZ
+    ids = [c["id"] for c in CASES]
+    assert len(CASES) == 10 and len(set(ids)) == len(ids)
+    for c in CASES:
+        assert c["title"] and c["story"] and c["result"] and len(c["signs"]) >= 3 and len(c["steps"]) >= 4
+        for label, target in c["actions"]:
+            assert target in ("add", "overview") or target.startswith(("acc:", "more#", "tips:")), target
+    assert all(q[2] in ids and q[1] in ("yes", "no") for q in QUIZ)
+    # арифметика в историях
+    assert 350_000 - (120_000 + 80_000 + 25_000) == 125_000            # от зарплаты до зарплаты
+    assert round(150_000 / 400_000 * 100) in (37, 38) and 400_000 * 0.2 == 80_000   # рассрочки
+    assert 3 * 420_000 == 1_260_000 and 1_260_000 / 60_000 == 21        # подушка
+    assert 680_000 - 80_000 - 40_000 == 560_000 and 600_000 - 560_000 == 40_000 and 320_000 // 4 == 80_000  # траты > доходов
+    assert round(400_000 / 220_000) == 2                                # потеря работы
+    assert 4_800_000 / 12 == 400_000                                    # нерегулярный доход
+    assert 25_000_000 * 0.2 == 5_000_000 and (5_000_000 - 800_000) / 150_000 == 28  # квартира
