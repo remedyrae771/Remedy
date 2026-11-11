@@ -780,7 +780,7 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
     <label>Название<input type="text" id="a-name" maxlength="40" required placeholder="например, Наличные"></label>
     <div class="icons" id="a-icons" role="group" aria-label="Значок"></div>
     <label>Сейчас на счёте, ₸<input type="number" id="a-balance" class="amount-input" inputmode="decimal" step="any" placeholder="0"></label>
-    <p class="hint">Укажите реальный остаток — Aqsha будет считать баланс дальше по вашим операциям.</p>
+    <p class="hint">Посмотрите сумму в Kaspi.kz и впишите её — Aqsha будет считать дальше от неё. При загрузке выписки остаток обновляется сам. <span id="a-checked"></span></p>
     <div class="form-actions">
       <button type="button" class="btn danger" id="a-delete" hidden>Удалить</button>
       <button type="button" class="btn" data-close>Отмена</button>
@@ -1014,6 +1014,29 @@ function parseKaspiText(text) {
   }
   return out;
 }
+// остаток из шапки выписки: «Доступно на 31.10.25  123 456,78 ₸» или «Остаток на 31.10.25 …»
+const KASPI_BAL = /(Доступно|Остаток|Конечный остаток|Исходящий остаток)\s*(?:на)?\s*:?\s*(\d{2}\.\d{2}\.\d{2,4})\s+([+\-−–]?)\s*(\d{1,3}(?:[   ]?\d{3})*(?:[.,]\d{1,2})?)/i;
+function parseKaspiBalance(text) {
+  let best = null;
+  for (const line of text.split("\n")) {
+    const m = line.match(KASPI_BAL); if (!m) continue;
+    const [dd, mm, yy] = m[2].split(".");
+    const date = `${yy.length === 2 ? "20" + yy : yy}-${mm}-${dd}`;
+    if (isNaN(Date.parse(date))) continue;
+    const amount = (m[3] && m[3] !== "+" ? -1 : 1) * parseFloat(m[4].replace(/[\s  ]/g, "").replace(",", "."));
+    const avail = /^Доступно/i.test(m[1]);
+    // «Доступно» точнее всего; иначе берём остаток на самую позднюю дату
+    if (!best || (avail && !best.avail) || (avail === best.avail && date > best.date)) best = { date, amount, avail };
+  }
+  return best;
+}
+// подогнать начальный остаток так, чтобы на дату `date` на счёте было `amount`
+async function setBalanceAt(id, amount, date) {
+  const a = accById(id), mine = txList().filter((t) => accOf(t) === id);
+  const upTo = mine.filter((t) => t.date <= date).reduce((s, t) => s + t.amount, 0);
+  const prev = Store.accounts.get(id) || {};
+  await Store.putAccount(id, { name: a.name, icon: a.icon, order: prev.order ?? (id === "main" ? 0 : Date.now()), ...prev, start: Math.round((amount - upTo) * 100) / 100, checked: todayISO() });
+}
 let pdfReady;
 function loadPdfJs() { // грузим только когда нужно: библиотека большая
   if (pdfReady) return pdfReady;
@@ -1041,11 +1064,11 @@ async function pdfToText(file, onProgress) {
   }
   return lines.join("\n");
 }
-let pending = [];
+let pending = [], pendingBal = null;
 $("#pdf").addEventListener("change", async (e) => {
   const file = e.target.files[0];
   const prev = $("#preview"), btn = $("#do-import"), bar = $("#progress");
-  prev.hidden = true; btn.hidden = true; pending = [];
+  prev.hidden = true; btn.hidden = true; pending = []; pendingBal = null;
   if (!file) return;
   bar.hidden = false; bar.firstElementChild.style.width = "5%";
   try {
@@ -1057,6 +1080,7 @@ $("#pdf").addEventListener("change", async (e) => {
       prev.hidden = false; return;
     }
     pending = txs.filter((t) => !Store.tx.has(t.id));
+    pendingBal = parseKaspiBalance(text);
     const inc = txs.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
     const exp = txs.filter((t) => t.amount < 0).reduce((s, t) => s - t.amount, 0);
     const dates = txs.map((t) => t.date).sort();
@@ -1064,10 +1088,11 @@ $("#pdf").addEventListener("change", async (e) => {
     prev.innerHTML = `<b>Найдено операций: ${txs.length}</b>
       <span>${fmtD(dates[0])} — ${fmtD(dates[dates.length - 1])}</span>
       <span>Доходы <b class="pos">${money(inc)}</b> · Расходы <b class="neg">${money(exp)}</b></span>
-      <span class="hint">${pending.length ? `Новых: ${pending.length}` : "Все эти операции уже добавлены."}</span>`;
+      <span class="hint">${pending.length ? `Новых: ${pending.length}` : "Все эти операции уже добавлены."}</span>
+      ${pendingBal ? `<span>Остаток на ${fmtD(pendingBal.date)}: <b>${money(pendingBal.amount)}</b> — счёт обновится сам</span>` : ""}`;
     prev.hidden = false;
-    btn.hidden = !pending.length;
-    btn.textContent = `Добавить ${pending.length} операций`;
+    btn.hidden = !pending.length && !pendingBal;
+    btn.textContent = pending.length ? `Добавить ${pending.length} операций` : "Обновить остаток счёта";
   } catch (err) {
     bar.hidden = true;
     prev.innerHTML = `<b>Не получилось прочитать файл.</b><span class="hint">${esc(err.message || err)}</span>`;
@@ -1083,8 +1108,10 @@ $("#do-import").addEventListener("click", async (e) => {
       done = Math.min(i + 6, pending.length);
       btn.textContent = `Сохраняю… ${done} из ${pending.length}`;
     }
-    toast(`Добавлено операций: ${done}`);
-    pending = []; btn.hidden = true; $("#pdf").value = ""; $("#preview").hidden = true;
+    const acc = $("#import-acc").value || "main";
+    if (pendingBal) await setBalanceAt(acc, pendingBal.amount, pendingBal.date);
+    toast(done ? `Добавлено операций: ${done}${pendingBal ? " · остаток обновлён" : ""}` : "Остаток счёта обновлён");
+    pending = []; pendingBal = null; btn.hidden = true; $("#pdf").value = ""; $("#preview").hidden = true;
     $("#import-box").open = false; closeSheets(); go("overview");
   } catch (err) {
     toast(`${err.message}. Сохранено: ${done}`, { error: true });
@@ -1116,7 +1143,7 @@ function renderAccounts(all) {
     + accs.map((a) => { const b = balance(a.id, all); return `<button class="acc" data-acc="${esc(a.id)}"><span class="acc-name">${esc(a.icon)} ${esc(a.name)}</span><b class="${b < 0 ? "neg" : ""}">${money(b)}</b></button>`; }).join("")
     + (accs.length < 2 ? `<button class="acc add" data-acc="">+ Счёт</button>` : "");
 }
-$("#acc-strip").addEventListener("click", (e) => { const b = e.target.closest("[data-acc]"); if (b) openAcc(b.dataset.acc); });
+$("#acc-strip").addEventListener("click", (e) => { const b = e.target.closest("[data-acc]"); if (b) checkAcc(b.dataset.acc); });
 
 // ─── Окна редактирования ───────────────────────────────────────────────────────────────
 function closeSheets() { $$(".sheet").forEach((s) => (s.hidden = true)); }
@@ -1141,7 +1168,9 @@ function openAcc(id) {
   $("#a-delete").textContent = "Удалить";
   closeSheets(); $("#acc-sheet").hidden = false;
   if (!a) setTimeout(() => $("#a-name").focus(), 60);
+  $("#a-checked").textContent = a && a.checked ? `Сверено ${new Date(a.checked + "T00:00:00").toLocaleDateString("ru-RU", { day: "numeric", month: "long" })}` : "";
 }
+function checkAcc(id) { openAcc(id); setTimeout(() => { const f = $("#a-balance"); f.focus(); f.select(); }, 80); }
 $("#a-icons").addEventListener("click", (e) => {
   const b = e.target.closest("[data-icon]"); if (!b) return;
   accIcon = b.dataset.icon; $$("#a-icons button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
@@ -1154,7 +1183,7 @@ $("#acc-form").addEventListener("submit", async (e) => {
   const want = parseFloat(String($("#a-balance").value).replace(",", ".")) || 0;
   const prev = Store.accounts.get(id) || {};
   try {
-    await Store.putAccount(id, { name, icon: accIcon, start: Math.round((want - flows) * 100) / 100, order: prev.order ?? (id === "main" ? 0 : Date.now()) });
+    await Store.putAccount(id, { name, icon: accIcon, start: Math.round((want - flows) * 100) / 100, order: prev.order ?? (id === "main" ? 0 : Date.now()), checked: todayISO() });
     closeSheets(); toast(editingAcc ? "Счёт сохранён" : `Счёт «${name}» добавлен`);
   } catch (err) { toast(err.message, { error: true }); }
 });
@@ -1359,7 +1388,15 @@ function renderAlerts(all) {
       `${esc(t.desc)} · ${money(-t.amount)} · ${esc(when)}${txTime(t) ? " в " + esc(txTime(t)) : ""}`,
       ASK[q.kind].opts.map(([v, l]) => `<button class="btn" type="button" data-ans="${v}">${l}</button>`).join("") + `<button class="skip" type="button" data-ans="">Не сейчас</button>`) + "</div>" });
   }
-  // 5. резервная копия, если данные только на телефоне
+  // 5. сверить остаток счёта: ни разу или больше месяца назад
+  for (const a of accounts()) {
+    const n = all.filter((t) => accOf(t) === a.id && t.src !== "demo").length;
+    if (n < 5 || (a.checked && (Date.now() - Date.parse(a.checked)) / 864e5 <= 30)) continue;
+    items.push({ rank: 8.5, html: attItem("info", a.icon, `Сверьте остаток: ${esc(a.name)}`,
+      `В Aqsha ${money(balance(a.id, all))}. Если в банке другая сумма — впишите её.`,
+      `<button class="btn" type="button" data-acc-check="${esc(a.id)}">Сверить</button>`) });
+  }
+  // 6. резервная копия, если данные только на телефоне
   const last = lsGet("aqsha.lastBackup", null), mine = all.filter((t) => t.src !== "demo").length;
   if (Store.mode === "local" && mine >= 5 && (!last || (Date.now() - Date.parse(last)) / 864e5 > 14))
     items.push({ rank: 9, html: attItem("warn", "💾", last ? "Давно не было резервной копии" : "Сделайте резервную копию",
@@ -1373,6 +1410,7 @@ function renderAlerts(all) {
   $("#att-more").textContent = `Показать все (${items.length})`;
 }
 $("#att-more").addEventListener("click", () => { attAll = true; render(); });
+document.addEventListener("click", (e) => { const b = e.target.closest("[data-acc-check]"); if (b) checkAcc(b.dataset.accCheck); });
 
 // ─── Операции ──────────────────────────────────────────────────────────────────────────
 function catOptions(selected, kind) {
