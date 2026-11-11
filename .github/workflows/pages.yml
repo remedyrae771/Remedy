@@ -1,8 +1,7 @@
-name: Deploy sites to GitHub Pages
+name: Deploy Aqsha to GitHub Pages
 
-# Один сайт на два приложения:
-#   /Remedy/          — Aqsha (статические файлы из docs/)
-#   /Remedy/couples/  — Remedy, приложение для пар (сборка Expo из couples/)
+# Сайт Aqsha: https://remedyrae771.github.io/Remedy/ (статические файлы из docs/).
+# Приложение для пар переехало в отдельный репозиторий: https://remedyrae771.github.io/zhanka/
 
 on:
   push:
@@ -23,39 +22,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: couples/package-lock.json
-
-      - name: Install couples app
-        working-directory: couples
-        run: npm ci
-
-      - name: Typecheck couples app
-        working-directory: couples
-        run: npx tsc --noEmit
-
-      - name: Build couples app for the web
-        working-directory: couples
-        run: npx expo export --platform web --output-dir dist
-        env:
-          EXPO_PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
 
       - name: Assemble site
         run: |
           mkdir -p site
           cp -r docs/. site/
-          cp -r couples/dist site/couples
           touch site/.nojekyll
-          # Обновили страницу на внутреннем адресе приложения для пар — вернуть на его главную.
+          # Старые ссылки-приглашения /Remedy/couples/?join=… ведут в новое приложение для пар.
           cat > site/404.html <<'HTML'
           <!doctype html><meta charset="utf-8"><title>Страница не найдена</title>
           <script>
             var p = location.pathname;
-            if (p.indexOf('/Remedy/couples/') === 0) location.replace('/Remedy/couples/' + location.search);
+            if (p.indexOf('/Remedy/couples') === 0) location.replace('https://remedyrae771.github.io/zhanka/' + location.search);
             else location.replace('/Remedy/');
           </script>
           <p>Страница не найдена. <a href="/Remedy/">На главную</a></p>

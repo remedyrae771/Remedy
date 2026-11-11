@@ -1,6 +1,5 @@
-> В этом репозитории два приложения:
-> - **Aqsha** — учёт доходов и расходов (описание ниже). Сайт: https://remedyrae771.github.io/Remedy/
-> - **Remedy 💞** — приложение для пар, папка [`couples/`](couples/). Сайт: https://remedyrae771.github.io/Remedy/couples/
+> Приложение для пар (Remedy 💞) теперь живёт отдельно: репозиторий [remedyrae771/zhanka](https://github.com/remedyrae771/zhanka),
+> сайт https://remedyrae771.github.io/zhanka/.
 
 # Aqsha — учёт доходов и расходов
 
