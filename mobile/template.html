@@ -328,6 +328,44 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
 .review-row { display: flex; gap: 6px; flex-wrap: wrap; }
 #d-note { width: 100%; min-height: 64px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); padding: 10px; font: inherit; font-size: 15px; resize: vertical; }
 
+/* шапка: кнопка «Ещё» */
+.hdr-btn { width: 38px; height: 38px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--muted); display: grid; place-items: center; padding: 0; flex: none; }
+.hdr-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.hdr-btn[aria-current="page"] { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+
+/* долги */
+.debt-sum { display: flex; flex-direction: column; gap: 10px; background: linear-gradient(160deg, var(--surface) 30%, color-mix(in srgb, var(--expense) 10%, var(--surface))); }
+.debt-sum .big { font: 700 30px/1.1 var(--display); font-variant-numeric: tabular-nums; }
+.debt-sum .row { display: flex; gap: 6px 18px; flex-wrap: wrap; font-size: 14px; color: var(--muted); }
+.debt-sum .row b { color: var(--text); font-variant-numeric: tabular-nums; }
+.load { display: flex; flex-direction: column; gap: 6px; }
+.load .meter { height: 10px; border-radius: 5px; background: var(--border); overflow: hidden; position: relative; }
+.load .meter i { display: block; height: 100%; border-radius: 5px; background: var(--income); }
+.load.warn .meter i { background: var(--gold); } .load.over .meter i { background: var(--expense); }
+.load .meter::after { content: ""; position: absolute; top: -2px; bottom: -2px; left: 60%; width: 2px; background: var(--muted); opacity: .5; } /* отметка 30% (шкала до 50%) */
+.load-text { font-size: 13.5px; }
+.debt-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.debt { display: flex; flex-direction: column; gap: 8px; cursor: pointer; text-align: left; }
+.debt .d-top { display: grid; grid-template-columns: auto 1fr auto; gap: 2px 12px; align-items: center; }
+.debt .d-ico { grid-row: span 2; width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-size: 21px; background: var(--danger-soft); }
+.debt.owed .d-ico { background: color-mix(in srgb, var(--income) 14%, transparent); }
+.debt .d-name { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.debt .d-left { font: 700 17px/1.2 var(--display); font-variant-numeric: tabular-nums; white-space: nowrap; text-align: right; }
+.debt .d-sub { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.debt .d-pay { font-size: 13px; color: var(--muted); white-space: nowrap; text-align: right; }
+.debt .progress { height: 8px; }
+.debt .progress i { background: var(--income); }
+.debt .d-foot { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--muted); flex-wrap: wrap; }
+.due { display: flex; gap: 12px; align-items: center; padding: 11px 14px; border-bottom: 1px solid var(--border); }
+.due:last-child { border-bottom: none; }
+.due .d-txt { flex: 1; min-width: 0; font-size: 14px; }
+.due .d-txt b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.due .when { font-size: 12.5px; color: var(--muted); }
+.due .when .late { color: var(--expense); font-weight: 700; }
+.due .when .soon { color: var(--gold-text); font-weight: 700; }
+.due .when .due-amt { display: inline; color: var(--text); font-variant-numeric: tabular-nums; }
+.wrap-chips { flex-wrap: wrap; margin-inline: 0; padding-inline: 0; overflow: visible; }
+
 /* нижняя панель */
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--surface); border-top: 1px solid var(--border);
   padding: 0 max(8px, env(safe-area-inset-right, 0px)) env(safe-area-inset-bottom, 0px) max(8px, env(safe-area-inset-left, 0px));
@@ -358,6 +396,9 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
     <!--__ICON__-->
     <h1>Aqsha</h1>
     <span class="sync" id="sync" data-state="loading">Загрузка…</span>
+    <button class="hdr-btn" id="hdr-more" type="button" data-goto="more" aria-label="Ещё: выписка, бюджет, напоминания, категории, копия">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
   </div>
 </header>
 
@@ -452,6 +493,20 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
       <select id="filter-acc" aria-label="Счёт" style="grid-column:1/-1" hidden><option value="">Все счета</option></select>
     </div>
     <div id="tx-list"></div>
+  </section>
+
+  <!-- Долги -->
+  <section class="tab" id="tab-debts" aria-label="Долги и кредиты">
+    <section class="card debt-sum" id="debt-sum"></section>
+    <div id="debt-upcoming"></div>
+    <div class="debt-head"><h2 class="section-title">Мои долги</h2>
+      <button class="btn primary small" type="button" data-new-debt="">+ Добавить</button></div>
+    <div class="tips" id="debt-list"></div>
+    <div id="debt-owed-block" hidden>
+      <h2 class="section-title" style="margin-bottom:10px">Мне должны</h2>
+      <div class="tips" id="debt-owed"></div>
+    </div>
+    <details class="card" id="debt-closed-block" hidden><summary>Закрытые долги</summary><div class="tips" id="debt-closed" style="margin-top:10px"></div></details>
   </section>
 
   <!-- Советы -->
@@ -586,8 +641,8 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
   <button data-tab="overview" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12A9 9 0 1 1 12 3v9z"/><path d="M15 3.3A9 9 0 0 1 20.7 9H15z"/></svg><span>Обзор</span></button>
   <button data-tab="transactions"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 20V4M7 20l-3-3M7 20l3-3"/><path d="M17 4v16M17 4l-3 3M17 4l3 3"/></svg><span>Операции</span></button>
   <button class="fab" id="fab" aria-label="Добавить операцию"><b aria-hidden="true">+</b></button>
+  <button data-tab="debts"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/></svg><span>Долги</span></button>
   <button data-tab="tips"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c2 2 10 2 12 0v-5"/><path d="M22 9v6"/></svg><span>Знания</span></button>
-  <button data-tab="more"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg><span>Ещё</span></button>
 </nav>
 
 <div class="sheet" id="add-sheet" hidden>
@@ -642,6 +697,53 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
   <div class="sheet-panel" role="dialog" aria-modal="true" aria-label="Подробности операции" id="detail"></div>
 </div>
 
+<div class="sheet" id="debt-sheet" hidden>
+  <form class="sheet-panel form" id="debt-form" role="dialog" aria-modal="true" aria-labelledby="debt-title">
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <h2 id="debt-title">Новый долг</h2>
+    <div class="chips wrap-chips" id="dt-types" role="group" aria-label="Тип"></div>
+    <label>Название<input type="text" id="dt-name" maxlength="60" required placeholder="например, iPhone в рассрочку"></label>
+    <label><span id="dt-lender-label">У кого</span><input type="text" id="dt-lender" maxlength="60" placeholder="Kaspi, Halyk, имя человека"></label>
+    <div class="row2">
+      <label>Сумма долга, ₸<input type="number" id="dt-total" inputmode="decimal" min="0" step="any" required placeholder="0"></label>
+      <label><span id="dt-paid-label">Уже выплачено, ₸</span><input type="number" id="dt-paid" inputmode="decimal" min="0" step="any" placeholder="0"></label>
+    </div>
+    <div class="row2">
+      <label>Осталось платить, мес.<input type="number" id="dt-months" inputmode="numeric" min="1" max="600" step="1" placeholder="например, 10"></label>
+      <label><span id="dt-pay-label">Платёж в месяц, ₸</span><input type="number" id="dt-payment" inputmode="decimal" min="0" step="any" placeholder="посчитаем сами"></label>
+    </div>
+    <div class="row2">
+      <label>День платежа<input type="number" id="dt-day" inputmode="numeric" min="1" max="31" step="1" placeholder="1–31"></label>
+      <label id="dt-rate-wrap">Ставка (ГЭСВ), %<input type="number" id="dt-rate" inputmode="decimal" min="0" max="999" step="any" placeholder="необязательно"></label>
+    </div>
+    <p class="hint" id="dt-calc"></p>
+    <label>Заметка<input type="text" id="dt-note" maxlength="200" placeholder="необязательно"></label>
+    <div class="form-actions">
+      <button type="button" class="btn danger" id="dt-delete" hidden>Удалить</button>
+      <button type="button" class="btn" data-close>Отмена</button>
+      <button class="btn primary">Сохранить</button>
+    </div>
+  </form>
+</div>
+
+<div class="sheet" id="pay-sheet" hidden>
+  <form class="sheet-panel form" id="pay-form" role="dialog" aria-modal="true" aria-labelledby="pay-title">
+    <div class="sheet-handle" aria-hidden="true"></div>
+    <h2 id="pay-title">Оплата</h2>
+    <p class="hint" id="pay-info"></p>
+    <label>Сумма, ₸<input type="number" id="pay-amount" class="amount-input" inputmode="decimal" min="0" step="any" required></label>
+    <div class="row2">
+      <label>Со счёта<select id="pay-acc"></select></label>
+      <label>Дата<input type="date" id="pay-date" required></label>
+    </div>
+    <p class="hint">Платёж запишется в операции и уменьшит остаток долга.</p>
+    <div class="form-actions">
+      <button type="button" class="btn" data-close>Отмена</button>
+      <button class="btn primary" id="pay-go">Оплатить</button>
+    </div>
+  </form>
+</div>
+
 <div class="sheet" id="acc-sheet" hidden>
   <form class="sheet-panel form" id="acc-form" role="dialog" aria-modal="true" aria-labelledby="acc-title">
     <div class="sheet-handle" aria-hidden="true"></div>
@@ -665,6 +767,7 @@ details summary { cursor: pointer; color: var(--accent); font-weight: 600; font-
 "use strict";
 // ─── Данные из основного приложения (собираются build.py) ───────────────────────────────
 const CATEGORIES = /*__CATEGORIES__*/[];
+CATEGORIES.push({ name: "Кредиты и долги", kind: "expense", color: "#6d5bd0" });
 const BUILTIN_RULES = /*__RULES__*/[];
 const LOW_PRIORITY = new Set(/*__LOW_PRIORITY__*/[]);
 const TOPICS = /*__TOPICS__*/{};
@@ -678,7 +781,7 @@ const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 const CAT = Object.fromEntries(CATEGORIES.map((c) => [c.name, c]));
 const CAT_ICON = { "Зарплата": "💼", "Переводы входящие": "📥", "Прочие доходы": "💰", "Продукты": "🛒", "Кафе и рестораны": "☕",
   "Транспорт": "🚕", "Жильё и ЖКХ": "🏠", "Связь и интернет": "📱", "Здоровье": "💊", "Развлечения": "🎬", "Покупки": "🛍️",
-  "Одежда": "👕", "Переводы исходящие": "📤", "Прочие расходы": "🧾" };
+  "Одежда": "👕", "Переводы исходящие": "📤", "Прочие расходы": "🧾", "Кредиты и долги": "🏦" };
 const catIco = (name, sm = false) => `<span class="cat-ico${sm ? " sm" : ""}" style="background:${esc((CAT[name]?.color || "#999999") + "26")}" aria-hidden="true">${CAT_ICON[name] || "•"}</span>`;
 const SITE = window.claude ? "https://remedyrae771.github.io/Remedy/" : "./"; // где лежат файлы напоминаний
 const money = (n) => new Intl.NumberFormat("ru-RU", { style: "currency", currency: "KZT", currencyDisplay: "narrowSymbol", maximumFractionDigits: 0 }).format(Math.round(n));
@@ -720,8 +823,8 @@ function toast(text, { error = false, action, onAction, ms = 4000 } = {}) {
 
 // ─── Хранилище: личный раздел на claude.ai, иначе — этот браузер ─────────────────────────
 const Store = {
-  mode: "loading", loaded: false, tx: new Map(), rules: new Map(), budgets: new Map(), accounts: new Map(),
-  db: null, txCol: null, ruleCol: null, budgetCol: null, accCol: null,
+  mode: "loading", loaded: false, tx: new Map(), rules: new Map(), budgets: new Map(), accounts: new Map(), debts: new Map(),
+  db: null, txCol: null, ruleCol: null, budgetCol: null, accCol: null, debtCol: null,
   setSync(state, text) { const el = $("#sync"); el.dataset.state = state; el.textContent = text; },
   async init() {
     let db = null, uid = null;
@@ -743,9 +846,10 @@ const Store = {
     this.ruleCol = base.collection("rules");
     this.budgetCol = base.collection("budgets");
     this.accCol = base.collection("accounts");
+    this.debtCol = base.collection("debts");
     this.setSync("loading", "Загрузка…");
     const slow = setTimeout(() => this.setSync("error", "Нет связи"), 10000);
-    let first = 4;
+    let first = 5;
     const done = (snap) => { if (!snap.metadata.fromCache && --first <= 0) { clearTimeout(slow); this.setSync("cloud", "Сохранено"); } };
     this.unsubs.push(this.txCol.onSnapshot((snap) => {
       this.tx = new Map(snap.docs.map((d) => [d.id, d.data()]));
@@ -753,6 +857,10 @@ const Store = {
     }, (e) => { clearTimeout(slow); this.setSync("error", "Нет доступа"); console.warn(e); }));
     this.unsubs.push(this.ruleCol.onSnapshot((snap) => {
       this.rules = new Map(snap.docs.map((d) => [d.id, d.data()]));
+      done(snap); render();
+    }, (e) => console.warn(e)));
+    this.unsubs.push(this.debtCol.onSnapshot((snap) => {
+      this.debts = new Map(snap.docs.map((d) => [d.id, d.data()]));
       done(snap); render();
     }, (e) => console.warn(e)));
     this.unsubs.push(this.accCol.onSnapshot((snap) => {
@@ -774,8 +882,9 @@ const Store = {
   },
   initLocal() {
     this.mode = "local";
-    const saved = lsGet("aqsha.v1", { tx: {}, rules: {}, budgets: {}, accounts: {} });
+    const saved = lsGet("aqsha.v1", { tx: {}, rules: {}, budgets: {}, accounts: {}, debts: {} });
     this.accounts = new Map(Object.entries(saved.accounts || {}));
+    this.debts = new Map(Object.entries(saved.debts || {}));
     this.tx = new Map(Object.entries(saved.tx || {}));
     this.rules = new Map(Object.entries(saved.rules || {}));
     this.budgets = new Map(Object.entries(saved.budgets || {}));
@@ -783,14 +892,14 @@ const Store = {
     this.setSync("local", "На телефоне");
     render();
   },
-  persistLocal() { lsSet("aqsha.v1", { tx: Object.fromEntries(this.tx), rules: Object.fromEntries(this.rules), budgets: Object.fromEntries(this.budgets), accounts: Object.fromEntries(this.accounts) }); },
+  persistLocal() { lsSet("aqsha.v1", { tx: Object.fromEntries(this.tx), rules: Object.fromEntries(this.rules), budgets: Object.fromEntries(this.budgets), accounts: Object.fromEntries(this.accounts), debts: Object.fromEntries(this.debts) }); },
   async write(kind, id, body) { // body = null → удалить
-    const map = { tx: this.tx, rule: this.rules, budget: this.budgets, account: this.accounts }[kind];
+    const map = { tx: this.tx, rule: this.rules, budget: this.budgets, account: this.accounts, debt: this.debts }[kind];
     if (this.mode !== "cloud") {
       if (body) map.set(id, body); else map.delete(id);
       this.persistLocal(); render(); return;
     }
-    const ref = { tx: this.txCol, rule: this.ruleCol, budget: this.budgetCol, account: this.accCol }[kind].doc(id);
+    const ref = { tx: this.txCol, rule: this.ruleCol, budget: this.budgetCol, account: this.accCol, debt: this.debtCol }[kind].doc(id);
     this.setSync("loading", "Сохраняю…");
     try {
       if (body) await ref.set(body); else await ref.delete();
@@ -817,6 +926,8 @@ const Store = {
   putBudget(id, b) { return this.write("budget", id, b); },
   putAccount(id, a) { return this.write("account", id, a); },
   delAccount(id) { return this.write("account", id, null); },
+  putDebt(id, d) { return this.write("debt", id, d); },
+  delDebt(id) { return this.write("debt", id, null); },
   delBudget(id) { return this.write("budget", id, null); },
 };
 function showBanner(html) { const b = $("#banner"); b.innerHTML = html; b.hidden = false; }
@@ -1192,6 +1303,12 @@ function renderAlerts(all) {
       ${a.id === "total" ? '<span class="a-ico">🎯</span>' : catIco(a.cat)}
       <span class="a-text"><b>${esc(a.name)}: ${a.share >= 1 ? "бюджет превышен" : `потрачено ${Math.round(a.share * 100)}%`}</b>
       ${money(a.spent)} из ${money(a.limit)}${a.share >= 1 ? ` · сверх лимита ${money(a.spent - a.limit)}` : ` · осталось ${money(a.limit - a.spent)}`}</span></div>`);
+  for (const d of activeDebts().filter((x) => !isOwed(x) && x.dueDay && x.payment)) {
+    const days = dueDays(d); if (days === null || days > 3) continue;
+    items.unshift(`<div class="alert${days < 0 ? " over" : ""}"><span class="a-ico">${(DEBT_TYPES[d.type] || DEBT_TYPES.credit).icon}</span>
+      <span class="a-text"><b>${esc(d.name)}: ${money(Math.min(d.payment, debtLeft(d)))}</b>платёж ${dueText(days).t}</span>
+      <button class="btn small${days <= 1 ? " primary" : ""}" type="button" data-pay="${esc(d.id)}">Оплатить</button></div>`);
+  }
   const last = lsGet("aqsha.lastBackup", null), mine = all.filter((t) => t.src !== "demo").length;
   if (Store.mode === "local" && mine >= 5 && (!last || (Date.now() - Date.parse(last)) / 864e5 > 14)) {
     items.push(`<div class="alert"><span class="a-ico">💾</span><span class="a-text"><b>${last ? "Давно не было резервной копии" : "Сделайте резервную копию"}</b>
@@ -1434,7 +1551,7 @@ $("#detail").addEventListener("input", (e) => {
 // ─── Советы ────────────────────────────────────────────────────────────────────────────
 const GENERAL = TIPS.map(([topic, icon, title, text]) => ({ id: "g-" + hash(title), kind: "general", topic, icon, title, text }));
 function monthBounds(d) { return [isoDay(new Date(d.getFullYear(), d.getMonth(), 1)), isoDay(new Date(d.getFullYear(), d.getMonth() + 1, 0))]; }
-const FIXED = new Set(["Жильё и ЖКХ", "Переводы исходящие"]);
+const FIXED = new Set(["Жильё и ЖКХ", "Переводы исходящие", "Кредиты и долги"]);
 function personalTips() {
   const all = txList(); if (!all.length) return [];
   const now = new Date(), month = todayISO().slice(0, 7), tips = [];
@@ -1475,6 +1592,9 @@ function personalTips() {
   const monthsExp = {}; for (const t of all) if (t.amount < 0 && t.date < monthBounds(now)[0]) monthsExp[t.date.slice(0, 7)] = (monthsExp[t.date.slice(0, 7)] || 0) - t.amount;
   const last3 = Object.keys(monthsExp).sort().slice(-3).map((k) => monthsExp[k]);
   if (last3.length) { const avg = last3.reduce((a, b) => a + b, 0) / last3.length; add("cushion", "🛟", `Ваша подушка: ${money(avg * 3)} – ${money(avg * 6)}`, `Вы тратите в среднем ${money(avg)} в месяц. Запас на 3–6 месяцев на отдельном депозите защитит от кредитов в трудной ситуации.`); }
+  const load = debtLoad();
+  if (load.share !== null && load.share > 0.2 && load.monthly) add("debtload", "🧾", `Платежи по долгам — ${Math.round(load.share * 100)}% дохода`,
+    `Каждый месяц ${money(load.monthly)} уходит на кредиты и рассрочки. ${load.share > 0.3 ? "Это выше безопасных 30%: не берите новых рассрочек, пока нагрузка не снизится." : "Держите нагрузку ниже 20–30% и не открывайте новые рассрочки без запаса."}`);
   const reviewed = inRange(all, monthBounds(now)).filter((t) => t.review && t.amount < 0);
   const bad = reviewed.filter((t) => t.review.worth === "bad"), imp = reviewed.filter((t) => t.review.planned === "no");
   if (bad.length) add("bad", "👎", `«Зря» в этом месяце: ${money(-bad.reduce((s, t) => s + t.amount, 0))}`,
@@ -1548,6 +1668,11 @@ function setKnow(k) {
 $$("[data-know]").forEach((b) => b.addEventListener("click", () => setKnow(b.dataset.know)));
 // по операциям: на какую ситуацию похоже (если данных достаточно)
 function diagnose() {
+  // долги — сразу, даже когда операций ещё мало
+  const late = activeDebts().find((d) => !isOwed(d) && d.dueDay && d.payment && dueDays(d) < 0);
+  if (late) return { id: "overdue", why: `платёж «${late.name}» ${dueText(dueDays(late)).t}` };
+  const load = debtLoad();
+  if (load.share !== null && load.share > 0.3) return { id: "installments", why: `платежи по долгам — ${Math.round(load.share * 100)}% дохода (${money(load.monthly)} в месяц)` };
   const all = txList().filter((t) => t.src !== "demo"); if (all.length < 5) return null;
   const now = new Date(), prevM = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const prev = inRange(all, monthBounds(prevM)), inc = sumIncome(prev), exp = sumExpense(prev);
@@ -1657,13 +1782,16 @@ $("#rule-list").addEventListener("click", async (e) => {
 });
 
 // ─── Резервная копия (CSV) ─────────────────────────────────────────────────────────────
-const CSV_HEAD = ["Дата", "Сумма", "Описание", "Категория", "Источник", "Счёт", "Время", "Заметка"];
+const CSV_HEAD = ["Дата", "Сумма", "Описание", "Категория", "Источник", "Счёт", "Время", "Заметка", "Данные"];
 const csvCell = (v) => { const t = String(v ?? ""); return /[;"\n\r]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t; };
 function toCSV() {
   const rows = txList().filter((t) => t.src !== "demo").sort((a, b) => a.date.localeCompare(b.date));
   // \u0441\u0442\u0440\u043e\u043a\u0438 \u00ab\u041e\u0441\u0442\u0430\u0442\u043e\u043a\u00bb \u0445\u0440\u0430\u043d\u044f\u0442 \u043d\u0430\u0447\u0430\u043b\u044c\u043d\u044b\u0439 \u043e\u0441\u0442\u0430\u0442\u043e\u043a \u0438 \u0437\u043d\u0430\u0447\u043e\u043a \u043a\u0430\u0436\u0434\u043e\u0433\u043e \u0441\u0447\u0451\u0442\u0430
   const accRows = accounts().map((a) => ["\u041e\u0441\u0442\u0430\u0442\u043e\u043a", String(a.start || 0).replace(".", ","), a.name, a.icon, a.id === "main" ? "\u043e\u0441\u043d\u043e\u0432\u043d\u043e\u0439 \u0441\u0447\u0451\u0442" : "\u0441\u0447\u0451\u0442", a.name]);
-  return "\ufeff" + [CSV_HEAD, ...accRows, ...rows.map((t) => [t.date, String(t.amount).replace(".", ","), t.desc, t.cat, t.src || "", accById(accOf(t)).name, txTime(t), t.note || ""])]
+  // строки «Долг»: сумма, название, тип, у кого, заметка; остальное — в колонке «Данные»
+  const debtRows = debtList().map((d) => ["Долг", String(d.total || 0).replace(".", ","), d.name, d.type, "долг", d.lender || "", "", d.note || "",
+    JSON.stringify({ paid: d.paid || 0, payment: d.payment || 0, dueDay: d.dueDay || null, rate: d.rate || null, firstMonth: d.firstMonth || null, paidMonths: d.paidMonths || [], closed: !!d.closed })]);
+  return "\ufeff" + [CSV_HEAD, ...accRows, ...debtRows, ...rows.map((t) => [t.date, String(t.amount).replace(".", ","), t.desc, t.cat, t.src || "", accById(accOf(t)).name, txTime(t), t.note || ""])]
     .map((r) => r.map(csvCell).join(";")).join("\r\n");
 }
 function parseCSV(text) {
@@ -1733,6 +1861,12 @@ async function restoreFromText(text) {
   // операция могла уже быть с другим id (из выписки) — сверяем по дате, сумме и описанию
   const known = new Set(txList().map((t) => `${t.date}|${t.amount}|${t.desc}`));
   const fresh = items.filter((t) => !known.has(`${t.date}|${t.amount}|${t.desc}`));
+  // долги из копии
+  for (const r of rows.filter((x) => x[0] === "Долг" && x[2])) {
+    let extra = {}; try { extra = JSON.parse(r[8] || "{}"); } catch { /* старый формат */ }
+    await Store.putDebt("d-" + hash(r[3] + "|" + r[2]), { type: DEBT_TYPES[r[3]] ? r[3] : "credit", name: r[2], lender: r[5] || "", note: r[7] || "",
+      total: parseFloat(String(r[1]).replace(",", ".")) || 0, created: Date.now(), ...extra });
+  }
   // счета из копии: строки «Остаток» задают начальный остаток и значок; основной счёт сопоставляем всегда
   const byName = Object.fromEntries(accounts().map((a) => [a.name, a.id]));
   for (const r of rows.filter((x) => x[0] === "Остаток" && x[2])) {
@@ -1857,12 +1991,197 @@ function renderReminders() {
 $("#remind-time").addEventListener("change", () => { lsSet("aqsha.remindTime", $("#remind-time").value); renderReminders(); });
 $("#remind-time").value = lsGet("aqsha.remindTime", "2100");
 
+// ─── Долги, рассрочки, кредиты ──────────────────────────────────────────────────────────
+const DEBT_TYPES = {
+  installment: { name: "Рассрочка", icon: "🧾" }, credit: { name: "Кредит", icon: "🏦" }, card: { name: "Кредитная карта", icon: "💳" },
+  mfo: { name: "Микрозайм", icon: "🌀" }, person: { name: "Долг человеку", icon: "🤝" }, owed: { name: "Мне должны", icon: "📥" },
+};
+const debtList = () => [...Store.debts.entries()].map(([id, d]) => ({ id, ...d }));
+const debtLeft = (d) => Math.max(0, Math.round(((d.total || 0) - (d.paid || 0)) * 100) / 100);
+const isOwed = (d) => d.type === "owed";
+const activeDebts = () => debtList().filter((d) => !d.closed && debtLeft(d) > 0);
+const ym = (date) => isoDay(date).slice(0, 7);
+const DAYS = ["день", "дня", "дней"];
+function nextDue(d) { // дата ближайшего платежа: в этом месяце, если ещё не оплачен, иначе в следующем
+  if (!d.dueDay || d.closed) return null;
+  const now = new Date(); let y = now.getFullYear(), m = now.getMonth();
+  if ((d.paidMonths || []).includes(ym(now))) m += 1;
+  if (d.firstMonth) { const [fy, fm] = d.firstMonth.split("-").map(Number); if (y * 12 + m < fy * 12 + fm - 1) { y = fy; m = fm - 1; } }
+  return new Date(y, m, Math.min(d.dueDay, new Date(y, m + 1, 0).getDate()));
+}
+function dueDays(d) { const due = nextDue(d); return due ? Math.round((due - new Date(new Date().toDateString())) / 864e5) : null; }
+function dueText(days) {
+  if (days === null) return { t: "день платежа не указан", c: "" };
+  if (days < 0) return { t: `просрочен на ${-days} ${plural(-days, DAYS)}`, c: "late" };
+  if (days === 0) return { t: "сегодня", c: "soon" };
+  if (days === 1) return { t: "завтра", c: "soon" };
+  return { t: `через ${days} ${plural(days, DAYS)}`, c: days <= 3 ? "soon" : "" };
+}
+function monthsLeft(d) { return d.payment > 0 ? Math.ceil(debtLeft(d) / d.payment) : null; }
+function endText(d) {
+  const n = monthsLeft(d); if (!n) return "";
+  const end = new Date(new Date().getFullYear(), new Date().getMonth() + n - ((d.paidMonths || []).includes(ym(new Date())) ? 0 : 1), 1);
+  // «до августа 2027»: берём месяц в родительном падеже из полной даты
+  const until = end.toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" }).replace(/^\d+\s/, "").replace(/\s?г\.$/, "");
+  return `${n} ${plural(n, ["платёж", "платежа", "платежей"])} · до ${until}`;
+}
+// средний месячный доход за 3 последних полных месяца (иначе — текущий)
+function avgIncome() {
+  const all = txList(), now = new Date(), vals = [];
+  for (let k = 1; k <= 3; k++) { const v = sumIncome(inRange(all, monthBounds(new Date(now.getFullYear(), now.getMonth() - k, 1)))); if (v) vals.push(v); }
+  return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : sumIncome(inRange(all, range("month")));
+}
+function debtLoad() {
+  const mine = activeDebts().filter((d) => !isOwed(d));
+  const monthly = mine.reduce((s, d) => s + Math.min(d.payment || 0, debtLeft(d)), 0), inc = avgIncome();
+  return { mine, monthly, inc, share: inc ? monthly / inc : null };
+}
+function debtCard(d) {
+  const t = DEBT_TYPES[d.type] || DEBT_TYPES.credit, left = debtLeft(d), done = d.total ? Math.min(1, (d.paid || 0) / d.total) : 0;
+  const dd = dueText(dueDays(d)), paidNow = (d.paidMonths || []).includes(ym(new Date()));
+  return `<div class="card debt${isOwed(d) ? " owed" : ""}" data-debt="${esc(d.id)}" role="button" tabindex="0">
+    <div class="d-top"><span class="d-ico">${t.icon}</span><span class="d-name">${esc(d.name)}</span>
+      <span class="d-left ${isOwed(d) ? "pos" : "neg"}">${money(left)}</span>
+      <span class="d-sub">${esc(t.name)}${d.lender ? " · " + esc(d.lender) : ""}${d.rate ? ` · ${String(d.rate).replace(".", ",")}%` : ""}</span>
+      <span class="d-pay">${d.payment ? `${money(d.payment)}/мес` : "остаток"}</span></div>
+    <div class="progress"><i style="width:${Math.round(done * 100)}%"></i></div>
+    <div class="d-foot"><span>${isOwed(d) ? "вернули" : "выплачено"} ${money(d.paid || 0)} из ${money(d.total || 0)} (${Math.round(done * 100)}%)</span>
+      <span>${d.dueDay ? (paidNow ? "✓ в этом месяце оплачено" : `${dd.t}`) : ""}</span></div>
+    ${d.payment ? `<div class="d-foot"><span>${esc(endText(d))}</span></div>` : ""}
+  </div>`;
+}
+function renderDebts() {
+  const { mine, monthly, inc, share } = debtLoad();
+  const owed = activeDebts().filter(isOwed), totalMine = mine.reduce((s, d) => s + debtLeft(d), 0);
+  const level = share === null ? "" : share > 0.3 ? "over" : share > 0.2 ? "warn" : "";
+  $("#debt-sum").innerHTML = mine.length || owed.length ? `<span class="hint">Я должен всего</span>
+    <span class="big neg">${money(totalMine)}</span>
+    <div class="row"><span>В месяц <b>${money(monthly)}</b></span><span>Долгов <b>${mine.length}</b></span>${owed.length ? `<span>Мне должны <b class="pos">${money(owed.reduce((s, d) => s + debtLeft(d), 0))}</b></span>` : ""}</div>
+    ${share !== null && monthly ? `<div class="load ${level}"><div class="meter"><i style="width:${Math.min(100, share / 0.5 * 100)}%"></i></div>
+      <span class="load-text">Платежи — <b>${Math.round(share * 100)}%</b> дохода (${money(inc)} в месяц). ${share > 0.3 ? "Это много: безопасно — до 30%." : share > 0.2 ? "Терпимо, но лучше не больше 20%." : "Хороший уровень."}</span>
+      ${share > 0.3 ? `<button class="btn small" type="button" data-open-case="installments">📚 Как снизить нагрузку</button>` : ""}</div>`
+      : monthly ? `<span class="hint">Добавьте доходы в операции — покажем, какую долю дохода забирают платежи.</span>` : ""}`
+    : `<div class="empty" style="padding:8px 0"><div class="big">🧾</div><b>Долгов пока нет</b>
+      <p class="hint">Добавьте рассрочки, кредиты, кредитные карты или долги друзьям — Aqsha напомнит о платежах и покажет, когда всё закончится.</p>
+      <button class="btn primary" type="button" data-new-debt="">+ Добавить долг</button></div>`;
+  // ближайшие платежи
+  const dues = mine.filter((d) => d.dueDay && d.payment).map((d) => ({ d, days: dueDays(d) })).sort((a, b) => a.days - b.days);
+  $("#debt-upcoming").innerHTML = dues.length ? `<h2 class="section-title" style="margin-bottom:10px">Ближайшие платежи</h2><div class="card txs">${dues.map(({ d, days }) => {
+    const dt = dueText(days), due = nextDue(d);
+    return `<div class="due"><span class="cat-ico">${(DEBT_TYPES[d.type] || DEBT_TYPES.credit).icon}</span>
+      <span class="d-txt"><b>${esc(d.name)}</b><span class="when"><b class="due-amt">${money(Math.min(d.payment, debtLeft(d)))}</b> · ${due.toLocaleDateString("ru-RU", { day: "numeric", month: "long" })} · <span class="${dt.c}">${dt.t}</span></span></span>
+      <button class="btn small${days <= 3 ? " primary" : ""}" type="button" data-pay="${esc(d.id)}">Оплатить</button></div>`;
+  }).join("")}</div>` : "";
+  const byDue = (a, b) => (dueDays(a) ?? 99) - (dueDays(b) ?? 99);
+  $("#debt-list").innerHTML = mine.sort(byDue).map(debtCard).join("");
+  $("#debt-owed-block").hidden = !owed.length; $("#debt-owed").innerHTML = owed.map(debtCard).join("");
+  const closed = debtList().filter((d) => d.closed || debtLeft(d) <= 0);
+  $("#debt-closed-block").hidden = !closed.length; $("#debt-closed").innerHTML = closed.map(debtCard).join("");
+}
+
+// окно «Долг»
+let editingDebt = null, debtType = "installment";
+function setDebtType(t) {
+  debtType = t;
+  $$("#dt-types [data-dtype]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.dtype === t)));
+  const owed = t === "owed", person = t === "person" || owed;
+  $("#dt-lender-label").textContent = owed ? "Кто должен" : person ? "Кому" : "Банк или магазин";
+  $("#dt-paid-label").textContent = owed ? "Уже вернули, ₸" : "Уже выплачено, ₸";
+  $("#dt-pay-label").textContent = owed ? "Возвращают в месяц, ₸" : "Платёж в месяц, ₸";
+  $("#dt-rate-wrap").hidden = person || t === "installment";
+  debtCalc();
+}
+function num(sel) { return parseFloat(String($(sel).value).replace(",", ".")) || 0; }
+function debtCalc() { // подсказка: платёж из срока или срок из платежа
+  const left = Math.max(0, num("#dt-total") - num("#dt-paid")), months = Math.round(num("#dt-months")), pay = num("#dt-payment");
+  let text = "";
+  if (left && months && !pay) text = `Платёж получится ${money(Math.ceil(left / months))} в месяц.`;
+  else if (left && pay) { const n = Math.ceil(left / pay); text = `Осталось ${money(left)} — это ${n} ${plural(n, ["платёж", "платежа", "платежей"])}.`; }
+  else if (left) text = `Осталось ${money(left)}.`;
+  $("#dt-calc").textContent = text;
+}
+["#dt-total", "#dt-paid", "#dt-months", "#dt-payment"].forEach((sel) => $(sel).addEventListener("input", debtCalc));
+function openDebt(id) {
+  const d = id ? Store.debts.get(id) : null;
+  editingDebt = d ? id : null;
+  $("#debt-title").textContent = d ? "Изменить долг" : "Новый долг";
+  $("#dt-types").innerHTML = Object.entries(DEBT_TYPES).map(([k, v]) => `<button type="button" class="chip" data-dtype="${k}">${v.icon} ${v.name}</button>`).join("");
+  $("#dt-name").value = d?.name || ""; $("#dt-lender").value = d?.lender || "";
+  $("#dt-total").value = d?.total ?? ""; $("#dt-paid").value = d?.paid || "";
+  $("#dt-months").value = ""; $("#dt-payment").value = d?.payment || "";
+  $("#dt-day").value = d?.dueDay || ""; $("#dt-rate").value = d?.rate || ""; $("#dt-note").value = d?.note || "";
+  $("#dt-delete").hidden = !d; $("#dt-delete").textContent = "Удалить";
+  setDebtType(d?.type || "installment");
+  closeSheets(); $("#debt-sheet").hidden = false;
+  if (!d) setTimeout(() => $("#dt-name").focus(), 60);
+}
+$("#dt-types").addEventListener("click", (e) => { const b = e.target.closest("[data-dtype]"); if (b) setDebtType(b.dataset.dtype); });
+$("#debt-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const total = num("#dt-total"), paid = Math.min(num("#dt-paid"), total), months = Math.round(num("#dt-months"));
+  let payment = num("#dt-payment");
+  if (!total) { toast("Укажите сумму долга", { error: true }); return; }
+  if (!payment && months) payment = Math.ceil((total - paid) / months);
+  const day = Math.min(31, Math.max(0, Math.round(num("#dt-day"))));
+  const prev = editingDebt ? Store.debts.get(editingDebt) : null;
+  const now = new Date();
+  // первый платёж: если день платежа в этом месяце уже прошёл — со следующего месяца
+  const firstMonth = prev?.firstMonth || (day && day < now.getDate() ? ym(new Date(now.getFullYear(), now.getMonth() + 1, 1)) : ym(now));
+  const body = { ...(prev || {}), type: debtType, name: $("#dt-name").value.trim(), lender: $("#dt-lender").value.trim(), total, paid, payment,
+    dueDay: day || null, rate: num("#dt-rate") || null, note: $("#dt-note").value.trim(), firstMonth, closed: total - paid <= 0, created: prev?.created || Date.now() };
+  try {
+    await Store.putDebt(editingDebt || "d-" + Date.now().toString(36), body);
+    closeSheets(); toast(editingDebt ? "Долг сохранён" : `Добавлено: ${body.name}`);
+  } catch (err) { toast(err.message, { error: true }); }
+});
+$("#dt-delete").addEventListener("click", (e) => armConfirm(e.target, "Удалить", async () => {
+  try { await Store.delDebt(editingDebt); closeSheets(); toast("Долг удалён. Записанные платежи остались в операциях."); } catch (err) { toast(err.message, { error: true }); }
+}));
+
+// окно «Оплата»
+let payingDebt = null;
+function openPay(id) {
+  const d = Store.debts.get(id); if (!d) return;
+  payingDebt = id;
+  const left = debtLeft(d), owed = isOwed(d);
+  $("#pay-title").textContent = owed ? `Возврат: ${d.name}` : `Оплата: ${d.name}`;
+  $("#pay-info").textContent = `Осталось ${money(left)}${d.payment ? ` · платёж ${money(d.payment)}` : ""}${d.dueDay ? ` · ${dueText(dueDays(d)).t}` : ""}`;
+  $("#pay-amount").value = Math.min(d.payment || left, left);
+  fillAccSelect($("#pay-acc"), quickAcc());
+  $("#pay-date").value = todayISO();
+  $("#pay-go").textContent = owed ? "Получил" : "Оплатить";
+  closeSheets(); $("#pay-sheet").hidden = false;
+}
+$("#pay-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const d = Store.debts.get(payingDebt); if (!d) return;
+  const amount = Math.min(num("#pay-amount"), debtLeft(d)), owed = isOwed(d);
+  if (!(amount > 0)) { toast("Укажите сумму", { error: true }); return; }
+  const date = $("#pay-date").value || todayISO(), month = date.slice(0, 7);
+  const paid = Math.round(((d.paid || 0) + amount) * 100) / 100, closed = paid >= (d.total || 0);
+  try {
+    await Store.putTx("p-" + Date.now().toString(36), { date, time: nowHM(), amount: owed ? amount : -amount,
+      desc: owed ? `Возврат долга: ${d.name}` : `Платёж: ${d.name}`, cat: owed ? "Переводы входящие" : "Кредиты и долги",
+      acc: $("#pay-acc").value, src: "debt", debt: payingDebt, at: Date.now() });
+    await Store.putDebt(payingDebt, { ...d, paid, closed, paidMonths: [...new Set([...(d.paidMonths || []), month])].slice(-60) });
+    closeSheets();
+    toast(closed ? `🎉 «${d.name}» ${owed ? "вернули полностью" : "полностью выплачен"}!` : `${owed ? "Получено" : "Оплачено"} ${money(amount)}. Осталось ${money((d.total || 0) - paid)}`);
+  } catch (err) { toast(err.message, { error: true }); }
+});
+document.addEventListener("click", (e) => {
+  const p = e.target.closest("[data-pay]"); if (p) { openPay(p.dataset.pay); return; }
+  const n = e.target.closest("[data-new-debt]"); if (n) { openDebt(null); return; }
+  const c = e.target.closest("[data-debt]"); if (c) openDebt(c.dataset.debt);
+});
+document.addEventListener("keydown", (e) => { const c = e.target.closest?.("[data-debt]"); if (c && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); openDebt(c.dataset.debt); } });
+
 // ─── Вкладки и отрисовка ───────────────────────────────────────────────────────────────
 let tab = "overview";
 function go(name) {
   tab = name;
   $$(".tabbar [data-tab]").forEach((b) => (b.dataset.tab === name ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current")));
   $$(".tab").forEach((s) => s.classList.toggle("active", s.id === "tab-" + name));
+  if (name === "more") $("#hdr-more").setAttribute("aria-current", "page"); else $("#hdr-more").removeAttribute("aria-current");
   window.scrollTo(0, 0);
   render();
 }
@@ -1873,6 +2192,7 @@ function render() { // перерисовываем только видимую 
   raf = requestAnimationFrame(() => {
     if (tab === "overview") renderOverview();
     if (tab === "transactions") renderTransactions();
+    if (tab === "debts") renderDebts();
     if (tab === "tips") (know === "lit" ? renderLiteracy() : renderTips());
     if (tab === "more") { renderCategories(); renderBudget(); renderReminders(); fillAccSelect($("#import-acc")); }
   });
