@@ -12,7 +12,8 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, radius, spacing } from '../theme';
+import { colors, gradients, radius, shadows, spacing } from '../theme';
+import { GradientFill } from './Gradient';
 
 export function Screen({
   children,
@@ -25,6 +26,7 @@ export function Screen({
 }) {
   return (
     <SafeAreaView style={styles.screen} edges={edges}>
+      <GradientFill colors={[colors.backgroundTop, colors.background, colors.backgroundBottom]} />
       {scroll ? (
         <ScrollView contentContainerStyle={styles.screenContent} keyboardShouldPersistTaps="handled">
           {children}
@@ -78,8 +80,8 @@ export function Button({
 }) {
   const isDisabled = disabled || loading;
   const variantStyle = {
-    primary: { backgroundColor: colors.primary },
-    secondary: { backgroundColor: colors.primarySoft },
+    primary: { backgroundColor: colors.primary, boxShadow: shadows.button, overflow: 'hidden' as const },
+    secondary: { backgroundColor: colors.primarySoft, boxShadow: shadows.soft },
     ghost: { backgroundColor: 'transparent' },
     danger: { backgroundColor: 'transparent' },
   }[variant];
@@ -98,10 +100,13 @@ export function Button({
       style={({ pressed }) => [
         styles.button,
         variantStyle,
-        { opacity: isDisabled ? 0.5 : pressed ? 0.8 : 1 },
+        { opacity: isDisabled ? 0.5 : 1, transform: [{ scale: pressed && !isDisabled ? 0.97 : 1 }] },
         style,
       ]}
     >
+      {variant === 'primary' ? (
+        <GradientFill colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 0.4, y: 1 }} />
+      ) : null}
       {loading ? (
         <ActivityIndicator color={textColor} />
       ) : (
@@ -158,9 +163,9 @@ export const styles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.lg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(255, 255, 255, 0.9)',
     gap: spacing.sm,
-    boxShadow: '0px 2px 8px rgba(122, 46, 72, 0.05)',
+    boxShadow: shadows.card,
   },
   sectionLabel: {
     fontSize: 13,
@@ -189,14 +194,16 @@ export const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     fontSize: 16,
     color: colors.text,
+    boxShadow: 'inset 0px 2px 4px rgba(122, 46, 72, 0.06)',
   },
   chip: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.pill,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(255, 255, 255, 0.9)',
     backgroundColor: colors.surface,
+    boxShadow: shadows.soft,
   },
   chipText: { color: colors.text, fontSize: 14 },
   error: { color: colors.danger, fontSize: 14 },
