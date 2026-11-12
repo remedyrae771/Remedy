@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import InviteCard from '../components/InviteCard';
+import PushCard from '../components/PushCard';
 import { PET_KINDS, PetArt } from '../components/Pet';
 import { Button, Card, ErrorText, Input, Muted, Screen, SectionLabel, styles } from '../components/ui';
 import { formatUserDate, parseUserDate } from '../lib/dates';
@@ -86,6 +87,9 @@ export default function Settings() {
         <Muted>Имя питомца</Muted>
         <Input value={petName} onChangeText={setPetName} placeholder="Пушок" maxLength={24} />
       </Card>
+
+      <SectionLabel>Уведомления</SectionLabel>
+      <PushCard />
 
       <SectionLabel>Профиль</SectionLabel>
       <Card>

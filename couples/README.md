@@ -27,6 +27,16 @@
 5. В GitHub: **Settings → Pages → Source: GitHub Actions**. Workflow `.github/workflows/pages.yml` в корне репозитория публикует Aqsha (`docs/`) в корень сайта, а это приложение — в `/couples/`.
 6. После слияния в `main` сайт соберётся сам и будет доступен по адресу **https://remedyrae771.github.io/Remedy/couples/**.
 
+## Push-уведомления
+
+Партнёру приходят уведомления о новом сообщении, «Думаю о тебе», ответе на вопрос дня и смене настроения.
+
+1. **SQL Editor:** выполните `supabase/migrations/0004_push.sql`.
+2. **Edge Functions → Deploy a new function → Via Editor:** имя `notify`, вставьте `supabase/functions/notify/index.ts`, нажмите **Deploy**. В настройках функции выключите **Verify JWT**.
+3. В приложении: **⚙️ → Уведомления → Включить**. На iPhone (iOS 16.4+) это работает только из приложения, добавленного на экран «Домой».
+
+Секреты задавать не нужно: ключи VAPID функция создаёт сама при первом запуске и хранит в таблице `push_vapid`, недоступной пользователям.
+
 ## Локальная разработка
 
 ```bash

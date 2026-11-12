@@ -8,6 +8,9 @@ import { isSupabaseConfigured } from '../lib/supabase';
 import SetupNeeded from '../components/SetupNeeded';
 // Импорт ради побочного эффекта: сохраняет код приглашения из адреса (?join=…) при запуске.
 import '../lib/invite';
+import { registerServiceWorker } from '../lib/push';
+
+registerServiceWorker();
 
 function RootNavigator() {
   const { session, profile, loading } = useAuth();
