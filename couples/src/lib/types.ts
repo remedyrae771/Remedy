@@ -71,4 +71,6 @@ export type Message = {
   body: string;
   kind: 'text' | 'thinking';
   created_at: string;
+  /** { user_id: emoji } — по одной реакции от каждого партнёра */
+  reactions?: Record<string, string>;
 };
