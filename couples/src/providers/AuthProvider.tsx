@@ -10,7 +10,7 @@ type AuthState = {
   partner: Profile | null;
   loading: boolean;
   refresh: () => Promise<void>;
-  updateProfile: (patch: Partial<Pick<Profile, 'display_name' | 'mood' | 'mood_note' | 'mood_updated_at'>>) => Promise<void>;
+  updateProfile: (patch: Partial<Pick<Profile, 'display_name' | 'mood' | 'mood_note' | 'mood_updated_at' | 'partner_nickname'>>) => Promise<void>;
   updateCouple: (patch: Partial<Pick<Couple, 'started_on' | 'pet_name' | 'pet_kind'>>) => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -147,5 +147,7 @@ export function useCouple() {
     profile,
     couple,
     partner,
+    /** Имя партнёра для показа: моё прозвище для него, иначе его собственное имя. */
+    partnerName: profile.partner_nickname?.trim() || partner?.display_name?.trim() || 'Партнёр',
   };
 }

@@ -19,6 +19,8 @@ export type Profile = {
   mood_note: string | null;
   mood_updated_at: string | null;
   last_seen_at?: string | null;
+  /** Как я называю партнёра (видно только в моём приложении) */
+  partner_nickname?: string | null;
 };
 
 export type CoupleEvent = {

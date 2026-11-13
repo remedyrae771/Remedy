@@ -124,7 +124,7 @@ Deno.serve(async (req) => {
     if (!notice) return json({ sent: 0, reason: 'not found' });
     if (Date.now() - new Date(notice.at).getTime() > FRESH_MS) return json({ sent: 0, reason: 'stale' });
 
-    const { data: partners } = await supabase.from('profiles').select('id').eq('couple_id', notice.coupleId).neq('id', notice.actorId);
+    const { data: partners } = await supabase.from('profiles').select('id, partner_nickname').eq('couple_id', notice.coupleId).neq('id', notice.actorId);
     const ids = (partners ?? []).map((p) => p.id);
     if (!ids.length) return json({ sent: 0, reason: 'no partner' });
 
@@ -132,12 +132,18 @@ Deno.serve(async (req) => {
     if (!subs?.length) return json({ sent: 0, reason: 'no subscriptions' });
 
     await getVapid();
-    const payload = JSON.stringify({ title: notice.title, body: notice.body, url: notice.url, tag: notice.tag });
+    // Получатель мог задать своё имя для партнёра («Зайка») — подставляем его вместо настоящего.
+    const actorName = await displayName(notice.actorId);
+    const payloadFor = (userId: string) => {
+      const nick = (partners ?? []).find((p) => p.id === userId)?.partner_nickname?.trim();
+      const swap = (t: string) => (nick ? t.split(actorName).join(nick) : t);
+      return JSON.stringify({ title: swap(notice.title), body: swap(notice.body), url: notice.url, tag: notice.tag });
+    };
     let sent = 0;
     await Promise.all(
       subs.map(async (s) => {
         try {
-          await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 60 * 60 * 24 });
+          await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payloadFor(s.user_id), { TTL: 60 * 60 * 24 });
           sent++;
         } catch (e) {
           const status = (e as { statusCode?: number }).statusCode;

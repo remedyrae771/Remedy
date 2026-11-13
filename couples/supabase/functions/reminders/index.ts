@@ -96,7 +96,7 @@ async function claim(coupleId: string, kind: string, ref: string, day: string) {
 }
 
 type Couple = { id: string; timezone: string; started_on: string | null; pet_name: string | null };
-type Member = { id: string; display_name: string };
+type Member = { id: string; display_name: string; partner_nickname: string | null };
 
 async function morning(c: Couple, members: Member[], today: string): Promise<Array<Push & { ref: string; kind: string }>> {
   const all = members.map((m) => m.id);
@@ -130,8 +130,10 @@ async function morning(c: Couple, members: Member[], today: string): Promise<Arr
   const { data: capsules } = await supabase.from('capsules').select('id, author_id').eq('couple_id', c.id).eq('open_on', today);
   for (const cap of capsules ?? []) {
     const author = members.find((m) => m.id === cap.author_id);
-    const recipients = members.filter((m) => m.id !== cap.author_id).map((m) => m.id);
-    out.push({ kind: 'capsule', ref: cap.id, userIds: recipients, title: '💌 Капсула времени открылась', body: `${author?.display_name || 'Партнёр'} оставил(а) вам письмо. Откройте его!`, url: `${APP_URL}capsules`, tag: `capsule-${cap.id}` });
+    for (const r of members.filter((m) => m.id !== cap.author_id)) {
+      const name = r.partner_nickname?.trim() || author?.display_name || 'Партнёр';
+      out.push({ kind: 'capsule', ref: `${cap.id}:${r.id}`, userIds: [r.id], title: '💌 Капсула времени открылась', body: `${name} оставил(а) вам письмо. Откройте его!`, url: `${APP_URL}capsules`, tag: `capsule-${cap.id}` });
+    }
   }
   return out;
 }
@@ -153,7 +155,7 @@ async function evening(c: Couple, members: Member[], today: string): Promise<Arr
         kind: 'question',
         ref: m.id,
         userIds: [m.id],
-        title: partnerDone ? `💬 ${partner!.display_name || 'Партнёр'} уже ответил(а) на вопрос дня` : '💬 Вопрос дня ждёт вашего ответа',
+        title: partnerDone ? `💬 ${m.partner_nickname?.trim() || partner!.display_name || 'Партнёр'} уже ответил(а) на вопрос дня` : '💬 Вопрос дня ждёт вашего ответа',
         body: partnerDone ? 'Ответьте — и увидите ответы друг друга' : 'Пара минут, чтобы узнать друг друга лучше',
         url: `${APP_URL}questions`,
         tag: 'question',
@@ -178,7 +180,7 @@ Deno.serve(async (req) => {
     const dry = body?.dry === true; // проверка: что было бы отправлено (только количество, без текстов)
 
     const { data: couples } = await supabase.from('couples').select('id, timezone, started_on, pet_name');
-    const { data: profiles } = await supabase.from('profiles').select('id, display_name, couple_id').not('couple_id', 'is', null);
+    const { data: profiles } = await supabase.from('profiles').select('id, display_name, partner_nickname, couple_id').not('couple_id', 'is', null);
 
     let planned = 0;
     let sent = 0;

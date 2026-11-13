@@ -65,7 +65,7 @@ const sameGroup = (a: Message | undefined, b: Message | undefined) =>
   );
 
 export default function Chat() {
-  const { coupleId, userId, partner, couple } = useCouple();
+  const { coupleId, userId, partner, couple, partnerName } = useCouple();
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
   const [loaded, setLoaded] = useState(false);
@@ -309,7 +309,6 @@ export default function Chat() {
     if (data) setMessages((prev) => prev.map((m) => (m.id === message.id ? { ...m, reactions: data as Record<string, string> } : m)));
   };
 
-  const partnerName = partner?.display_name || 'Партнёр';
   const myLast = messages.find((m) => m.sender_id === userId && m.kind !== 'thinking' && !m.sending);
   const moodPart = partner?.mood ? ` · ${partner.mood} ${moodLabel(partner.mood).toLowerCase()}` : '';
   // Когда партнёр был в сети: отметка присутствия или самое свежее его действие
