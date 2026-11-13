@@ -65,7 +65,7 @@ function useQuestionsAndAnswers() {
 }
 
 function DailyQuestion() {
-  const { coupleId, userId, partner } = useCouple();
+  const { coupleId, userId, partner, partnerName } = useCouple();
   const { questions, answers, loaded, reload } = useQuestionsAndAnswers();
   const [draft, setDraft] = useState('');
   const [saving, setSaving] = useState(false);
@@ -97,7 +97,6 @@ function DailyQuestion() {
     reload();
   };
 
-  const partnerName = partner?.display_name || 'Партнёр';
 
   return (
     <>

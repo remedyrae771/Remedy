@@ -60,7 +60,7 @@ function Options({
 }
 
 export default function Game() {
-  const { coupleId, userId, profile, partner } = useCouple();
+  const { coupleId, userId, profile, partnerName } = useCouple();
   const [rounds, setRounds] = useState<Round[]>([]);
   const [secrets, setSecrets] = useState<Record<string, number>>({});
   const [newQuestion, setNewQuestion] = useState<number | null>(null);
@@ -69,7 +69,6 @@ export default function Game() {
   const [reveal, setReveal] = useState<{ correct: boolean; answer: number; idx: number; guess: number } | null>(null);
 
   const myName = profile.display_name || 'Вы';
-  const partnerName = partner?.display_name || 'Партнёр';
 
   const load = useCallback(async () => {
     const [{ data: r }, { data: sec }] = await Promise.all([

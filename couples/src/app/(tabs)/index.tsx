@@ -73,8 +73,8 @@ function TaskRow({ task }: { task: PetTask }) {
 
 export default function Home() {
   const { updateProfile } = useAuth();
-  const { userId, coupleId, profile, couple, partner } = useCouple();
-  const pet = usePetMood(coupleId, userId, profile, partner);
+  const { userId, coupleId, profile, couple, partner, partnerName } = useCouple();
+  const pet = usePetMood(coupleId, userId, profile, partner, partnerName);
   const stats = useCoupleStats();
   const growth = stageFor(stats?.days_together ?? 0);
   const { partnerOnline } = usePresence();
@@ -153,13 +153,13 @@ export default function Home() {
         <View style={{ flexDirection: 'row' }}>
           <Avatar name={profile.display_name} tint={AVATAR_TINTS.me} />
           <View style={{ marginLeft: -14 }}>
-            <Avatar name={partner?.display_name ?? '?'} tint={partner ? AVATAR_TINTS.partner : AVATAR_TINTS.empty} online={partnerOnline} />
+            <Avatar name={partner ? partnerName : '?'} tint={partner ? AVATAR_TINTS.partner : AVATAR_TINTS.empty} online={partnerOnline} />
           </View>
         </View>
         <View style={{ flex: 1 }}>
           <Text style={s.hello} numberOfLines={1}>
             {profile.display_name || 'Я'}
-            {partner ? ` & ${partner.display_name || 'партнёр'}` : ''}
+            {partner ? ` & ${partnerName}` : ''}
           </Text>
           <Text style={ui.muted}>
             {daysTogether !== null && daysTogether >= 0 ? `${daysTogether} ${pluralDays(daysTogether)} вместе 💞` : 'Наше пространство'}
@@ -306,7 +306,7 @@ export default function Home() {
         </View>
         <View style={[s.tile, { flex: 1, alignItems: 'center' }]}>
           <Text style={s.moodWho} numberOfLines={1}>
-            {partner?.display_name || 'Партнёр'}
+            {partner ? partnerName : 'Партнёр'}
           </Text>
           <View style={s.moodOrb}>
             <Text style={{ fontSize: 34 }}>{partner?.mood ?? '💭'}</Text>

@@ -16,13 +16,13 @@ export type PickedMedia = {
 };
 
 /** Открыть галерею (на iPhone в браузере там же можно снять фото или видео). */
-export async function pickMedia(): Promise<PickedMedia | null> {
+export async function pickMedia(options: { imagesOnly?: boolean } = {}): Promise<PickedMedia | null> {
   if (Platform.OS !== 'web') {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) throw new Error('Разрешите доступ к фото в настройках телефона.');
   }
   const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ['images', 'videos'],
+    mediaTypes: options.imagesOnly ? ['images'] : ['images', 'videos'],
     quality: 0.8,
     allowsMultipleSelection: false,
     videoMaxDuration: 180,

@@ -11,7 +11,7 @@ import { colors, radius, spacing } from '../../theme';
 
 export default function ListScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { coupleId, userId, partner } = useCouple();
+  const { coupleId, userId, partnerName } = useCouple();
   const [list, setList] = useState<List | null>(null);
   const [items, setItems] = useState<ListItem[]>([]);
   const [text, setText] = useState('');
@@ -114,7 +114,7 @@ export default function ListScreen() {
               {item.text}
             </Text>
             <Text style={{ fontSize: 12, color: colors.muted }}>
-              {item.created_by === userId ? 'я' : partner?.display_name || 'партнёр'}
+              {item.created_by === userId ? 'я' : partnerName}
             </Text>
           </Pressable>
         )}

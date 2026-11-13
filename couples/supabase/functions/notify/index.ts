@@ -58,7 +58,9 @@ async function getVapid() {
   return vapidCache;
 }
 
-type Notice = { coupleId: string; actorId: string; at: string; title: string; body: string; url: string; tag: string };
+/** Вид уведомления — по нему работают настройки «какие уведомления присылать» (profiles.notify_prefs). */
+type Category = 'messages' | 'thinking' | 'reactions' | 'mood' | 'question' | 'game' | 'moments' | 'capsules' | 'dates' | 'lists';
+type Notice = { coupleId: string; actorId: string; at: string; title: string; body: string; url: string; tag: string; category: Category };
 
 async function displayName(userId: string) {
   const { data } = await supabase.from('profiles').select('display_name').eq('id', userId).maybeSingle();
@@ -72,40 +74,78 @@ async function buildNotice(table: string, id: string): Promise<Notice | null> {
     if (!m) return null;
     const name = await displayName(m.sender_id);
     return m.kind === 'thinking'
-      ? { coupleId: m.couple_id, actorId: m.sender_id, at: m.created_at, title: `💭 ${name} думает о тебе`, body: 'Открой Remedy и ответь чем-нибудь тёплым', url: `${APP_URL}chat`, tag: 'thinking' }
+      ? { coupleId: m.couple_id, actorId: m.sender_id, at: m.created_at, title: `💭 ${name} думает о тебе`, body: 'Открой Remedy и ответь чем-нибудь тёплым', url: `${APP_URL}chat`, tag: 'thinking', category: 'thinking' }
       : m.kind === 'voice'
-        ? { coupleId: m.couple_id, actorId: m.sender_id, at: m.created_at, title: `💌 ${name}`, body: '🎤 Голосовое сообщение', url: `${APP_URL}chat`, tag: 'chat' }
+        ? { coupleId: m.couple_id, actorId: m.sender_id, at: m.created_at, title: `💌 ${name}`, body: '🎤 Голосовое сообщение', url: `${APP_URL}chat`, tag: 'chat', category: 'messages' }
       : m.kind === 'media'
-        ? { coupleId: m.couple_id, actorId: m.sender_id, at: m.created_at, title: `💌 ${name}`, body: (m.media_type === 'video' ? '🎬 Видео' : '📷 Фото') + (m.body ? ` · ${String(m.body).slice(0, 140)}` : ''), url: `${APP_URL}chat`, tag: 'chat' }
-        : { coupleId: m.couple_id, actorId: m.sender_id, at: m.created_at, title: `💌 ${name}`, body: String(m.body).slice(0, 180), url: `${APP_URL}chat`, tag: 'chat' };
+        ? { coupleId: m.couple_id, actorId: m.sender_id, at: m.created_at, title: `💌 ${name}`, body: (m.media_type === 'video' ? '🎬 Видео' : '📷 Фото') + (m.body ? ` · ${String(m.body).slice(0, 140)}` : ''), url: `${APP_URL}chat`, tag: 'chat', category: 'messages' }
+        : { coupleId: m.couple_id, actorId: m.sender_id, at: m.created_at, title: m.reply_to ? `↩︎ ${name} ответил(а) вам` : `💌 ${name}`, body: String(m.body).slice(0, 180), url: `${APP_URL}chat`, tag: 'chat', category: 'messages' };
   }
   if (table === 'game_rounds') {
     const { data: r } = await supabase.from('game_rounds').select('*').eq('id', id).maybeSingle();
     if (!r) return null;
     if (!r.guessed_at) {
       const name = await displayName(r.subject_id);
-      return { coupleId: r.couple_id, actorId: r.subject_id, at: r.created_at, title: `🎯 ${name} загадал(а) вопрос`, body: 'Угадай, что ответил(а)! Игра «Кто лучше знает»', url: `${APP_URL}game`, tag: 'game' };
+      return { coupleId: r.couple_id, actorId: r.subject_id, at: r.created_at, title: `🎯 ${name} загадал(а) вопрос`, body: 'Угадай, что ответил(а)! Игра «Кто лучше знает»', url: `${APP_URL}game`, tag: 'game', category: 'game' };
     }
     // Угадал партнёр загадавшего — уведомляем загадавшего.
     const { data: guesser } = await supabase.from('profiles').select('id, display_name').eq('couple_id', r.couple_id).neq('id', r.subject_id).maybeSingle();
     if (!guesser) return null;
     const name = guesser.display_name?.trim() || 'Партнёр';
-    return { coupleId: r.couple_id, actorId: guesser.id, at: r.guessed_at, title: r.correct ? `🎯 ${name} угадал(а)!` : `🙈 ${name} не угадал(а)`, body: r.correct ? 'Вы отлично знаете друг друга 💞' : 'Загляните, что он(а) выбрал(а)', url: `${APP_URL}game`, tag: 'game' };
+    return { coupleId: r.couple_id, actorId: guesser.id, at: r.guessed_at, title: r.correct ? `🎯 ${name} угадал(а)!` : `🙈 ${name} не угадал(а)`, body: r.correct ? 'Вы отлично знаете друг друга 💞' : 'Загляните, что он(а) выбрал(а)', url: `${APP_URL}game`, tag: 'game', category: 'game' };
   }
   if (table === 'answers') {
     const { data: a } = await supabase.from('answers').select('*').eq('id', id).maybeSingle();
     if (!a) return null;
     const name = await displayName(a.user_id);
-    return { coupleId: a.couple_id, actorId: a.user_id, at: a.created_at, title: `💬 ${name} ответил(а) на вопрос дня`, body: 'Ответьте тоже — и увидите ответы друг друга', url: `${APP_URL}questions`, tag: 'question' };
+    return { coupleId: a.couple_id, actorId: a.user_id, at: a.created_at, title: `💬 ${name} ответил(а) на вопрос дня`, body: 'Ответьте тоже — и увидите ответы друг друга', url: `${APP_URL}questions`, tag: 'question', category: 'question' };
   }
   if (table === 'profiles') {
     const { data: p } = await supabase.from('profiles').select('*').eq('id', id).maybeSingle();
     if (!p?.couple_id || !p.mood || !p.mood_updated_at) return null;
     const name = p.display_name?.trim() || 'Партнёр';
     const label = MOOD_LABELS[p.mood] ? `: ${MOOD_LABELS[p.mood]}` : '';
-    return { coupleId: p.couple_id, actorId: p.id, at: p.mood_updated_at, title: `${p.mood} ${name}${label}`, body: p.mood_note ? `«${p.mood_note}»` : 'Загляните, как дела у партнёра', url: APP_URL, tag: 'mood' };
+    return { coupleId: p.couple_id, actorId: p.id, at: p.mood_updated_at, title: `${p.mood} ${name}${label}`, body: p.mood_note ? `«${p.mood_note}»` : 'Загляните, как дела у партнёра', url: APP_URL, tag: 'mood', category: 'mood' };
+  }
+  if (table === 'moments') {
+    const { data: m } = await supabase.from('moments').select('*').eq('id', id).maybeSingle();
+    if (!m) return null;
+    const name = await displayName(m.created_by);
+    const what = m.media_type === 'video' ? 'видео' : 'фото';
+    return { coupleId: m.couple_id, actorId: m.created_by, at: m.created_at, title: `📸 ${name} добавил(а) момент в альбом`, body: m.title ? `«${m.title}» — ${what}` : `Новое ${what} в «Наших моментах»`, url: `${APP_URL}album`, tag: 'moment', category: 'moments' };
+  }
+  if (table === 'capsules') {
+    const { data: c } = await supabase.from('capsules').select('id, couple_id, author_id, open_on, created_at').eq('id', id).maybeSingle();
+    if (!c) return null;
+    const name = await displayName(c.author_id);
+    const [y, mo, d] = String(c.open_on).split('-').map(Number);
+    const date = new Date(Date.UTC(y, mo - 1, d)).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
+    return { coupleId: c.couple_id, actorId: c.author_id, at: c.created_at, title: `💌 ${name} запечатал(а) для вас письмо`, body: `Капсула времени откроется ${date}. Наберитесь терпения 🤫`, url: `${APP_URL}capsules`, tag: `capsule-${c.id}`, category: 'capsules' };
+  }
+  if (table === 'events') {
+    const { data: e } = await supabase.from('events').select('*').eq('id', id).maybeSingle();
+    if (!e) return null;
+    const name = await displayName(e.created_by);
+    return { coupleId: e.couple_id, actorId: e.created_by, at: e.created_at, title: `${e.emoji || '📅'} ${name} добавил(а) важную дату`, body: String(e.title).slice(0, 120), url: `${APP_URL}dates`, tag: `event-${e.id}`, category: 'dates' };
+  }
+  if (table === 'list_items') {
+    const { data: it } = await supabase.from('list_items').select('*, lists(title, emoji)').eq('id', id).maybeSingle();
+    if (!it) return null;
+    const name = await displayName(it.created_by);
+    const list = (it as { lists?: { title?: string; emoji?: string } }).lists;
+    return { coupleId: it.couple_id, actorId: it.created_by, at: it.created_at, title: `${list?.emoji || '📝'} ${name} добавил(а) в «${list?.title || 'список'}»`, body: String(it.text).slice(0, 140), url: `${APP_URL}list/${it.list_id}`, tag: `list-${it.list_id}`, category: 'lists' };
   }
   return null;
+}
+
+/** Реакция на сообщение: проверяем, что она действительно стоит, и шлём автору сообщения. */
+async function buildReaction(messageId: string, actorId: string): Promise<(Notice & { emoji: string }) | null> {
+  const { data: m } = await supabase.from('messages').select('*').eq('id', messageId).maybeSingle();
+  const emoji = m?.reactions?.[actorId];
+  if (!m || !emoji || m.sender_id === actorId) return null;
+  const name = await displayName(actorId);
+  const what = m.kind === 'voice' ? 'голосовое' : m.kind === 'media' ? (m.media_type === 'video' ? 'видео' : 'фото') : `«${String(m.body).slice(0, 60)}»`;
+  return { coupleId: m.couple_id, actorId, at: new Date().toISOString(), title: `${emoji} ${name} отреагировал(а)`, body: `На ваше сообщение ${what}`, url: `${APP_URL}chat`, tag: `reaction-${m.id}`, category: 'reactions', emoji };
 }
 
 Deno.serve(async (req) => {
@@ -117,27 +157,52 @@ Deno.serve(async (req) => {
       return json({ publicKey });
     }
 
-    const { table, id } = await req.json();
+    const { table, id, actor } = await req.json();
     if (typeof table !== 'string' || typeof id !== 'string') return json({ error: 'bad request' }, 400);
 
-    const notice = await buildNotice(table, id);
+    let notice: Notice | null;
+    if (table === 'reaction') {
+      if (typeof actor !== 'string') return json({ error: 'bad request' }, 400);
+      const r = await buildReaction(id, actor);
+      if (!r) return json({ sent: 0, reason: 'not found' });
+      // Одна и та же реакция на одно сообщение — не чаще раза в день (если её снимают и ставят снова).
+      const { data: fresh } = await supabase
+        .from('reminder_log')
+        .upsert({ couple_id: r.coupleId, kind: 'reaction', ref: `${id}:${actor}:${r.emoji}`, day: new Date().toISOString().slice(0, 10) }, { onConflict: 'couple_id,kind,ref,day', ignoreDuplicates: true })
+        .select();
+      if (!fresh?.length) return json({ sent: 0, reason: 'duplicate' });
+      notice = r;
+    } else {
+      notice = await buildNotice(table, id);
+    }
     if (!notice) return json({ sent: 0, reason: 'not found' });
     if (Date.now() - new Date(notice.at).getTime() > FRESH_MS) return json({ sent: 0, reason: 'stale' });
 
-    const { data: partners } = await supabase.from('profiles').select('id').eq('couple_id', notice.coupleId).neq('id', notice.actorId);
-    const ids = (partners ?? []).map((p) => p.id);
-    if (!ids.length) return json({ sent: 0, reason: 'no partner' });
+    const { data: partners } = await supabase
+      .from('profiles')
+      .select('id, partner_nickname, notify_prefs')
+      .eq('couple_id', notice.coupleId)
+      .neq('id', notice.actorId);
+    // Учитываем настройки получателя: выключенный вид уведомлений не присылаем.
+    const ids = (partners ?? []).filter((p) => (p.notify_prefs ?? {})[notice!.category] !== false).map((p) => p.id);
+    if (!ids.length) return json({ sent: 0, reason: 'no recipients' });
 
     const { data: subs } = await supabase.from('push_subscriptions').select('*').in('user_id', ids);
     if (!subs?.length) return json({ sent: 0, reason: 'no subscriptions' });
 
     await getVapid();
-    const payload = JSON.stringify({ title: notice.title, body: notice.body, url: notice.url, tag: notice.tag });
+    // Получатель мог задать своё имя для партнёра («Зайка») — подставляем его вместо настоящего.
+    const actorName = await displayName(notice.actorId);
+    const payloadFor = (userId: string) => {
+      const nick = (partners ?? []).find((p) => p.id === userId)?.partner_nickname?.trim();
+      const swap = (t: string) => (nick ? t.split(actorName).join(nick) : t);
+      return JSON.stringify({ title: swap(notice!.title), body: swap(notice!.body), url: notice!.url, tag: notice!.tag });
+    };
     let sent = 0;
     await Promise.all(
       subs.map(async (s) => {
         try {
-          await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 60 * 60 * 24 });
+          await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payloadFor(s.user_id), { TTL: 60 * 60 * 24 });
           sent++;
         } catch (e) {
           const status = (e as { statusCode?: number }).statusCode;

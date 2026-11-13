@@ -18,7 +18,7 @@ const isToday = (iso: string | null | undefined) => {
  * Настроение питомца складывается из того, что пара сделала сегодня:
  * отметили настроение, ответили на вопрос дня, написали друг другу.
  */
-export function usePetMood(coupleId: string, userId: string, profile: Profile, partner: Profile | null) {
+export function usePetMood(coupleId: string, userId: string, profile: Profile, partner: Profile | null, partnerName: string) {
   const [answeredMe, setAnsweredMe] = useState(false);
   const [answeredPartner, setAnsweredPartner] = useState(false);
   const [talked, setTalked] = useState(false);
@@ -43,7 +43,6 @@ export function usePetMood(coupleId: string, userId: string, profile: Profile, p
     }, [load]),
   );
 
-  const partnerName = partner?.display_name || 'партнёр';
   const tasks: PetTask[] = [
     { key: 'mood-me', label: 'Отметить своё настроение', done: isToday(profile.mood_updated_at) },
     { key: 'mood-partner', label: `${partnerName} отмечает настроение`, done: isToday(partner?.mood_updated_at) },

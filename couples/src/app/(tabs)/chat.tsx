@@ -9,6 +9,8 @@ import { GradientFill } from '../../components/Gradient';
 import Appear from '../../components/Appear';
 import { MediaBubble, MediaViewer } from '../../components/Media';
 import { VoiceBubble, VoiceRecorder } from '../../components/Voice';
+import Wallpaper, { isDarkWallpaper } from '../../components/Wallpaper';
+import WallpaperPicker from '../../components/WallpaperPicker';
 import { PetArt } from '../../components/Pet';
 import { formatTime, lastSeenText } from '../../lib/dates';
 import { pickMedia, uploadMedia, uploadVoice } from '../../lib/media';
@@ -65,7 +67,10 @@ const sameGroup = (a: Message | undefined, b: Message | undefined) =>
   );
 
 export default function Chat() {
-  const { coupleId, userId, partner, couple } = useCouple();
+  const { coupleId, userId, partner, couple, partnerName, profile } = useCouple();
+  const [wallpaperOpen, setWallpaperOpen] = useState(false);
+  const dark = isDarkWallpaper(profile.chat_wallpaper);
+  const onWallpaper = dark ? 'rgba(255,255,255,0.85)' : colors.muted;
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
   const [loaded, setLoaded] = useState(false);
@@ -309,7 +314,6 @@ export default function Chat() {
     if (data) setMessages((prev) => prev.map((m) => (m.id === message.id ? { ...m, reactions: data as Record<string, string> } : m)));
   };
 
-  const partnerName = partner?.display_name || 'Партнёр';
   const myLast = messages.find((m) => m.sender_id === userId && m.kind !== 'thinking' && !m.sending);
   const moodPart = partner?.mood ? ` · ${partner.mood} ${moodLabel(partner.mood).toLowerCase()}` : '';
   // Когда партнёр был в сети: отметка присутствия или самое свежее его действие
@@ -429,12 +433,12 @@ export default function Chat() {
               <View>
                 {quote ? <View style={[s.bubble, s.bubbleTheirs, { marginBottom: 4 }]}>{quote}</View> : null}
                 <MediaBubble message={item} onOpen={() => (picker ? setPicker(null) : setViewer(item))} />
-                <Text style={[s.time, { color: colors.muted, marginTop: 3, marginRight: 4 }]}>{formatTime(item.created_at)}</Text>
+                <Text style={[s.time, { color: onWallpaper, marginTop: 3, marginRight: 4 }]}>{formatTime(item.created_at)}</Text>
               </View>
             ) : big ? (
               <View style={{ alignItems: mine ? 'flex-end' : 'flex-start', paddingHorizontal: 4 }}>
                 <Text style={{ fontSize: 48, lineHeight: 58 }}>{item.body}</Text>
-                <Text style={[s.time, { color: colors.muted }]}>{formatTime(item.created_at)}</Text>
+                <Text style={[s.time, { color: onWallpaper }]}>{formatTime(item.created_at)}</Text>
               </View>
             ) : (
               <View
@@ -459,7 +463,7 @@ export default function Chat() {
             ) : null}
           </Pressable>
 
-          {isLastMine && !groupedWithNewer ? <Text style={s.receipt}>{read ? 'Прочитано ✓✓' : 'Отправлено ✓'}</Text> : null}
+          {isLastMine && !groupedWithNewer ? <Text style={[s.receipt, { color: onWallpaper }]}>{read ? 'Прочитано ✓✓' : 'Отправлено ✓'}</Text> : null}
         </View>
       </Wrap>
     );
@@ -467,7 +471,7 @@ export default function Chat() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
-      <GradientFill colors={[colors.backgroundTop, colors.background, colors.backgroundBottom]} />
+      <Wallpaper value={profile.chat_wallpaper} />
 
       <View style={s.header}>
         <Avatar name={partnerName} tint={partner ? AVATAR_TINTS.partner : AVATAR_TINTS.empty} size={46} online={partnerOnline} />
@@ -486,6 +490,9 @@ export default function Chat() {
             {status}
           </Text>
         </View>
+        <Pressable onPress={() => setWallpaperOpen(true)} hitSlop={8} style={s.headerButton} accessibilityLabel="Обои чата">
+          <Text style={{ fontSize: 20 }}>🎨</Text>
+        </Pressable>
       </View>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -611,6 +618,7 @@ export default function Chat() {
         </View>
       </KeyboardAvoidingView>
       <MediaViewer message={viewer} onClose={() => setViewer(null)} />
+      <WallpaperPicker visible={wallpaperOpen} onClose={() => setWallpaperOpen(false)} />
     </SafeAreaView>
   );
 }
@@ -629,6 +637,15 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.95)',
     boxShadow: shadows.card,
+  },
+  headerButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFF4F7',
+    boxShadow: 'inset 0px -3px 6px rgba(201, 61, 104, 0.10), inset 0px 2px 0px rgba(255,255,255,1), 0px 4px 10px rgba(122, 46, 72, 0.10)',
   },
   headerName: { fontSize: 18, fontWeight: '800', color: colors.text },
   headerStatus: { fontSize: 13, color: colors.muted },

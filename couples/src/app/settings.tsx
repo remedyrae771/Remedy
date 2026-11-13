@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import InviteCard from '../components/InviteCard';
+import NotifyPrefs from '../components/NotifyPrefs';
 import PushCard from '../components/PushCard';
 import { PET_KINDS, PetArt } from '../components/Pet';
 import { Button, Card, ErrorText, Input, Muted, Screen, SectionLabel, styles } from '../components/ui';
@@ -13,13 +14,30 @@ import { colors, radius, spacing } from '../theme';
 
 export default function Settings() {
   const { updateProfile, updateCouple, signOut, refresh, session } = useAuth();
-  const { profile, couple, partner } = useCouple();
+  const { profile, couple, partner, partnerName } = useCouple();
   const [name, setName] = useState(profile.display_name);
   const [startedOn, setStartedOn] = useState(couple?.started_on ? formatUserDate(couple.started_on) : '');
   const [petName, setPetName] = useState(couple?.pet_name ?? 'Пушок');
+  const [nickname, setNickname] = useState(profile.partner_nickname ?? '');
+  const [nickSaved, setNickSaved] = useState(false);
+  const [nickSaving, setNickSaving] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+
+  const saveNickname = async () => {
+    setNickSaving(true);
+    setNickSaved(false);
+    setError(null);
+    try {
+      await updateProfile({ partner_nickname: nickname.trim() || null });
+      setNickSaved(true);
+    } catch (e) {
+      setError(errorText(e));
+    } finally {
+      setNickSaving(false);
+    }
+  };
 
   const save = async () => {
     setError(null);
@@ -90,6 +108,7 @@ export default function Settings() {
 
       <SectionLabel>Уведомления</SectionLabel>
       <PushCard />
+      <NotifyPrefs />
 
       <SectionLabel>Профиль</SectionLabel>
       <Card>
@@ -111,7 +130,29 @@ export default function Settings() {
       <SectionLabel>Пара</SectionLabel>
       {partner ? (
         <Card>
-          <Text style={styles.body}>Вы вместе с {partner.display_name || 'партнёром'} 💞</Text>
+          <Text style={styles.body}>Вы и {partnerName} — пара 💞</Text>
+          <Muted>Как вы называете партнёра</Muted>
+          <Input
+            value={nickname}
+            onChangeText={(t) => {
+              setNickname(t);
+              setNickSaved(false);
+            }}
+            placeholder={partner.display_name || 'Например, Зайка'}
+            maxLength={30}
+          />
+          <Muted>
+            Это имя увидите только вы — в приложении и в уведомлениях. Оставьте пустым, чтобы показывалось «{partner.display_name || 'Партнёр'}».
+          </Muted>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
+            {['Зайка', 'Солнце', 'Любимая', 'Любимый', 'Котик', 'Жаным'].map((n) => (
+              <Pressable key={n} onPress={() => { setNickname(n); setNickSaved(false); }} style={[styles.chip, nickname === n && { backgroundColor: colors.primary, borderColor: colors.primary }]}>
+                <Text style={[styles.chipText, nickname === n && { color: '#fff' }]}>{n}</Text>
+              </Pressable>
+            ))}
+          </View>
+          {nickSaved ? <Muted>Сохранено ✓</Muted> : null}
+          <Button title="Сохранить имя" variant="secondary" onPress={saveNickname} loading={nickSaving} />
           <Button title="Выйти из пары" variant="danger" onPress={leave} />
         </Card>
       ) : (

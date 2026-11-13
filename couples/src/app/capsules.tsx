@@ -17,7 +17,7 @@ const addDays = (n: number) => {
 };
 
 export default function Capsules() {
-  const { coupleId, userId, partner, couple } = useCouple();
+  const { coupleId, userId, couple, partnerName } = useCouple();
   const [list, setList] = useState<Capsule[]>([]);
   const [writing, setWriting] = useState(false);
   const [body, setBody] = useState('');
@@ -25,7 +25,6 @@ export default function Capsules() {
   const [custom, setCustom] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const partnerName = partner?.display_name || 'партнёр';
 
   const load = useCallback(async () => {
     const { data } = await supabase.rpc('capsule_list');
