@@ -3,6 +3,7 @@ import { Animated, Easing, Platform, Pressable, View } from 'react-native';
 import Svg, { Circle, Defs, Ellipse, G, LinearGradient, Path, RadialGradient, Stop } from 'react-native-svg';
 import type { PetKind } from '../lib/types';
 import { useSvgId } from './Gradient';
+import { KittenArt, KittenTail } from './Kitten';
 
 function GroundShadow() {
   const id = useSvgId('shadow');
@@ -153,6 +154,11 @@ function Face({ mood, blink, p, g }: { mood: PetMood; blink: boolean; p: Palette
 
 /** Статичный рисунок питомца с объёмом (градиенты, блики, мягкая тень). */
 export function PetArt({ kind, mood, size = 160, blink = false }: { kind: PetKind; mood: PetMood; size?: number; blink?: boolean }) {
+  if (kind === 'cat') return <KittenArt mood={mood} size={size} blink={blink} />;
+  return <GenericPetArt kind={kind} mood={mood} size={size} blink={blink} />;
+}
+
+function GenericPetArt({ kind, mood, size, blink }: { kind: PetKind; mood: PetMood; size: number; blink: boolean }) {
   const p = PALETTE[kind] ?? PALETTE.cat;
   const uid = useSvgId('pet');
   const g = (name: string) => `url(#${uid}${name})`;
@@ -223,6 +229,11 @@ export function PetArt({ kind, mood, size = 160, blink = false }: { kind: PetKin
 
 /** Хвост рисуется отдельным слоем, чтобы им можно было вилять вокруг основания. */
 function Tail({ kind }: { kind: PetKind }) {
+  if (kind === 'cat') return <KittenTail />;
+  return <GenericTail kind={kind} />;
+}
+
+function GenericTail({ kind }: { kind: PetKind }) {
   const p = PALETTE[kind] ?? PALETTE.cat;
   const uid = useSvgId('tail');
   const fill = `url(#${uid})`;
@@ -381,10 +392,11 @@ export default function Pet({
   const shadowScale = jump.interpolate({ inputRange: [0, 1], outputRange: [1, 0.65] });
   const tailRotate = wag.interpolate({ inputRange: [0, 1], outputRange: ['-10deg', '14deg'] });
 
-  // Хвост крепится к правому боку тела (112, 128) в координатах рисунка.
+  // Хвост крепится к правому боку тела (у котёнка тело ниже и уже).
+  const anchor = kind === 'cat' ? { x: 110, y: 140 } : { x: 112, y: 128 };
   const tailSide = 100 * k;
-  const tailLeft = (112 - VB_X) * k - tailSide / 2;
-  const tailTop = (128 - VB_Y) * k - tailSide / 2;
+  const tailLeft = (anchor.x - VB_X) * k - tailSide / 2;
+  const tailTop = (anchor.y - VB_Y) * k - tailSide / 2;
 
   return (
     <Pressable onPress={pat} accessibilityRole="button" accessibilityLabel="Погладить питомца" hitSlop={8}>

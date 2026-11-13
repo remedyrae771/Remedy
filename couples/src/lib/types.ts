@@ -18,6 +18,7 @@ export type Profile = {
   mood: string | null;
   mood_note: string | null;
   mood_updated_at: string | null;
+  last_seen_at?: string | null;
 };
 
 export type CoupleEvent = {
@@ -69,6 +70,15 @@ export type Message = {
   couple_id: string;
   sender_id: string;
   body: string;
-  kind: 'text' | 'thinking';
+  kind: 'text' | 'thinking' | 'media';
   created_at: string;
+  /** { user_id: emoji } — по одной реакции от каждого партнёра */
+  reactions?: Record<string, string>;
+  media_path?: string | null;
+  media_type?: 'image' | 'video' | null;
+  media_width?: number | null;
+  media_height?: number | null;
+  /** Только на этом устройстве, пока файл загружается */
+  local_uri?: string;
+  sending?: boolean;
 };

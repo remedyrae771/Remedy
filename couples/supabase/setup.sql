@@ -1,4 +1,4 @@
--- Remedy: полная настройка базы для нового проекта (0001–0004). Вставьте целиком в SQL Editor и нажмите Run.
+-- Remedy: полная настройка базы для нового проекта (0001–0006). Вставьте целиком в SQL Editor и нажмите Run.
 
 -- Remedy: приложение для пар
 -- Схема базы данных Supabase (Postgres) с Row Level Security.
@@ -462,4 +462,115 @@ create trigger notify_on_mood
   for each row
   when (new.mood is distinct from old.mood and new.mood is not null and new.couple_id is not null)
   execute function public.notify_partner();
+
+-- Чат: реакции на сообщения и отметки о прочтении.
+-- Применить после 0001–0004: SQL Editor → вставить файл → Run.
+
+-- Реакции: { "<user_id>": "❤️" } — у каждого партнёра одна реакция на сообщение.
+alter table public.messages add column if not exists reactions jsonb not null default '{}'::jsonb;
+
+-- Поставить, сменить или снять свою реакцию. Сообщения напрямую менять нельзя (RLS разрешает
+-- только вставку), поэтому реакции идут через эту функцию: она трогает только свою запись.
+create or replace function public.react_message(message_id uuid, emoji text)
+returns jsonb
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  result jsonb;
+begin
+  if auth.uid() is null then
+    raise exception 'not authenticated';
+  end if;
+  if emoji is not null and (length(emoji) = 0 or length(emoji) > 16) then
+    raise exception 'bad emoji';
+  end if;
+
+  update public.messages m
+     set reactions = case
+       when emoji is null or m.reactions ->> auth.uid()::text = emoji then m.reactions - auth.uid()::text
+       else m.reactions || jsonb_build_object(auth.uid()::text, emoji)
+     end
+   where m.id = message_id
+     and m.couple_id = public.my_couple_id()
+  returning m.reactions into result;
+
+  if result is null then
+    raise exception 'message not found';
+  end if;
+  return result;
+end;
+$$;
+
+-- Когда каждый последний раз читал чат.
+create table if not exists public.chat_reads (
+  user_id       uuid primary key default auth.uid() references auth.users (id) on delete cascade,
+  couple_id     uuid not null references public.couples (id) on delete cascade,
+  last_read_at  timestamptz not null default now()
+);
+
+alter table public.chat_reads enable row level security;
+
+drop policy if exists "chat_reads: couple read" on public.chat_reads;
+drop policy if exists "chat_reads: own insert" on public.chat_reads;
+drop policy if exists "chat_reads: own update" on public.chat_reads;
+
+create policy "chat_reads: couple read" on public.chat_reads
+  for select using (couple_id = public.my_couple_id());
+create policy "chat_reads: own insert" on public.chat_reads
+  for insert with check (user_id = auth.uid() and couple_id = public.my_couple_id());
+create policy "chat_reads: own update" on public.chat_reads
+  for update using (user_id = auth.uid()) with check (user_id = auth.uid() and couple_id = public.my_couple_id());
+
+do $$
+begin
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'chat_reads') then
+    alter publication supabase_realtime add table public.chat_reads;
+  end if;
+end;
+$$;
+
+-- Фото и видео в чате + «был(а) в сети».
+-- Применить после 0001–0005: SQL Editor → вставить файл → Run.
+
+-- «Был(а) в сети»: приложение обновляет время, пока открыто, и при сворачивании.
+alter table public.profiles add column if not exists last_seen_at timestamptz;
+
+-- Сообщения с медиа: kind = 'media', файл лежит в хранилище chat-media по пути «<couple_id>/<файл>».
+alter table public.messages add column if not exists media_path text;
+alter table public.messages add column if not exists media_type text;
+alter table public.messages add column if not exists media_width integer;
+alter table public.messages add column if not exists media_height integer;
+
+alter table public.messages drop constraint if exists messages_kind_check;
+alter table public.messages add constraint messages_kind_check check (kind in ('text', 'thinking', 'media'));
+
+alter table public.messages drop constraint if exists messages_media_check;
+alter table public.messages add constraint messages_media_check check (
+  (kind <> 'media' and media_path is null)
+  or (kind = 'media' and media_type in ('image', 'video') and media_path like couple_id::text || '/%')
+);
+
+-- Закрытое хранилище: файл до 50 МБ, только картинки и видео.
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('chat-media', 'chat-media', false, 52428800, array['image/*', 'video/*'])
+on conflict (id) do update
+  set public = false, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
+
+-- Доступ к файлам — только своей паре (первая папка пути = id пары).
+drop policy if exists "chat-media: couple read" on storage.objects;
+drop policy if exists "chat-media: couple upload" on storage.objects;
+drop policy if exists "chat-media: own delete" on storage.objects;
+
+create policy "chat-media: couple read" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'chat-media' and (storage.foldername(name))[1] = public.my_couple_id()::text);
+
+create policy "chat-media: couple upload" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'chat-media' and (storage.foldername(name))[1] = public.my_couple_id()::text);
+
+create policy "chat-media: own delete" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'chat-media' and owner_id = auth.uid()::text);
 

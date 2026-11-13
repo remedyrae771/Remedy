@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Loading } from '../components/ui';
 import { AuthProvider, useAuth } from '../providers/AuthProvider';
+import { PresenceProvider } from '../providers/PresenceProvider';
 import { colors } from '../theme';
 import { isSupabaseConfigured } from '../lib/supabase';
 import SetupNeeded from '../components/SetupNeeded';
@@ -57,7 +58,9 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AuthProvider>
         <StatusBar style="dark" />
-        <RootNavigator />
+        <PresenceProvider>
+          <RootNavigator />
+        </PresenceProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

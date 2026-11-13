@@ -2,6 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import Avatar, { AVATAR_TINTS } from '../../components/Avatar';
 import { GradientFill } from '../../components/Gradient';
 import InviteCard from '../../components/InviteCard';
 import PushCard from '../../components/PushCard';
@@ -13,6 +14,7 @@ import { errorText, supabase } from '../../lib/supabase';
 import type { CoupleEvent } from '../../lib/types';
 import { usePetMood, type PetTask } from '../../lib/usePetMood';
 import { useAuth, useCouple } from '../../providers/AuthProvider';
+import { usePresence } from '../../providers/PresenceProvider';
 import { colors, gradients, radius, shadows, spacing } from '../../theme';
 
 function timeAgo(iso: string | null): string {
@@ -29,8 +31,6 @@ const haptic = (fn: () => Promise<void>) => {
   if (Platform.OS !== 'web') fn().catch(() => {});
 };
 
-const initial = (name: string | null | undefined) => (name?.trim()?.[0] ?? '♥').toUpperCase();
-
 /** Где выполнить задание для питомца. */
 const TASK_LINKS: Record<string, Href | null> = {
   'mood-me': null,
@@ -39,27 +39,6 @@ const TASK_LINKS: Record<string, Href | null> = {
   'q-partner': '/questions',
   chat: '/chat',
 };
-
-function Avatar({ name, tint, size = 44 }: { name: string; tint: readonly string[]; size?: number }) {
-  return (
-    <View
-      style={{
-        width: size,
-        height: size,
-        borderRadius: size / 2,
-        overflow: 'hidden',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 3,
-        borderColor: '#FFFFFF',
-        boxShadow: shadows.soft,
-      }}
-    >
-      <GradientFill colors={tint} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
-      <Text style={{ color: '#fff', fontWeight: '800', fontSize: size * 0.4 }}>{initial(name)}</Text>
-    </View>
-  );
-}
 
 function HeartsMeter({ score, total }: { score: number; total: number }) {
   return (
@@ -95,6 +74,7 @@ export default function Home() {
   const { updateProfile } = useAuth();
   const { userId, coupleId, profile, couple, partner } = useCouple();
   const pet = usePetMood(coupleId, userId, profile, partner);
+  const { partnerOnline } = usePresence();
   const [nextEvent, setNextEvent] = useState<{ event: CoupleEvent; days: number } | null>(null);
   const [note, setNote] = useState(profile.mood_note ?? '');
   const [error, setError] = useState<string | null>(null);
@@ -168,9 +148,9 @@ export default function Home() {
       {/* Шапка: мы двое */}
       <View style={[ui.row, { gap: spacing.md }]}>
         <View style={{ flexDirection: 'row' }}>
-          <Avatar name={profile.display_name} tint={['#F7849F', '#C93D68']} />
+          <Avatar name={profile.display_name} tint={AVATAR_TINTS.me} />
           <View style={{ marginLeft: -14 }}>
-            <Avatar name={partner?.display_name ?? '?'} tint={partner ? ['#B9A6F2', '#7D63C9'] : ['#E4DCE2', '#C7B9C2']} />
+            <Avatar name={partner?.display_name ?? '?'} tint={partner ? AVATAR_TINTS.partner : AVATAR_TINTS.empty} online={partnerOnline} />
           </View>
         </View>
         <View style={{ flex: 1 }}>
