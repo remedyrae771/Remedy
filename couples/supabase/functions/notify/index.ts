@@ -73,7 +73,9 @@ async function buildNotice(table: string, id: string): Promise<Notice | null> {
     const name = await displayName(m.sender_id);
     return m.kind === 'thinking'
       ? { coupleId: m.couple_id, actorId: m.sender_id, at: m.created_at, title: `💭 ${name} думает о тебе`, body: 'Открой Remedy и ответь чем-нибудь тёплым', url: `${APP_URL}chat`, tag: 'thinking' }
-      : { coupleId: m.couple_id, actorId: m.sender_id, at: m.created_at, title: `💌 ${name}`, body: String(m.body).slice(0, 180), url: `${APP_URL}chat`, tag: 'chat' };
+      : m.kind === 'media'
+        ? { coupleId: m.couple_id, actorId: m.sender_id, at: m.created_at, title: `💌 ${name}`, body: (m.media_type === 'video' ? '🎬 Видео' : '📷 Фото') + (m.body ? ` · ${String(m.body).slice(0, 140)}` : ''), url: `${APP_URL}chat`, tag: 'chat' }
+        : { coupleId: m.couple_id, actorId: m.sender_id, at: m.created_at, title: `💌 ${name}`, body: String(m.body).slice(0, 180), url: `${APP_URL}chat`, tag: 'chat' };
   }
   if (table === 'answers') {
     const { data: a } = await supabase.from('answers').select('*').eq('id', id).maybeSingle();

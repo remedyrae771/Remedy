@@ -6,12 +6,15 @@ import { FlatList, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleS
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Avatar, { AVATAR_TINTS } from '../../components/Avatar';
 import { GradientFill } from '../../components/Gradient';
+import { MediaBubble, MediaViewer } from '../../components/Media';
 import { PetArt } from '../../components/Pet';
-import { formatTime } from '../../lib/dates';
+import { formatTime, lastSeenText } from '../../lib/dates';
+import { pickMedia, uploadMedia } from '../../lib/media';
 import { moodLabel } from '../../lib/moods';
 import { supabase } from '../../lib/supabase';
 import type { Message } from '../../lib/types';
 import { useCouple } from '../../providers/AuthProvider';
+import { usePresence } from '../../providers/PresenceProvider';
 import { colors, gradients, radius, shadows, spacing } from '../../theme';
 
 const PAGE = 200;
@@ -52,8 +55,8 @@ const sameGroup = (a: Message | undefined, b: Message | undefined) =>
   Boolean(
     a &&
       b &&
-      a.kind === 'text' &&
-      b.kind === 'text' &&
+      a.kind !== 'thinking' &&
+      b.kind !== 'thinking' &&
       a.sender_id === b.sender_id &&
       Math.abs(new Date(a.created_at).getTime() - new Date(b.created_at).getTime()) < GROUP_MS &&
       dayLabel(a.created_at) === dayLabel(b.created_at),
@@ -69,6 +72,9 @@ export default function Chat() {
   const [picker, setPicker] = useState<string | null>(null);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [focused, setFocused] = useState(false);
+  const [viewer, setViewer] = useState<Message | null>(null);
+  const [mediaError, setMediaError] = useState<string | null>(null);
+  const { partnerOnline } = usePresence();
   const channelRef = useRef<RealtimeChannel | null>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingSent = useRef(0);
@@ -166,6 +172,60 @@ export default function Chat() {
     setMessages((prev) => (prev.some((m) => m.id === data.id) ? prev : [data, ...prev]));
   };
 
+  const sendMedia = async () => {
+    setMediaError(null);
+    setEmojiOpen(false);
+    let picked;
+    try {
+      picked = await pickMedia();
+    } catch (e) {
+      setMediaError((e as Error).message);
+      return;
+    }
+    if (!picked) return;
+
+    // Сразу показываем файл в ленте с пометкой «Отправка…», пока он загружается.
+    const tempId = `temp-${Date.now()}`;
+    const temp: Message = {
+      id: tempId,
+      couple_id: coupleId,
+      sender_id: userId,
+      body: '',
+      kind: 'media',
+      created_at: new Date().toISOString(),
+      media_type: picked.type,
+      media_width: picked.width,
+      media_height: picked.height,
+      local_uri: picked.uri,
+      sending: true,
+    };
+    setMessages((prev) => [temp, ...prev]);
+    try {
+      const path = await uploadMedia(coupleId, picked);
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({
+          couple_id: coupleId,
+          body: '',
+          kind: 'media',
+          media_path: path,
+          media_type: picked.type,
+          media_width: Math.round(picked.width),
+          media_height: Math.round(picked.height),
+        })
+        .select()
+        .single<Message>();
+      if (error) throw new Error('Не получилось отправить. Попробуйте ещё раз.');
+      setMessages((prev) => {
+        const withoutTemp = prev.filter((m) => m.id !== tempId);
+        return withoutTemp.some((m) => m.id === data.id) ? withoutTemp : [{ ...data, local_uri: picked.uri }, ...withoutTemp];
+      });
+    } catch (e) {
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      setMediaError((e as Error).message);
+    }
+  };
+
   const react = async (message: Message, emoji: string) => {
     setPicker(null);
     haptic(() => Haptics.selectionAsync());
@@ -184,14 +244,19 @@ export default function Chat() {
   };
 
   const partnerName = partner?.display_name || 'Партнёр';
-  const myLast = messages.find((m) => m.sender_id === userId && m.kind === 'text');
+  const myLast = messages.find((m) => m.sender_id === userId && m.kind !== 'thinking' && !m.sending);
+  const moodPart = partner?.mood ? ` · ${partner.mood} ${moodLabel(partner.mood).toLowerCase()}` : '';
   const status = partnerTyping
     ? 'печатает…'
-    : partner?.mood
-      ? `сейчас ${partner.mood} ${moodLabel(partner.mood).toLowerCase()}`
-      : partner
-        ? 'ваш человек 💞'
-        : 'ещё не присоединился';
+    : !partner
+      ? 'ещё не присоединился'
+      : partnerOnline
+        ? `в сети${moodPart}`
+        : partner.last_seen_at
+          ? lastSeenText(partner.last_seen_at)
+          : partner.mood
+            ? `сейчас ${partner.mood} ${moodLabel(partner.mood).toLowerCase()}`
+            : 'ваш человек 💞';
 
   const renderItem = ({ item, index }: { item: Message; index: number }) => {
     const mine = item.sender_id === userId;
@@ -222,7 +287,7 @@ export default function Chat() {
     }
 
     const reactions = Object.values(item.reactions ?? {});
-    const big = isEmojiOnly(item.body);
+    const big = item.kind === 'text' && isEmojiOnly(item.body);
     const isLastMine = myLast?.id === item.id;
     const read = isLastMine && partnerReadAt && partnerReadAt >= item.created_at;
 
@@ -249,7 +314,12 @@ export default function Chat() {
             delayLongPress={300}
             style={{ maxWidth: '80%' }}
           >
-            {big ? (
+            {item.kind === 'media' ? (
+              <View>
+                <MediaBubble message={item} onOpen={() => (picker ? setPicker(null) : setViewer(item))} />
+                <Text style={[s.time, { color: colors.muted, marginTop: 3, marginRight: 4 }]}>{formatTime(item.created_at)}</Text>
+              </View>
+            ) : big ? (
               <View style={{ alignItems: mine ? 'flex-end' : 'flex-start', paddingHorizontal: 4 }}>
                 <Text style={{ fontSize: 48, lineHeight: 58 }}>{item.body}</Text>
                 <Text style={[s.time, { color: colors.muted }]}>{formatTime(item.created_at)}</Text>
@@ -287,12 +357,19 @@ export default function Chat() {
       <GradientFill colors={[colors.backgroundTop, colors.background, colors.backgroundBottom]} />
 
       <View style={s.header}>
-        <Avatar name={partnerName} tint={partner ? AVATAR_TINTS.partner : AVATAR_TINTS.empty} size={46} />
+        <Avatar name={partnerName} tint={partner ? AVATAR_TINTS.partner : AVATAR_TINTS.empty} size={46} online={partnerOnline} />
         <View style={{ flex: 1 }}>
           <Text style={s.headerName} numberOfLines={1}>
             {partnerName}
           </Text>
-          <Text style={[s.headerStatus, partnerTyping && { color: colors.primary, fontWeight: '700' }]} numberOfLines={1}>
+          <Text
+            style={[
+              s.headerStatus,
+              partnerOnline && { color: '#2E9E64', fontWeight: '600' },
+              partnerTyping && { color: colors.primary, fontWeight: '700' },
+            ]}
+            numberOfLines={1}
+          >
             {status}
           </Text>
         </View>
@@ -346,7 +423,12 @@ export default function Chat() {
             </View>
           ) : null}
 
+          {mediaError ? <Text style={s.mediaError}>{mediaError}</Text> : null}
+
           <View style={s.composer}>
+            <Pressable onPress={sendMedia} hitSlop={8} style={s.emojiToggle} accessibilityLabel="Отправить фото или видео">
+              <Text style={{ fontSize: 22 }}>📎</Text>
+            </Pressable>
             <Pressable onPress={() => setEmojiOpen((v) => !v)} hitSlop={8} style={s.emojiToggle} accessibilityLabel="Эмодзи">
               <Text style={{ fontSize: 22 }}>{emojiOpen ? '⌨️' : '😊'}</Text>
             </Pressable>
@@ -378,6 +460,7 @@ export default function Chat() {
           </View>
         </View>
       </KeyboardAvoidingView>
+      <MediaViewer message={viewer} onClose={() => setViewer(null)} />
     </SafeAreaView>
   );
 }
@@ -490,7 +573,8 @@ const s = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.95)',
     boxShadow: shadows.card,
   },
-  emojiToggle: { width: 40, height: 44, alignItems: 'center', justifyContent: 'center' },
+  emojiToggle: { width: 36, height: 44, alignItems: 'center', justifyContent: 'center' },
+  mediaError: { color: colors.danger, fontSize: 13, textAlign: 'center', marginHorizontal: spacing.lg },
   input: { flex: 1, fontSize: 16, lineHeight: 20, color: colors.text, minHeight: 40, maxHeight: 120, paddingVertical: 10, paddingHorizontal: 4 },
   send: {
     width: 44,

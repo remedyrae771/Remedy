@@ -14,6 +14,7 @@ import { errorText, supabase } from '../../lib/supabase';
 import type { CoupleEvent } from '../../lib/types';
 import { usePetMood, type PetTask } from '../../lib/usePetMood';
 import { useAuth, useCouple } from '../../providers/AuthProvider';
+import { usePresence } from '../../providers/PresenceProvider';
 import { colors, gradients, radius, shadows, spacing } from '../../theme';
 
 function timeAgo(iso: string | null): string {
@@ -73,6 +74,7 @@ export default function Home() {
   const { updateProfile } = useAuth();
   const { userId, coupleId, profile, couple, partner } = useCouple();
   const pet = usePetMood(coupleId, userId, profile, partner);
+  const { partnerOnline } = usePresence();
   const [nextEvent, setNextEvent] = useState<{ event: CoupleEvent; days: number } | null>(null);
   const [note, setNote] = useState(profile.mood_note ?? '');
   const [error, setError] = useState<string | null>(null);
@@ -148,7 +150,7 @@ export default function Home() {
         <View style={{ flexDirection: 'row' }}>
           <Avatar name={profile.display_name} tint={AVATAR_TINTS.me} />
           <View style={{ marginLeft: -14 }}>
-            <Avatar name={partner?.display_name ?? '?'} tint={partner ? AVATAR_TINTS.partner : AVATAR_TINTS.empty} />
+            <Avatar name={partner?.display_name ?? '?'} tint={partner ? AVATAR_TINTS.partner : AVATAR_TINTS.empty} online={partnerOnline} />
           </View>
         </View>
         <View style={{ flex: 1 }}>

@@ -28,7 +28,15 @@
       "backgroundColor": "#FFF7F5"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-video",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Remedy нужен доступ к фото, чтобы отправлять их партнёру в чат.",
+          "cameraPermission": "Remedy нужен доступ к камере, чтобы снимать фото и видео для партнёра."
+        }
+      ]
     ],
     "scheme": "remedy",
     "experiments": {

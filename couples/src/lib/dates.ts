@@ -79,3 +79,17 @@ export function dayIndex(date: Date = today()): number {
 export function formatTime(isoTimestamp: string): string {
   return new Date(isoTimestamp).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
 }
+
+/** «был(а) в сети …»: только что, 5 мин назад, сегодня в 14:20, вчера в 23:10, 3 мая. */
+export function lastSeenText(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const at = new Date(iso);
+  const minutes = Math.round((Date.now() - at.getTime()) / 60000);
+  if (minutes < 1) return 'был(а) в сети только что';
+  if (minutes < 60) return `был(а) в сети ${minutes} мин назад`;
+  const days = daysBetween(new Date(at.getFullYear(), at.getMonth(), at.getDate()), today());
+  const time = at.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+  if (days === 0) return `был(а) в сети сегодня в ${time}`;
+  if (days === 1) return `был(а) в сети вчера в ${time}`;
+  return `был(а) в сети ${at.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}`;
+}
