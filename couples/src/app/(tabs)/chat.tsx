@@ -6,10 +6,12 @@ import { FlatList, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleS
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Avatar, { AVATAR_TINTS } from '../../components/Avatar';
 import { GradientFill } from '../../components/Gradient';
+import Appear from '../../components/Appear';
 import { MediaBubble, MediaViewer } from '../../components/Media';
+import { VoiceBubble, VoiceRecorder } from '../../components/Voice';
 import { PetArt } from '../../components/Pet';
 import { formatTime, lastSeenText } from '../../lib/dates';
-import { pickMedia, uploadMedia } from '../../lib/media';
+import { pickMedia, uploadMedia, uploadVoice } from '../../lib/media';
 import { moodLabel } from '../../lib/moods';
 import { supabase } from '../../lib/supabase';
 import type { Message } from '../../lib/types';
@@ -74,6 +76,11 @@ export default function Chat() {
   const [focused, setFocused] = useState(false);
   const [viewer, setViewer] = useState<Message | null>(null);
   const [mediaError, setMediaError] = useState<string | null>(null);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
+  // Сообщения, пришедшие или отправленные при открытом чате, — их появление анимируем.
+  const [freshIds, setFreshIds] = useState<ReadonlySet<string>>(() => new Set());
+  const markFresh = useCallback((id: string) => setFreshIds((prev) => new Set(prev).add(id)), []);
+  const [recording, setRecording] = useState(false);
   const { partnerOnline } = usePresence();
   const channelRef = useRef<RealtimeChannel | null>(null);
   const typingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -106,6 +113,7 @@ export default function Chat() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `couple_id=eq.${coupleId}` }, (payload) => {
         const msg = payload.new as Message;
         setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [msg, ...prev]));
+        markFresh(msg.id);
         if (msg.sender_id !== userId) setPartnerTyping(false);
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `couple_id=eq.${coupleId}` }, (payload) => {
@@ -129,7 +137,7 @@ export default function Chat() {
       supabase.removeChannel(channel);
       channelRef.current = null;
     };
-  }, [coupleId, userId]);
+  }, [coupleId, userId, markFresh]);
 
   useFocusEffect(
     useCallback(() => {
@@ -164,11 +172,14 @@ export default function Chat() {
     if (!raw) setText('');
     setEmojiOpen(false);
     haptic(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light));
-    const { data, error } = await supabase.from('messages').insert({ couple_id: coupleId, body }).select().single<Message>();
+    const reply = replyTo?.id ?? null;
+    setReplyTo(null);
+    const { data, error } = await supabase.from('messages').insert({ couple_id: coupleId, body, reply_to: reply }).select().single<Message>();
     if (error) {
       if (!raw) setText(body);
       return;
     }
+    markFresh(data.id);
     setMessages((prev) => (prev.some((m) => m.id === data.id) ? prev : [data, ...prev]));
   };
 
@@ -185,6 +196,8 @@ export default function Chat() {
     if (!picked) return;
 
     // Сразу показываем файл в ленте с пометкой «Отправка…», пока он загружается.
+    const reply = replyTo?.id ?? null;
+    setReplyTo(null);
     const tempId = `temp-${Date.now()}`;
     const temp: Message = {
       id: tempId,
@@ -199,6 +212,7 @@ export default function Chat() {
       local_uri: picked.uri,
       sending: true,
     };
+    markFresh(tempId);
     setMessages((prev) => [temp, ...prev]);
     try {
       const path = await uploadMedia(coupleId, picked);
@@ -208,6 +222,7 @@ export default function Chat() {
           couple_id: coupleId,
           body: '',
           kind: 'media',
+          reply_to: reply,
           media_path: path,
           media_type: picked.type,
           media_width: Math.round(picked.width),
@@ -225,6 +240,57 @@ export default function Chat() {
       setMediaError((e as Error).message);
     }
   };
+
+  const sendVoice = async (uri: string, seconds: number) => {
+    setRecording(false);
+    setMediaError(null);
+    const reply = replyTo?.id ?? null;
+    setReplyTo(null);
+    const tempId = `temp-${Date.now()}`;
+    const temp: Message = {
+      id: tempId,
+      couple_id: coupleId,
+      sender_id: userId,
+      body: '',
+      kind: 'voice',
+      created_at: new Date().toISOString(),
+      media_type: 'audio',
+      media_duration: seconds,
+      local_uri: uri,
+      sending: true,
+    };
+    markFresh(tempId);
+    setMessages((prev) => [temp, ...prev]);
+    try {
+      const path = await uploadVoice(coupleId, uri);
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({ couple_id: coupleId, body: '', kind: 'voice', reply_to: reply, media_path: path, media_type: 'audio', media_duration: Math.round(seconds * 10) / 10 })
+        .select()
+        .single<Message>();
+      if (error) throw new Error('Не получилось отправить голосовое. Попробуйте ещё раз.');
+      setMessages((prev) => {
+        const withoutTemp = prev.filter((m) => m.id !== tempId);
+        return withoutTemp.some((m) => m.id === data.id) ? withoutTemp : [data, ...withoutTemp];
+      });
+    } catch (e) {
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      setMediaError((e as Error).message);
+    }
+  };
+
+  /** Короткое описание сообщения для цитаты в ответе. */
+  const snippet = (m: Message) =>
+    m.kind === 'voice'
+      ? '🎤 Голосовое сообщение'
+      : m.kind === 'media'
+        ? m.media_type === 'video'
+          ? '🎬 Видео'
+          : '📷 Фото'
+        : m.kind === 'thinking'
+          ? '💭 Думаю о тебе'
+          : m.body;
+  const authorName = (m: Message) => (m.sender_id === userId ? 'Вы' : partnerName);
 
   const react = async (message: Message, emoji: string) => {
     setPicker(null);
@@ -246,14 +312,20 @@ export default function Chat() {
   const partnerName = partner?.display_name || 'Партнёр';
   const myLast = messages.find((m) => m.sender_id === userId && m.kind !== 'thinking' && !m.sending);
   const moodPart = partner?.mood ? ` · ${partner.mood} ${moodLabel(partner.mood).toLowerCase()}` : '';
+  // Когда партнёр был в сети: отметка присутствия или самое свежее его действие
+  // (сообщение, смена настроения, прочтение чата) — что из этого позже.
+  const lastTheirMessage = messages.find((m) => m.sender_id !== userId)?.created_at ?? null;
+  const lastSeen = [partner?.last_seen_at, partner?.mood_updated_at, lastTheirMessage, partnerReadAt]
+    .filter((v): v is string => Boolean(v))
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
   const status = partnerTyping
     ? 'печатает…'
     : !partner
       ? 'ещё не присоединился'
       : partnerOnline
         ? `в сети${moodPart}`
-        : partner.last_seen_at
-          ? lastSeenText(partner.last_seen_at)
+        : lastSeen
+          ? `${lastSeenText(lastSeen)}${partner.mood ? ` · ${partner.mood}` : ''}`
           : partner.mood
             ? `сейчас ${partner.mood} ${moodLabel(partner.mood).toLowerCase()}`
             : 'ваш человек 💞';
@@ -287,12 +359,27 @@ export default function Chat() {
     }
 
     const reactions = Object.values(item.reactions ?? {});
-    const big = item.kind === 'text' && isEmojiOnly(item.body);
+    const original = item.reply_to ? messages.find((m) => m.id === item.reply_to) : undefined;
+    const big = item.kind === 'text' && !item.reply_to && isEmojiOnly(item.body);
+    const quoteOnBubble = mine && item.kind !== 'media';
+    const quote = item.reply_to ? (
+      <View style={[s.quote, quoteOnBubble ? s.quoteMine : s.quoteTheirs]}>
+        <Text style={[s.quoteName, { color: quoteOnBubble ? '#fff' : colors.primaryDeep }]} numberOfLines={1}>
+          {original ? authorName(original) : 'Сообщение'}
+        </Text>
+        <Text style={[s.quoteText, { color: quoteOnBubble ? 'rgba(255,255,255,0.9)' : colors.muted }]} numberOfLines={2}>
+          {original ? snippet(original) : 'Сообщение недоступно'}
+        </Text>
+      </View>
+    ) : null;
     const isLastMine = myLast?.id === item.id;
     const read = isLastMine && partnerReadAt && partnerReadAt >= item.created_at;
 
+    // Только что пришедшие сообщения плавно выплывают снизу (список перевёрнут — отсюда знак минус).
+    const fresh = freshIds.has(item.id);
+    const Wrap = fresh ? Appear : View;
     return (
-      <View style={{ marginTop: groupedWithOlder ? 2 : spacing.sm }}>
+      <Wrap {...(fresh ? { distance: -16 } : {})} style={{ marginTop: groupedWithOlder ? 2 : spacing.sm }}>
         {day}
         <View style={{ alignItems: mine ? 'flex-end' : 'flex-start' }}>
           {picker === item.id ? (
@@ -302,6 +389,17 @@ export default function Chat() {
                   <Text style={{ fontSize: 24, opacity: item.reactions?.[userId] && item.reactions[userId] !== e ? 0.5 : 1 }}>{e}</Text>
                 </Pressable>
               ))}
+              <Pressable
+                onPress={() => {
+                  setPicker(null);
+                  setReplyTo(item);
+                }}
+                hitSlop={4}
+                style={s.replyAction}
+                accessibilityLabel="Ответить"
+              >
+                <Text style={{ fontSize: 13, fontWeight: '700', color: colors.primaryDeep }}>↩︎ Ответить</Text>
+              </Pressable>
             </View>
           ) : null}
 
@@ -314,8 +412,22 @@ export default function Chat() {
             delayLongPress={300}
             style={{ maxWidth: '80%' }}
           >
-            {item.kind === 'media' ? (
+            {item.kind === 'voice' ? (
+              <View
+                style={[
+                  s.bubble,
+                  mine ? s.bubbleMine : s.bubbleTheirs,
+                  mine ? { borderBottomRightRadius: groupedWithNewer ? 8 : 6 } : { borderBottomLeftRadius: groupedWithNewer ? 8 : 6 },
+                ]}
+              >
+                {mine ? <GradientFill colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 0.6, y: 1 }} /> : null}
+                {quote}
+                <VoiceBubble message={item} mine={mine} />
+                <Text style={[s.time, { color: mine ? 'rgba(255,255,255,0.8)' : colors.muted }]}>{formatTime(item.created_at)}</Text>
+              </View>
+            ) : item.kind === 'media' ? (
               <View>
+                {quote ? <View style={[s.bubble, s.bubbleTheirs, { marginBottom: 4 }]}>{quote}</View> : null}
                 <MediaBubble message={item} onOpen={() => (picker ? setPicker(null) : setViewer(item))} />
                 <Text style={[s.time, { color: colors.muted, marginTop: 3, marginRight: 4 }]}>{formatTime(item.created_at)}</Text>
               </View>
@@ -335,6 +447,7 @@ export default function Chat() {
                 ]}
               >
                 {mine ? <GradientFill colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 0.6, y: 1 }} /> : null}
+                {quote}
                 <Text style={[s.bubbleText, { color: mine ? '#fff' : colors.text }]}>{item.body}</Text>
                 <Text style={[s.time, { color: mine ? 'rgba(255,255,255,0.8)' : colors.muted }]}>{formatTime(item.created_at)}</Text>
               </View>
@@ -348,7 +461,7 @@ export default function Chat() {
 
           {isLastMine && !groupedWithNewer ? <Text style={s.receipt}>{read ? 'Прочитано ✓✓' : 'Отправлено ✓'}</Text> : null}
         </View>
-      </View>
+      </Wrap>
     );
   };
 
@@ -381,7 +494,7 @@ export default function Chat() {
           data={messages}
           keyExtractor={(m) => m.id}
           renderItem={renderItem}
-          extraData={{ picker, partnerReadAt }}
+          extraData={{ picker, partnerReadAt, freshIds }}
           contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingVertical: spacing.md }}
           keyboardShouldPersistTaps="handled"
           ListHeaderComponent={
@@ -425,6 +538,32 @@ export default function Chat() {
 
           {mediaError ? <Text style={s.mediaError}>{mediaError}</Text> : null}
 
+          {replyTo ? (
+            <View style={s.replyBar}>
+              <View style={{ flex: 1 }}>
+                <Text style={s.quoteName} numberOfLines={1}>
+                  ↩︎ Ответ: {authorName(replyTo)}
+                </Text>
+                <Text style={[s.quoteText, { color: colors.muted }]} numberOfLines={1}>
+                  {snippet(replyTo)}
+                </Text>
+              </View>
+              <Pressable onPress={() => setReplyTo(null)} hitSlop={10} accessibilityLabel="Отменить ответ">
+                <Text style={{ fontSize: 16, color: colors.muted, fontWeight: '700' }}>✕</Text>
+              </Pressable>
+            </View>
+          ) : null}
+
+          {recording ? (
+            <VoiceRecorder
+              onSend={sendVoice}
+              onCancel={() => setRecording(false)}
+              onError={(message) => {
+                setRecording(false);
+                setMediaError(message);
+              }}
+            />
+          ) : (
           <View style={s.composer}>
             <Pressable onPress={sendMedia} hitSlop={8} style={s.emojiToggle} accessibilityLabel="Отправить фото или видео">
               <Text style={{ fontSize: 22 }}>📎</Text>
@@ -448,16 +587,27 @@ export default function Chat() {
                 }
               }}
             />
-            <Pressable
-              onPress={() => send()}
-              disabled={!text.trim()}
-              accessibilityLabel="Отправить"
-              style={({ pressed }) => [s.send, !text.trim() && { opacity: 0.4 }, pressed && { transform: [{ scale: 0.92 }] }]}
-            >
-              <GradientFill colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
-              <Text style={{ color: '#fff', fontSize: 18, fontWeight: '800', marginLeft: 2 }}>➤</Text>
-            </Pressable>
+            {text.trim() ? (
+              <Pressable onPress={() => send()} accessibilityLabel="Отправить" style={({ pressed }) => [s.send, pressed && { transform: [{ scale: 0.92 }] }]}>
+                <GradientFill colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+                <Text style={{ color: '#fff', fontSize: 18, fontWeight: '800', marginLeft: 2 }}>➤</Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={() => {
+                  setMediaError(null);
+                  setEmojiOpen(false);
+                  setRecording(true);
+                }}
+                accessibilityLabel="Записать голосовое"
+                style={({ pressed }) => [s.send, pressed && { transform: [{ scale: 0.92 }] }]}
+              >
+                <GradientFill colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+                <Text style={{ fontSize: 20 }}>🎤</Text>
+              </Pressable>
+            )}
           </View>
+          )}
         </View>
       </KeyboardAvoidingView>
       <MediaViewer message={viewer} onClose={() => setViewer(null)} />
@@ -540,6 +690,25 @@ const s = StyleSheet.create({
   },
   thinkingText: { fontSize: 15, fontWeight: '700', color: colors.primaryDeep },
   thinkingTime: { fontSize: 11, color: colors.muted },
+  replyAction: { justifyContent: 'center', paddingHorizontal: 8, marginLeft: 2, borderLeftWidth: 1, borderLeftColor: colors.border },
+  quote: { borderLeftWidth: 3, paddingLeft: 8, paddingVertical: 2, marginBottom: 4, borderRadius: 4 },
+  quoteMine: { borderLeftColor: 'rgba(255,255,255,0.85)', backgroundColor: 'rgba(255,255,255,0.15)' },
+  quoteTheirs: { borderLeftColor: colors.primary, backgroundColor: 'rgba(232, 87, 126, 0.08)' },
+  quoteName: { fontSize: 12, fontWeight: '700', color: colors.primaryDeep },
+  quoteText: { fontSize: 13 },
+  replyBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 16,
+    backgroundColor: colors.surface,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary,
+    boxShadow: shadows.soft,
+  },
   composerWrap: { paddingTop: spacing.sm, paddingBottom: spacing.sm, gap: spacing.sm },
   quick: {
     paddingHorizontal: spacing.md,

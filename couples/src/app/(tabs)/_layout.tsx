@@ -1,11 +1,23 @@
 import { Tabs } from 'expo-router';
-import { Platform, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Animated, Easing, Platform, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, radius } from '../../theme';
 
 function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
+  // Иконка активной вкладки мягко «подпрыгивает».
+  const [bounce] = useState(() => new Animated.Value(focused ? 1 : 0));
+  useEffect(() => {
+    if (focused) {
+      bounce.setValue(0);
+      Animated.spring(bounce, { toValue: 1, friction: 4, tension: 160, useNativeDriver: Platform.OS !== 'web' }).start();
+    } else {
+      Animated.timing(bounce, { toValue: 0, duration: 150, easing: Easing.out(Easing.quad), useNativeDriver: Platform.OS !== 'web' }).start();
+    }
+  }, [focused, bounce]);
+  const scale = bounce.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] });
   return (
-    <View
+    <Animated.View
       style={{
         width: 52,
         height: 32,
@@ -13,10 +25,11 @@ function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
         alignItems: 'center',
         justifyContent: 'center',
         backgroundColor: focused ? colors.primarySoft : 'transparent',
+        transform: [{ scale }],
       }}
     >
       <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.55 }}>{emoji}</Text>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -29,6 +42,7 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        animation: 'shift',
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.muted,
         tabBarStyle: {

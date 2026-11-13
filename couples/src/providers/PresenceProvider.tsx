@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { AppState } from 'react-native';
+import { markActiveToday } from '../lib/growth';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './AuthProvider';
 
@@ -22,6 +23,7 @@ export function PresenceProvider({ children }: { children: ReactNode }) {
     if (!userId || !coupleId) return;
 
     const touch = () => {
+      markActiveToday(coupleId);
       supabase.from('profiles').update({ last_seen_at: new Date().toISOString() }).eq('id', userId).then(() => {});
     };
 

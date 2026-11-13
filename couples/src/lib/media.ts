@@ -80,3 +80,25 @@ export async function signedUrl(path: string): Promise<string | null> {
   urlCache.set(path, { url: data.signedUrl, expires: Date.now() + 3600_000 });
   return data.signedUrl;
 }
+
+/** Формат записи голоса в браузере: mp4 (iPhone и новые Chrome), иначе webm. */
+export function webVoiceMimeType(): string | undefined {
+  if (typeof MediaRecorder === 'undefined') return undefined;
+  return ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'].find((t) => MediaRecorder.isTypeSupported(t));
+}
+
+/** Загружает записанное голосовое и возвращает путь в хранилище. */
+export async function uploadVoice(coupleId: string, uri: string): Promise<string> {
+  const blob = await (await fetch(uri)).blob();
+  const mime = (blob.type || (Platform.OS === 'web' ? 'audio/webm' : 'audio/mp4')).split(';')[0];
+  const ext = mime.includes('webm') ? 'webm' : mime.includes('mpeg') ? 'mp3' : mime.includes('wav') ? 'wav' : 'm4a';
+  const path = `${coupleId}/${randomId()}.${ext}`;
+  const { error } = await supabase.storage.from(MEDIA_BUCKET).upload(path, blob, { contentType: mime, upsert: false });
+  if (error) throw new Error('Не получилось отправить голосовое. Проверьте интернет.');
+  return path;
+}
+
+export function formatDuration(seconds: number | null | undefined): string {
+  const s = Math.max(0, Math.round(seconds ?? 0));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}
