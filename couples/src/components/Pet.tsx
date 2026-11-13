@@ -263,6 +263,56 @@ function GenericTail({ kind }: { kind: PetKind }) {
   );
 }
 
+/** Аксессуары по стадии роста: 2 — бантик, 3 — ошейник с колокольчиком, 4 — ещё и корона. */
+function Accessories({ stage }: { stage: number }) {
+  const uid = useSvgId('acc');
+  if (stage < 2) return null;
+  return (
+    <Svg width="100%" height="100%" viewBox={`${VB_X} ${VB_Y} ${VB} ${VB}`}>
+      <Defs>
+        <RadialGradient id={`${uid}gold`} cx="0.35" cy="0.3" rx="0.7" ry="0.7">
+          <Stop offset="0" stopColor="#FFF3B0" />
+          <Stop offset="0.5" stopColor="#F5C842" />
+          <Stop offset="1" stopColor="#B8860B" />
+        </RadialGradient>
+        <LinearGradient id={`${uid}bow`} x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#FF9EBB" />
+          <Stop offset="1" stopColor="#E0487A" />
+        </LinearGradient>
+        <LinearGradient id={`${uid}collar`} x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#F2557C" />
+          <Stop offset="1" stopColor="#B82A55" />
+        </LinearGradient>
+      </Defs>
+      {stage === 2 ? (
+        <G transform="translate(110 30) rotate(18)">
+          <Path d="M0 0 C -14 -10 -18 8 -4 4 Z" fill={`url(#${uid}bow)`} />
+          <Path d="M0 0 C 14 -10 18 8 4 4 Z" fill={`url(#${uid}bow)`} />
+          <Circle cx={0} cy={1.5} r={3.6} fill="#E0487A" />
+          <Circle cx={-1} cy={0.5} r={1.2} fill="#FFFFFF" opacity={0.7} />
+        </G>
+      ) : null}
+      {stage >= 3 ? (
+        <G>
+          <Path d="M50 111 Q80 126 110 111" stroke={`url(#${uid}collar)`} strokeWidth={7} strokeLinecap="round" fill="none" />
+          <Path d="M53 110 Q80 123 107 110" stroke="#FFFFFF" strokeWidth={1.4} strokeLinecap="round" fill="none" opacity={0.35} />
+          <Circle cx={80} cy={124} r={6.5} fill={`url(#${uid}gold)`} />
+          <Path d="M75.5 125 h9" stroke="#8A6508" strokeWidth={1.2} strokeLinecap="round" />
+          <Circle cx={78} cy={121.5} r={1.6} fill="#FFFFFF" opacity={0.8} />
+        </G>
+      ) : null}
+      {stage >= 4 ? (
+        <G transform="translate(80 22)">
+          <Path d="M-16 6 L-18 -10 L-8 -2 L0 -14 L8 -2 L18 -10 L16 6 Z" fill={`url(#${uid}gold)`} stroke="#B8860B" strokeWidth={1} strokeLinejoin="round" />
+          <Circle cx={0} cy={-14} r={2.4} fill="#FF7EA0" />
+          <Circle cx={-18} cy={-10} r={2} fill="#9FD8FF" />
+          <Circle cx={18} cy={-10} r={2} fill="#9FD8FF" />
+        </G>
+      ) : null}
+    </Svg>
+  );
+}
+
 type Heart = { id: number; x: number; anim: Animated.Value };
 
 /**
@@ -274,11 +324,17 @@ export default function Pet({
   mood,
   size = 160,
   onPat,
+  stage = 0,
+  scale = 1,
 }: {
   kind: PetKind;
   mood: PetMood;
   size?: number;
   onPat?: () => void;
+  /** Стадия роста (0–4): аксессуары */
+  stage?: number;
+  /** Размер по стадии роста */
+  scale?: number;
 }) {
   const [breathe] = useState(() => new Animated.Value(0));
   const [jump] = useState(() => new Animated.Value(0));
@@ -400,7 +456,7 @@ export default function Pet({
 
   return (
     <Pressable onPress={pat} accessibilityRole="button" accessibilityLabel="Погладить питомца" hitSlop={8}>
-      <View style={{ width: size, height: size }}>
+      <View style={{ width: size, height: size, transform: [{ scale }], transformOrigin: 'bottom' }}>
         {/* мягкая тень на полу: размытое пятно, которое сжимается, когда питомец подпрыгивает */}
         <Animated.View
           style={{
@@ -429,6 +485,9 @@ export default function Pet({
           </Animated.View>
           <Animated.View style={{ transform: [{ scaleX }, { scaleY }], transformOrigin: 'bottom' }}>
             <PetArt kind={kind} mood={shownMood} size={size} blink={blink} />
+            <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: size, height: size }}>
+              <Accessories stage={stage} />
+            </View>
           </Animated.View>
         </Animated.View>
 

@@ -1,4 +1,4 @@
-import { useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Button, Card, Chip, ErrorText, Input, Muted, Screen, SectionLabel, Title, styles } from '../../components/ui';
@@ -156,6 +156,16 @@ function Games() {
   if (!deck) {
     return (
       <>
+        <Pressable onPress={() => router.push('/game')}>
+          <Card style={[styles.row, { backgroundColor: colors.primarySoft, borderColor: colors.primarySoft }]}>
+            <Text style={{ fontSize: 32 }}>🎯</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.body, { fontWeight: '700' }]}>Кто лучше знает</Text>
+              <Muted>Онлайн-игра: угадайте ответы друг друга и набирайте очки</Muted>
+            </View>
+            <Text style={{ color: colors.primary, fontSize: 20 }}>›</Text>
+          </Card>
+        </Pressable>
         <Muted>Игры для вас двоих — играйте вместе вживую или по видеосвязи.</Muted>
         {DECKS.map((d) => (
           <Pressable key={d.id} onPress={() => start(d.id)}>

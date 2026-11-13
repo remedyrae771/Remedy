@@ -73,9 +73,24 @@ async function buildNotice(table: string, id: string): Promise<Notice | null> {
     const name = await displayName(m.sender_id);
     return m.kind === 'thinking'
       ? { coupleId: m.couple_id, actorId: m.sender_id, at: m.created_at, title: `💭 ${name} думает о тебе`, body: 'Открой Remedy и ответь чем-нибудь тёплым', url: `${APP_URL}chat`, tag: 'thinking' }
+      : m.kind === 'voice'
+        ? { coupleId: m.couple_id, actorId: m.sender_id, at: m.created_at, title: `💌 ${name}`, body: '🎤 Голосовое сообщение', url: `${APP_URL}chat`, tag: 'chat' }
       : m.kind === 'media'
         ? { coupleId: m.couple_id, actorId: m.sender_id, at: m.created_at, title: `💌 ${name}`, body: (m.media_type === 'video' ? '🎬 Видео' : '📷 Фото') + (m.body ? ` · ${String(m.body).slice(0, 140)}` : ''), url: `${APP_URL}chat`, tag: 'chat' }
         : { coupleId: m.couple_id, actorId: m.sender_id, at: m.created_at, title: `💌 ${name}`, body: String(m.body).slice(0, 180), url: `${APP_URL}chat`, tag: 'chat' };
+  }
+  if (table === 'game_rounds') {
+    const { data: r } = await supabase.from('game_rounds').select('*').eq('id', id).maybeSingle();
+    if (!r) return null;
+    if (!r.guessed_at) {
+      const name = await displayName(r.subject_id);
+      return { coupleId: r.couple_id, actorId: r.subject_id, at: r.created_at, title: `🎯 ${name} загадал(а) вопрос`, body: 'Угадай, что ответил(а)! Игра «Кто лучше знает»', url: `${APP_URL}game`, tag: 'game' };
+    }
+    // Угадал партнёр загадавшего — уведомляем загадавшего.
+    const { data: guesser } = await supabase.from('profiles').select('id, display_name').eq('couple_id', r.couple_id).neq('id', r.subject_id).maybeSingle();
+    if (!guesser) return null;
+    const name = guesser.display_name?.trim() || 'Партнёр';
+    return { coupleId: r.couple_id, actorId: guesser.id, at: r.guessed_at, title: r.correct ? `🎯 ${name} угадал(а)!` : `🙈 ${name} не угадал(а)`, body: r.correct ? 'Вы отлично знаете друг друга 💞' : 'Загляните, что он(а) выбрал(а)', url: `${APP_URL}game`, tag: 'game' };
   }
   if (table === 'answers') {
     const { data: a } = await supabase.from('answers').select('*').eq('id', id).maybeSingle();

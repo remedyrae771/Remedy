@@ -12,6 +12,7 @@ import { daysBetween, nextOccurrence, parseISODate, pluralDays, today } from '..
 import { MOODS, moodLabel } from '../../lib/moods';
 import { errorText, supabase } from '../../lib/supabase';
 import type { CoupleEvent } from '../../lib/types';
+import { stageFor, useCoupleStats } from '../../lib/growth';
 import { usePetMood, type PetTask } from '../../lib/usePetMood';
 import { useAuth, useCouple } from '../../providers/AuthProvider';
 import { usePresence } from '../../providers/PresenceProvider';
@@ -74,6 +75,8 @@ export default function Home() {
   const { updateProfile } = useAuth();
   const { userId, coupleId, profile, couple, partner } = useCouple();
   const pet = usePetMood(coupleId, userId, profile, partner);
+  const stats = useCoupleStats();
+  const growth = stageFor(stats?.days_together ?? 0);
   const { partnerOnline } = usePresence();
   const [nextEvent, setNextEvent] = useState<{ event: CoupleEvent; days: number } | null>(null);
   const [note, setNote] = useState(profile.mood_note ?? '');
@@ -174,10 +177,19 @@ export default function Home() {
 
         <View style={[ui.row, { justifyContent: 'space-between', alignSelf: 'stretch' }]}>
           <View style={s.glassChip}>
-            <Text style={s.glassChipText}>🐾 {petName}</Text>
+            <Text style={s.glassChipText}>
+              🐾 {petName} · <Text style={{ color: colors.primaryDeep }}>{growth.name}</Text>
+            </Text>
           </View>
-          <View style={s.glassChip}>
-            <Text style={s.glassChipText}>💗 {petPats}</Text>
+          <View style={[ui.row, { gap: 6 }]}>
+            {stats && stats.streak > 0 ? (
+              <View style={s.glassChip}>
+                <Text style={s.glassChipText}>🔥 {stats.streak}</Text>
+              </View>
+            ) : null}
+            <View style={s.glassChip}>
+              <Text style={s.glassChipText}>💗 {petPats}</Text>
+            </View>
           </View>
         </View>
 
@@ -186,12 +198,30 @@ export default function Home() {
           <View style={s.bubbleTail} />
         </View>
 
-        <Pet kind={couple?.pet_kind ?? 'cat'} mood={pet.mood} size={190} onPat={patPet} />
+        <Pet kind={couple?.pet_kind ?? 'cat'} mood={pet.mood} size={190} onPat={patPet} stage={growth.index} scale={growth.scale} />
 
         <View style={s.meterPanel}>
           <HeartsMeter score={score} total={tasks.length} />
           <Text style={{ color: colors.text, fontWeight: '700', fontSize: 13 }}>
             Счастье {score}/{tasks.length}
+          </Text>
+        </View>
+        <View style={s.growthPanel}>
+          <View style={[ui.row, { justifyContent: 'space-between' }]}>
+            <Text style={{ fontWeight: '700', color: colors.text, fontSize: 13 }}>
+              {growth.next ? `До стадии «${growth.next}»` : 'Максимальная стадия 👑'}
+            </Text>
+            <Text style={[ui.muted, { fontSize: 12 }]}>
+              {growth.next ? `ещё ${growth.daysToNext} ${pluralDays(growth.daysToNext)} вместе` : `${stats?.days_together ?? 0} дней вместе`}
+            </Text>
+          </View>
+          <View style={s.growthTrack}>
+            <View style={[s.growthFill, { width: `${Math.max(6, Math.round(growth.progress * 100))}%` }]}>
+              <GradientFill colors={['#FFC36B', '#F06B93']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} />
+            </View>
+          </View>
+          <Text style={[ui.muted, { fontSize: 11 }]}>
+            Растёт за дни, когда заходите вы оба{stats?.best_streak ? ` · рекорд серии 🔥 ${stats.best_streak}` : ''}
           </Text>
         </View>
         <Text style={[ui.muted, { fontSize: 12 }]}>Нажмите на питомца, чтобы погладить</Text>
@@ -207,6 +237,25 @@ export default function Home() {
         <Text style={[ui.muted, { marginTop: -8, marginBottom: 4 }]}>Каждое выполненное добавляет питомцу сердечко</Text>
         {tasks.map((t) => (
           <TaskRow key={t.key} task={t} />
+        ))}
+      </View>
+
+      {/* Разделы для пары */}
+      <View style={{ flexDirection: 'row', gap: spacing.md }}>
+        {[
+          { emoji: '📸', title: 'Моменты', sub: 'Фото и видео', href: '/album' as const },
+          { emoji: '💌', title: 'Капсула', sub: 'В будущее', href: '/capsules' as const },
+          { emoji: '🎯', title: 'Игра', sub: 'Кто лучше знает', href: '/game' as const },
+        ].map((t) => (
+          <Pressable key={t.href} onPress={() => router.push(t.href)} style={({ pressed }) => [s.feature, pressed && { transform: [{ scale: 0.96 }] }]}>
+            <View style={s.featureIcon}>
+              <Text style={{ fontSize: 26 }}>{t.emoji}</Text>
+            </View>
+            <Text style={s.featureTitle}>{t.title}</Text>
+            <Text style={s.featureSub} numberOfLines={1}>
+              {t.sub}
+            </Text>
+          </Pressable>
         ))}
       </View>
 
@@ -351,6 +400,42 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.8)',
   },
+  feature: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xs,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.9)',
+    boxShadow: shadows.card,
+  },
+  featureIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFF4F7',
+    boxShadow: 'inset 0px -4px 8px rgba(201, 61, 104, 0.10), inset 0px 3px 0px rgba(255,255,255,1), 0px 6px 12px rgba(122, 46, 72, 0.10)',
+  },
+  featureTitle: { fontSize: 14, fontWeight: '800', color: colors.text },
+  featureSub: { fontSize: 11, color: colors.muted },
+  growthPanel: {
+    alignSelf: 'stretch',
+    gap: 6,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.sm,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.95)',
+    boxShadow: '0px 6px 14px rgba(122, 46, 72, 0.08)',
+  },
+  growthTrack: { height: 10, borderRadius: 5, backgroundColor: 'rgba(201, 61, 104, 0.12)', overflow: 'hidden' },
+  growthFill: { height: '100%', borderRadius: 5, overflow: 'hidden' },
   glassChip: {
     paddingHorizontal: spacing.md,
     paddingVertical: 6,

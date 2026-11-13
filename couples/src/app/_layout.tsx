@@ -32,6 +32,8 @@ function RootNavigator() {
         headerTitleStyle: { color: colors.text },
         headerShadowVisible: false,
         headerBackButtonDisplayMode: 'minimal',
+        animation: 'slide_from_right',
+        animationDuration: 280,
       }}
     >
       <Stack.Screen name="join" />
@@ -47,7 +49,10 @@ function RootNavigator() {
       <Stack.Protected guard={signedIn && paired}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="list/[id]" options={{ headerShown: true, title: '' }} />
-        <Stack.Screen name="settings" options={{ headerShown: true, title: 'Настройки', presentation: 'modal' }} />
+        <Stack.Screen name="settings" options={{ headerShown: true, title: 'Настройки', presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="album" options={{ headerShown: true, title: 'Наши моменты' }} />
+        <Stack.Screen name="capsules" options={{ headerShown: true, title: 'Капсула времени' }} />
+        <Stack.Screen name="game" options={{ headerShown: true, title: 'Кто лучше знает' }} />
       </Stack.Protected>
     </Stack>
   );

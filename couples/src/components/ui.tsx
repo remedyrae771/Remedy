@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { Children, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, gradients, radius, shadows, spacing } from '../theme';
+import Appear from './Appear';
 import { GradientFill } from './Gradient';
 
 export function Screen({
@@ -29,7 +30,10 @@ export function Screen({
       <GradientFill colors={[colors.backgroundTop, colors.background, colors.backgroundBottom]} />
       {scroll ? (
         <ScrollView contentContainerStyle={styles.screenContent} keyboardShouldPersistTaps="handled">
-          {children}
+          {/* Блоки экрана появляются «лесенкой» при открытии */}
+          {Children.map(children, (child, i) => (
+            <Appear delay={Math.min(i, 8) * 55}>{child}</Appear>
+          ))}
         </ScrollView>
       ) : (
         <View style={[styles.screenContent, { flex: 1 }]}>{children}</View>

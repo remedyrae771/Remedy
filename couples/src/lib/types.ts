@@ -70,12 +70,14 @@ export type Message = {
   couple_id: string;
   sender_id: string;
   body: string;
-  kind: 'text' | 'thinking' | 'media';
+  kind: 'text' | 'thinking' | 'media' | 'voice';
   created_at: string;
   /** { user_id: emoji } — по одной реакции от каждого партнёра */
   reactions?: Record<string, string>;
   media_path?: string | null;
-  media_type?: 'image' | 'video' | null;
+  media_type?: 'image' | 'video' | 'audio' | null;
+  media_duration?: number | null;
+  reply_to?: string | null;
   media_width?: number | null;
   media_height?: number | null;
   /** Только на этом устройстве, пока файл загружается */
