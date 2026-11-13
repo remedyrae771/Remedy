@@ -96,7 +96,10 @@ async function claim(coupleId: string, kind: string, ref: string, day: string) {
 }
 
 type Couple = { id: string; timezone: string; started_on: string | null; pet_name: string | null };
-type Member = { id: string; display_name: string; partner_nickname: string | null };
+type Member = { id: string; display_name: string; partner_nickname: string | null; notify_prefs: Record<string, boolean> | null };
+
+/** Вид напоминания для настроек «какие уведомления присылать». */
+const CATEGORY: Record<string, string> = { event: 'dates', anniversary: 'dates', milestone: 'dates', capsule: 'capsules', question: 'question', pet: 'pet', streak: 'pet', stage: 'pet' };
 
 async function morning(c: Couple, members: Member[], today: string): Promise<Array<Push & { ref: string; kind: string }>> {
   const all = members.map((m) => m.id);
@@ -174,13 +177,50 @@ async function evening(c: Couple, members: Member[], today: string): Promise<Arr
   return out;
 }
 
+const STAGES = [
+  { from: 0, name: 'Малыш', gift: '' },
+  { from: 3, name: 'Растёт', gift: '' },
+  { from: 10, name: 'Подросток', gift: 'У него появился бантик 🎀' },
+  { from: 30, name: 'Взрослый', gift: 'Теперь у него ошейник с колокольчиком 🔔' },
+  { from: 100, name: 'Легенда', gift: 'Он заслужил корону 👑' },
+];
+
+/** Дни, когда заходили оба, и серия, закончившаяся вчера (по местной дате). */
+async function coupleDays(c: Couple, members: Member[], today: string) {
+  const { data } = await supabase.from('activity_days').select('user_id, day').eq('couple_id', c.id);
+  const byDay = new Map<string, Set<string>>();
+  for (const r of data ?? []) {
+    const set = byDay.get(r.day) ?? new Set<string>();
+    set.add(r.user_id);
+    byDay.set(r.day, set);
+  }
+  const both = new Set([...byDay.entries()].filter(([, v]) => members.every((m) => v.has(m.id))).map(([d]) => d));
+  let streak = 0;
+  for (let d = addDays(today, -1); both.has(d); d = addDays(d, -1)) streak++;
+  return { total: both.size, streakUntilYesterday: streak, activeToday: byDay.get(today) ?? new Set<string>(), bothToday: both.has(today) };
+}
+
+/** Питомец перешёл на новую стадию — поздравляем один раз за стадию. */
+async function stageUp(c: Couple, members: Member[], total: number): Promise<Array<Push & { ref: string; kind: string }>> {
+  let idx = 0;
+  STAGES.forEach((st, i) => {
+    if (total >= st.from) idx = i;
+  });
+  if (idx === 0) return [];
+  const { data: done } = await supabase.from('reminder_log').select('day').eq('couple_id', c.id).eq('kind', 'stage').eq('ref', String(idx)).limit(1);
+  if (done?.length) return [];
+  const pet = c.pet_name || 'Пушок';
+  const stage = STAGES[idx];
+  return [{ kind: 'stage', ref: String(idx), userIds: members.map((m) => m.id), title: `🎉 ${pet} вырос! Теперь он «${stage.name}»`, body: stage.gift || 'Продолжайте заходить вместе — он будет расти дальше', url: APP_URL, tag: 'stage' }];
+}
+
 Deno.serve(async (req) => {
   try {
     const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
     const dry = body?.dry === true; // проверка: что было бы отправлено (только количество, без текстов)
 
     const { data: couples } = await supabase.from('couples').select('id, timezone, started_on, pet_name');
-    const { data: profiles } = await supabase.from('profiles').select('id, display_name, partner_nickname, couple_id').not('couple_id', 'is', null);
+    const { data: profiles } = await supabase.from('profiles').select('id, display_name, partner_nickname, notify_prefs, couple_id').not('couple_id', 'is', null);
 
     let planned = 0;
     let sent = 0;
@@ -193,10 +233,22 @@ Deno.serve(async (req) => {
       if (body?.slot && !dry) continue; // принудительный слот — только для проверки
 
       const pushes = slot === 'morning' ? await morning(c, members, date) : await evening(c, members, date);
+      const days = await coupleDays(c, members, date);
+      pushes.push(...(await stageUp(c, members, days.total)));
+      // Вечером: серия 🔥 вот-вот прервётся — напоминаем тем, кто сегодня ещё не заходил.
+      if (slot === 'evening' && days.streakUntilYesterday >= 2 && !days.bothToday) {
+        const missing = members.filter((m) => !days.activeToday.has(m.id)).map((m) => m.id);
+        if (missing.length) {
+          pushes.push({ kind: 'streak', ref: '', userIds: missing, title: `🔥 Серия ${days.streakUntilYesterday} дн. прервётся!`, body: `Загляните в Remedy сегодня, чтобы ${c.pet_name || 'Пушок'} продолжал расти`, url: APP_URL, tag: 'streak' });
+        }
+      }
       planned += pushes.length;
       if (dry) continue;
       for (const p of pushes) {
-        if (await claim(c.id, p.kind, p.ref, date)) sent += await sendPush(p);
+        const category = CATEGORY[p.kind];
+        const userIds = p.userIds.filter((u) => (members.find((m) => m.id === u)?.notify_prefs ?? {})[category] !== false);
+        if (!userIds.length) continue;
+        if (await claim(c.id, p.kind, p.ref, date)) sent += await sendPush({ ...p, userIds });
       }
     }
     return json({ planned, sent, dry });

@@ -21,6 +21,10 @@ export type Profile = {
   last_seen_at?: string | null;
   /** Как я называю партнёра (видно только в моём приложении) */
   partner_nickname?: string | null;
+  /** Выключенные виды уведомлений: { reactions: false } */
+  notify_prefs?: Record<string, boolean> | null;
+  /** Обои чата: id готовых или 'photo:<путь>' */
+  chat_wallpaper?: string | null;
 };
 
 export type CoupleEvent = {

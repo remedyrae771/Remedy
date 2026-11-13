@@ -10,7 +10,7 @@ type AuthState = {
   partner: Profile | null;
   loading: boolean;
   refresh: () => Promise<void>;
-  updateProfile: (patch: Partial<Pick<Profile, 'display_name' | 'mood' | 'mood_note' | 'mood_updated_at' | 'partner_nickname'>>) => Promise<void>;
+  updateProfile: (patch: Partial<Pick<Profile, 'display_name' | 'mood' | 'mood_note' | 'mood_updated_at' | 'partner_nickname' | 'notify_prefs' | 'chat_wallpaper'>>) => Promise<void>;
   updateCouple: (patch: Partial<Pick<Couple, 'started_on' | 'pet_name' | 'pet_kind'>>) => Promise<void>;
   signOut: () => Promise<void>;
 };

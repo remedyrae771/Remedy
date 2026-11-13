@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import InviteCard from '../components/InviteCard';
+import NotifyPrefs from '../components/NotifyPrefs';
 import PushCard from '../components/PushCard';
 import { PET_KINDS, PetArt } from '../components/Pet';
 import { Button, Card, ErrorText, Input, Muted, Screen, SectionLabel, styles } from '../components/ui';
@@ -107,6 +108,7 @@ export default function Settings() {
 
       <SectionLabel>Уведомления</SectionLabel>
       <PushCard />
+      <NotifyPrefs />
 
       <SectionLabel>Профиль</SectionLabel>
       <Card>
