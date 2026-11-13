@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { GradientFill } from '../../components/Gradient';
 import InviteCard from '../../components/InviteCard';
+import PushCard from '../../components/PushCard';
 import Pet, { petSpeech } from '../../components/Pet';
 import { Button, ErrorText, Input, Muted, Screen, styles as ui } from '../../components/ui';
 import { daysBetween, nextOccurrence, parseISODate, pluralDays, today } from '../../lib/dates';
@@ -217,6 +218,8 @@ export default function Home() {
       </View>
 
       {!partner && couple ? <InviteCard code={couple.invite_code} inviterName={profile.display_name} /> : null}
+
+      {partner ? <PushCard compact /> : null}
 
       {/* Задания для питомца */}
       <View style={s.panel}>
