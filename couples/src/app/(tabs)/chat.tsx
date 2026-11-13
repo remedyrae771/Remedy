@@ -246,14 +246,20 @@ export default function Chat() {
   const partnerName = partner?.display_name || 'Партнёр';
   const myLast = messages.find((m) => m.sender_id === userId && m.kind !== 'thinking' && !m.sending);
   const moodPart = partner?.mood ? ` · ${partner.mood} ${moodLabel(partner.mood).toLowerCase()}` : '';
+  // Когда партнёр был в сети: отметка присутствия или самое свежее его действие
+  // (сообщение, смена настроения, прочтение чата) — что из этого позже.
+  const lastTheirMessage = messages.find((m) => m.sender_id !== userId)?.created_at ?? null;
+  const lastSeen = [partner?.last_seen_at, partner?.mood_updated_at, lastTheirMessage, partnerReadAt]
+    .filter((v): v is string => Boolean(v))
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
   const status = partnerTyping
     ? 'печатает…'
     : !partner
       ? 'ещё не присоединился'
       : partnerOnline
         ? `в сети${moodPart}`
-        : partner.last_seen_at
-          ? lastSeenText(partner.last_seen_at)
+        : lastSeen
+          ? `${lastSeenText(lastSeen)}${partner.mood ? ` · ${partner.mood}` : ''}`
           : partner.mood
             ? `сейчас ${partner.mood} ${moodLabel(partner.mood).toLowerCase()}`
             : 'ваш человек 💞';
