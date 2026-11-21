@@ -6,6 +6,7 @@ import Avatar, { AVATAR_TINTS } from '../components/Avatar';
 import { GradientFill } from '../components/Gradient';
 import { Button, ErrorText, Muted, Screen } from '../components/ui';
 import { GAME_QUESTIONS, pickQuestion } from '../lib/game';
+import { confirmAction } from '../lib/platform';
 import { supabase } from '../lib/supabase';
 import { useCouple } from '../providers/AuthProvider';
 import { colors, gradients, radius, shadows, spacing } from '../theme';
@@ -134,6 +135,31 @@ export default function Game() {
     load();
   };
 
+  /**
+   * Убрать раунд, который ещё не угадали: отменить свой вопрос, изменить ответ
+   * (тот же вопрос откроется снова) или пропустить вопрос партнёра.
+   */
+  const removeRound = async (round: Round, then?: 'reanswer') => {
+    setBusy(true);
+    setError(null);
+    const { data, error: e } = await supabase.from('game_rounds').delete().eq('id', round.id).is('guessed_at', null).select('id');
+    setBusy(false);
+    if (e || !data?.length) {
+      // Нет строки — либо партнёр уже угадал, либо в базе ещё не включено правило отмены.
+      load();
+      return setError('Не получилось: возможно, партнёр уже угадал. Обновите экран.');
+    }
+    haptic(() => Haptics.selectionAsync());
+    if (then === 'reanswer') setNewQuestion(round.question_idx);
+    load();
+  };
+
+  const cancelMine = (round: Round) =>
+    confirmAction('Отменить вопрос?', `${partnerName} больше не увидит его. Можно будет загадать другой.`, 'Отменить', () => removeRound(round));
+
+  const skipTheirs = (round: Round) =>
+    confirmAction('Пропустить вопрос?', `Вопрос ${partnerName} исчезнет без очков. Он(а) сможет загадать новый.`, 'Пропустить', () => removeRound(round));
+
   const guess = async (round: Round, choice: number) => {
     setBusy(true);
     setError(null);
@@ -182,6 +208,7 @@ export default function Game() {
           <Text style={s.question}>{GAME_QUESTIONS[toGuess.question_idx].q}</Text>
           <Muted>Как думаете, что выбрал(а) {partnerName}?</Muted>
           <Options idx={toGuess.question_idx} busy={busy} onPick={(i) => guess(toGuess, i)} />
+          <Button title="Пропустить вопрос" variant="ghost" onPress={() => skipTheirs(toGuess)} disabled={busy} />
         </View>
       ) : newQuestion !== null ? (
         <View style={s.card}>
@@ -189,13 +216,20 @@ export default function Game() {
           <Text style={s.question}>{GAME_QUESTIONS[newQuestion].q}</Text>
           <Muted>{partnerName} попробует угадать ваш ответ</Muted>
           <Options idx={newQuestion} busy={busy} onPick={commit} />
-          <Button title="Другой вопрос" variant="ghost" onPress={startRound} />
+          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+            <Button title="Другой вопрос" variant="ghost" onPress={startRound} style={{ flex: 1 }} />
+            <Button title="Назад" variant="ghost" onPress={() => setNewQuestion(null)} style={{ flex: 1 }} />
+          </View>
         </View>
       ) : myPending ? (
         <View style={[s.card, { alignItems: 'center' }]}>
           <Text style={{ fontSize: 40 }}>⏳</Text>
           <Text style={s.question}>{GAME_QUESTIONS[myPending.question_idx].q}</Text>
           <Muted>Ваш ответ: «{GAME_QUESTIONS[myPending.question_idx].options[secrets[myPending.id] ?? 0]}». Ждём, пока {partnerName} угадает — мы пришлём уведомление.</Muted>
+          <View style={{ flexDirection: 'row', gap: spacing.sm, alignSelf: 'stretch' }}>
+            <Button title="✏️ Изменить ответ" variant="secondary" onPress={() => removeRound(myPending, 'reanswer')} disabled={busy} style={{ flex: 1 }} />
+            <Button title="Отменить вопрос" variant="danger" onPress={() => cancelMine(myPending)} disabled={busy} style={{ flex: 1 }} />
+          </View>
         </View>
       ) : (
         <View style={[s.card, { alignItems: 'center' }]}>
