@@ -136,8 +136,8 @@ export default function Game() {
   };
 
   /**
-   * Убрать раунд, который ещё не угадали: отменить свой вопрос, изменить ответ
-   * (тот же вопрос откроется снова) или пропустить вопрос партнёра.
+   * Убрать свой раунд, который ещё не угадали: отменить вопрос или изменить ответ
+   * (тот же вопрос откроется снова).
    */
   const removeRound = async (round: Round, then?: 'reanswer') => {
     setBusy(true);
@@ -156,9 +156,6 @@ export default function Game() {
 
   const cancelMine = (round: Round) =>
     confirmAction('Отменить вопрос?', `${partnerName} больше не увидит его. Можно будет загадать другой.`, 'Отменить', () => removeRound(round));
-
-  const skipTheirs = (round: Round) =>
-    confirmAction('Пропустить вопрос?', `Вопрос ${partnerName} исчезнет без очков. Он(а) сможет загадать новый.`, 'Пропустить', () => removeRound(round));
 
   const guess = async (round: Round, choice: number) => {
     setBusy(true);
@@ -208,7 +205,6 @@ export default function Game() {
           <Text style={s.question}>{GAME_QUESTIONS[toGuess.question_idx].q}</Text>
           <Muted>Как думаете, что выбрал(а) {partnerName}?</Muted>
           <Options idx={toGuess.question_idx} busy={busy} onPick={(i) => guess(toGuess, i)} />
-          <Button title="Пропустить вопрос" variant="ghost" onPress={() => skipTheirs(toGuess)} disabled={busy} />
         </View>
       ) : newQuestion !== null ? (
         <View style={s.card}>
