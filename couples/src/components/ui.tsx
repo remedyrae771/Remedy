@@ -42,11 +42,38 @@ export function Screen({
   );
 }
 
-export function Title({ children, subtitle }: { children: ReactNode; subtitle?: string }) {
+/** Шапка экрана: объёмный значок-эмодзи, крупный заголовок и подпись. */
+export function Title({ children, subtitle, emoji }: { children: ReactNode; subtitle?: string; emoji?: string }) {
   return (
-    <View style={{ marginBottom: spacing.lg }}>
-      <Text style={styles.title}>{children}</Text>
-      {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+    <View style={{ marginBottom: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+      {emoji ? (
+        <View style={styles.titleOrb}>
+          <Text style={{ fontSize: 28 }}>{emoji}</Text>
+        </View>
+      ) : null}
+      <View style={{ flex: 1 }}>
+        <Text style={styles.title}>{children}</Text>
+        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      </View>
+    </View>
+  );
+}
+
+/** Переключатель разделов: «таблетка» с подсвеченным выбранным пунктом. */
+export function Segmented<T extends string>({ value, options, onChange }: { value: T; options: { key: T; label: string }[]; onChange: (key: T) => void }) {
+  return (
+    <View style={styles.segment}>
+      {options.map((o) => {
+        const active = o.key === value;
+        return (
+          <Pressable key={o.key} onPress={() => onChange(o.key)} style={[styles.segmentItem, active && styles.segmentActive]} accessibilityRole="tab" accessibilityState={{ selected: active }}>
+            {active ? <GradientFill colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} /> : null}
+            <Text style={[styles.segmentText, active && { color: '#FFFFFF' }]} numberOfLines={1}>
+              {o.label}
+            </Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -160,7 +187,29 @@ export const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   screenContent: { padding: spacing.lg, paddingBottom: spacing.xl * 2, gap: spacing.md },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
-  title: { fontSize: 28, fontWeight: '700', color: colors.text },
+  title: { fontSize: 28, fontWeight: '800', color: colors.text, letterSpacing: -0.4 },
+  titleOrb: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFF4F7',
+    boxShadow: 'inset 0px -4px 8px rgba(201, 61, 104, 0.12), inset 0px 3px 0px rgba(255,255,255,1), 0px 8px 16px rgba(122, 46, 72, 0.12)',
+  },
+  segment: {
+    flexDirection: 'row',
+    padding: 4,
+    gap: 4,
+    borderRadius: radius.pill,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.95)',
+    boxShadow: shadows.soft,
+  },
+  segmentItem: { flex: 1, paddingVertical: 10, borderRadius: radius.pill, alignItems: 'center', overflow: 'hidden' },
+  segmentActive: { boxShadow: shadows.button },
+  segmentText: { fontSize: 14, fontWeight: '700', color: colors.muted },
   subtitle: { fontSize: 15, color: colors.muted, marginTop: spacing.xs },
   card: {
     backgroundColor: colors.surface,

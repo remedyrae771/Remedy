@@ -141,7 +141,7 @@ export default function Dates() {
 
   return (
     <Screen>
-      <Title subtitle="Годовщины, дни рождения и планы">Важные даты</Title>
+      <Title emoji="📅" subtitle="Годовщины, дни рождения и планы">Важные даты</Title>
 
       {showForm ? (
         <Card>

@@ -1,6 +1,7 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { GradientFill } from '../../components/Gradient';
 import { Button, Card, Chip, ErrorText, Input, Muted, Screen, Title, styles } from '../../components/ui';
 import { confirmAction } from '../../lib/platform';
 import { errorText, supabase } from '../../lib/supabase';
@@ -67,7 +68,7 @@ export default function Lists() {
 
   return (
     <Screen>
-      <Title subtitle="Желания, планы и идеи — общие на двоих">Списки</Title>
+      <Title emoji="📝" subtitle="Желания, планы и идеи — общие на двоих">Списки</Title>
 
       {lists.map((list) => {
         const total = list.list_items.length;
@@ -78,13 +79,20 @@ export default function Lists() {
             onPress={() => router.push({ pathname: '/list/[id]', params: { id: list.id } })}
             onLongPress={() => remove(list)}
           >
-            <Card style={styles.row}>
-              <Text style={{ fontSize: 32 }}>{list.emoji}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.body}>{list.title}</Text>
-                <Muted>{total === 0 ? 'пусто' : `${done} из ${total} выполнено`}</Muted>
+            <Card style={[styles.row, { gap: spacing.md }]}>
+              <View style={ls.orb}>
+                <Text style={{ fontSize: 26 }}>{list.emoji}</Text>
               </View>
-              <Text style={{ color: colors.muted, fontSize: 20 }}>›</Text>
+              <View style={{ flex: 1, gap: 6 }}>
+                <Text style={[styles.body, { fontWeight: '700' }]}>{list.title}</Text>
+                <View style={ls.track}>
+                  <View style={[ls.fill, { width: `${total ? Math.max(4, (done / total) * 100) : 0}%` }]}>
+                    <GradientFill colors={['#6FD3A0', '#2F9E6B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} />
+                  </View>
+                </View>
+                <Muted>{total === 0 ? 'пока пусто' : done === total ? `всё выполнено 🎉 · ${total}` : `${done} из ${total} выполнено`}</Muted>
+              </View>
+              <Text style={{ color: colors.primary, fontSize: 22, fontWeight: '700' }}>›</Text>
             </Card>
           </Pressable>
         );
@@ -121,3 +129,17 @@ export default function Lists() {
     </Screen>
   );
 }
+
+const ls = StyleSheet.create({
+  orb: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFF4F7',
+    boxShadow: 'inset 0px -4px 8px rgba(201, 61, 104, 0.10), inset 0px 3px 0px rgba(255,255,255,1), 0px 6px 12px rgba(122, 46, 72, 0.10)',
+  },
+  track: { height: 6, borderRadius: 3, backgroundColor: 'rgba(47, 158, 107, 0.12)', overflow: 'hidden' },
+  fill: { height: '100%', borderRadius: 3, overflow: 'hidden' },
+});

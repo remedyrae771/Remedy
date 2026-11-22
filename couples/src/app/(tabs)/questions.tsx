@@ -1,13 +1,14 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
-import { Button, Card, Chip, ErrorText, Input, Muted, Screen, SectionLabel, Title, styles } from '../../components/ui';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { GradientFill } from '../../components/Gradient';
+import { Button, Card, ErrorText, Input, Muted, Screen, SectionLabel, Segmented, Title, styles } from '../../components/ui';
 import { dayIndex } from '../../lib/dates';
-import { DECKS, shuffle } from '../../lib/games';
+import { DECKS, MIX_ID } from '../../lib/games';
 import { errorText, supabase } from '../../lib/supabase';
 import type { Answer, Question } from '../../lib/types';
 import { useCouple } from '../../providers/AuthProvider';
-import { colors, radius, spacing } from '../../theme';
+import { colors, gradients, radius, shadows, spacing } from '../../theme';
 
 type Tab = 'daily' | 'games' | 'archive';
 
@@ -16,12 +17,16 @@ export default function Questions() {
 
   return (
     <Screen>
-      <Title subtitle="Узнавайте друг друга лучше каждый день">Вопросы и игры</Title>
-      <View style={[styles.row, { flexWrap: 'wrap' }]}>
-        <Chip label="Вопрос дня" selected={tab === 'daily'} onPress={() => setTab('daily')} />
-        <Chip label="Игры" selected={tab === 'games'} onPress={() => setTab('games')} />
-        <Chip label="Архив ответов" selected={tab === 'archive'} onPress={() => setTab('archive')} />
-      </View>
+      <Title emoji="💬" subtitle="Узнавайте друг друга лучше каждый день">Вопросы и игры</Title>
+      <Segmented
+        value={tab}
+        onChange={setTab}
+        options={[
+          { key: 'daily', label: 'Вопрос дня' },
+          { key: 'games', label: 'Игры' },
+          { key: 'archive', label: 'Архив' },
+        ]}
+      />
       {tab === 'daily' && <DailyQuestion />}
       {tab === 'games' && <Games />}
       {tab === 'archive' && <Archive />}
@@ -100,10 +105,15 @@ function DailyQuestion() {
 
   return (
     <>
-      <Card style={{ backgroundColor: colors.primarySoft, borderColor: colors.primarySoft }}>
-        <Muted>{question.category}</Muted>
-        <Text style={{ fontSize: 22, fontWeight: '700', color: colors.text }}>{question.text}</Text>
-      </Card>
+      <View style={gs.questionCard}>
+        <GradientFill colors={gradients.question} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+        <GradientFill colors={['rgba(255,255,255,0.3)', 'rgba(255,255,255,0)']} radial center={{ x: 0.15, y: 0.1 }} />
+        <View style={gs.categoryChip}>
+          <Text style={gs.categoryText}>{question.category}</Text>
+        </View>
+        <Text style={gs.quoteMark}>“</Text>
+        <Text style={gs.questionText}>{question.text}</Text>
+      </View>
 
       {mine ? (
         <>
@@ -139,83 +149,79 @@ function DailyQuestion() {
   );
 }
 
+function DeckTile({ title, emoji, count, colors: tint, onPress, wide }: { title: string; emoji: string; count: string; colors: readonly string[]; onPress: () => void; wide?: boolean }) {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [gs.tile, wide && gs.tileWide, pressed && { transform: [{ scale: 0.96 }] }]}>
+      <GradientFill colors={tint} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+      <GradientFill colors={['rgba(255,255,255,0.3)', 'rgba(255,255,255,0)']} radial center={{ x: 0.2, y: 0.1 }} />
+      <Text style={gs.tileEmoji}>{emoji}</Text>
+      <Text style={gs.tileTitle} numberOfLines={2}>
+        {title}
+      </Text>
+      <Text style={gs.tileCount}>{count}</Text>
+    </Pressable>
+  );
+}
+
 function Games() {
-  const [deckId, setDeckId] = useState<string | null>(null);
-  const deck = DECKS.find((d) => d.id === deckId);
-  const [order, setOrder] = useState<string[]>([]);
-  const [index, setIndex] = useState(0);
-
-  const start = (id: string) => {
-    const d = DECKS.find((x) => x.id === id)!;
-    setDeckId(id);
-    setOrder(shuffle(d.cards));
-    setIndex(0);
-  };
-
-  if (!deck) {
-    return (
-      <>
-        <Pressable onPress={() => router.push('/game')}>
-          <Card style={[styles.row, { backgroundColor: colors.primarySoft, borderColor: colors.primarySoft }]}>
-            <Text style={{ fontSize: 32 }}>🎯</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.body, { fontWeight: '700' }]}>Кто лучше знает</Text>
-              <Muted>Онлайн-игра: угадайте ответы друг друга и набирайте очки</Muted>
-            </View>
-            <Text style={{ color: colors.primary, fontSize: 20 }}>›</Text>
-          </Card>
-        </Pressable>
-        <Muted>Игры для вас двоих — играйте вместе вживую или по видеосвязи.</Muted>
-        {DECKS.map((d) => (
-          <Pressable key={d.id} onPress={() => start(d.id)}>
-            <Card style={styles.row}>
-              <Text style={{ fontSize: 32 }}>{d.emoji}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.body}>{d.title}</Text>
-                <Muted>{d.cards.length} карточек</Muted>
-              </View>
-              <Text style={{ color: colors.muted, fontSize: 20 }}>›</Text>
-            </Card>
-          </Pressable>
-        ))}
-      </>
-    );
-  }
-
-  const finished = index >= order.length;
-
+  const open = (deck: string) => router.push({ pathname: '/cards/[deck]', params: { deck } });
   return (
     <>
-      <SectionLabel>
-        {deck.emoji} {deck.title}
-      </SectionLabel>
-      <View
-        style={{
-          backgroundColor: colors.primary,
-          borderRadius: radius.lg,
-          padding: spacing.xl,
-          minHeight: 220,
-          justifyContent: 'center',
-        }}
-      >
-        <Text style={{ color: '#fff', fontSize: 24, fontWeight: '700', textAlign: 'center' }}>
-          {finished ? 'Колода закончилась 🎉' : order[index]}
-        </Text>
-        {!finished && (
-          <Text style={{ color: '#fff', opacity: 0.7, textAlign: 'center', marginTop: spacing.md }}>
-            {index + 1} / {order.length}
-          </Text>
-        )}
+      <Pressable onPress={() => router.push('/game')} style={({ pressed }) => [gs.feature, pressed && { transform: [{ scale: 0.98 }] }]}>
+        <GradientFill colors={['#FFE7DA', '#FBD3E0', '#EBD9F7']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+        <Text style={{ fontSize: 44 }}>🎯</Text>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={gs.featureTitle}>Кто лучше знает</Text>
+          <Text style={gs.featureText}>Онлайн-игра на очки: угадайте ответы друг друга</Text>
+        </View>
+        <Text style={{ color: colors.primary, fontSize: 26, fontWeight: '700' }}>›</Text>
+      </Pressable>
+
+      <SectionLabel>Карточки для двоих</SectionLabel>
+      <Muted>Играйте вживую или по видеосвязи: читайте карточку, отвечайте, листайте свайпом.</Muted>
+      <View style={gs.grid}>
+        <DeckTile wide title="Вперемешку" emoji="🎲" count={`по 6 из каждой колоды`} colors={['#F7849F', '#7D63C9']} onPress={() => open(MIX_ID)} />
+        {DECKS.map((d) => (
+          <DeckTile key={d.id} title={d.title} emoji={d.emoji} count={`${d.cards.length} карточек`} colors={d.colors} onPress={() => open(d.id)} />
+        ))}
       </View>
-      {finished ? (
-        <Button title="Перемешать и сыграть ещё" onPress={() => start(deck.id)} />
-      ) : (
-        <Button title="Следующая карточка" onPress={() => setIndex(index + 1)} />
-      )}
-      <Button title="← Все игры" variant="ghost" onPress={() => setDeckId(null)} />
     </>
   );
 }
+
+const gs = StyleSheet.create({
+  questionCard: { borderRadius: radius.lg, overflow: 'hidden', padding: spacing.xl, paddingTop: spacing.lg, gap: spacing.sm, minHeight: 200, justifyContent: 'center', boxShadow: shadows.raised },
+  categoryChip: { alignSelf: 'flex-start', paddingHorizontal: spacing.md, paddingVertical: 4, borderRadius: radius.pill, backgroundColor: 'rgba(255,255,255,0.22)' },
+  categoryText: { color: '#FFFFFF', fontWeight: '700', fontSize: 12, letterSpacing: 0.4, textTransform: 'uppercase' },
+  quoteMark: { color: 'rgba(255,255,255,0.35)', fontSize: 72, lineHeight: 72, fontWeight: '900', marginBottom: -30 },
+  questionText: { color: '#FFFFFF', fontSize: 25, lineHeight: 33, fontWeight: '800' },
+  feature: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.lg,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    boxShadow: shadows.raised,
+  },
+  featureTitle: { fontSize: 19, fontWeight: '800', color: colors.text },
+  featureText: { fontSize: 14, color: colors.text, opacity: 0.75 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
+  tile: {
+    width: '47.5%',
+    aspectRatio: 0.85,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    padding: spacing.lg,
+    justifyContent: 'flex-end',
+    gap: 4,
+    boxShadow: shadows.raised,
+  },
+  tileWide: { width: '100%', aspectRatio: 2.6 },
+  tileEmoji: { fontSize: 44, position: 'absolute', top: spacing.md, left: spacing.lg },
+  tileTitle: { color: '#FFFFFF', fontSize: 19, fontWeight: '800', textShadowColor: 'rgba(0,0,0,0.15)', textShadowRadius: 4 },
+  tileCount: { color: 'rgba(255,255,255,0.85)', fontSize: 13, fontWeight: '600' },
+});
 
 function Archive() {
   const { userId } = useCouple();
