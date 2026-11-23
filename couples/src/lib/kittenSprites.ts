@@ -6,12 +6,12 @@ export type KittenClip = 'walk' | 'run' | 'jump' | 'idleF' | 'sitF' | 'sleepF' |
 export type ClipInfo = { frames: number; fps: number; cols: number; rows: number; src: ImageSourcePropType };
 
 export const KITTEN_SPRITES = {
-  cellW: 507,
+  cellW: 440,
   cellH: 535,
   /** пикселей листа на метр мира (для скорости шагов без «скольжения») */
   pxPerM: 581.528,
   /** где в ячейке центр тела по x и линия пола по y */
-  anchorX: 251.61,
+  anchorX: 184.93,
   floorY: 528.42,
   /** высота котика (стоя) на листе, px */
   catH: 340,
