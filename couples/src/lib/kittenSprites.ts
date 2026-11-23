@@ -6,15 +6,15 @@ export type KittenClip = 'idle' | 'walk' | 'run' | 'jump' | 'sit' | 'sleep' | 'c
 export type ClipInfo = { frames: number; fps: number; cols: number; rows: number; src: ImageSourcePropType };
 
 export const KITTEN_SPRITES = {
-  cellW: 447,
-  cellH: 469,
+  cellW: 507,
+  cellH: 532,
   /** пикселей листа на метр мира (для скорости шагов без «скольжения») */
-  pxPerM: 513.113,
+  pxPerM: 581.528,
   /** где в ячейке центр тела по x и линия пола по y */
-  anchorX: 222.01,
-  floorY: 466.25,
+  anchorX: 251.61,
+  floorY: 528.42,
   /** высота котика (стоя) на листе, px */
-  catH: 300,
+  catH: 340,
   /** на листе котик смотрит влево */
   clips: {
     idle: { frames: 20, fps: 10, cols: 8, rows: 3, src: require('../../assets/kitten/idle.webp') },
