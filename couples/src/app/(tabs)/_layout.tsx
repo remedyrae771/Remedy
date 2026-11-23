@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Animated, Easing, Platform, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GlossFace, glossShadow } from '../../components/Glossy';
 import { colors, radius } from '../../theme';
 
 function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
@@ -24,10 +25,14 @@ function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
         borderRadius: radius.pill,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: focused ? colors.primarySoft : 'transparent',
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: focused ? 'rgba(255,255,255,0.6)' : 'transparent',
+        boxShadow: focused ? glossShadow('rose', false, 3) : 'none',
         transform: [{ scale }],
       }}
     >
+      {focused ? <GlossFace tone="rose" /> : null}
       <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.55 }}>{emoji}</Text>
     </Animated.View>
   );
@@ -58,7 +63,7 @@ export default function TabsLayout() {
           shadowOffset: { width: 0, height: -4 },
           elevation: 8,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '600', marginTop: 2, lineHeight: 14 },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600', marginTop: 7, lineHeight: 14 },
         sceneStyle: { backgroundColor: colors.background },
       }}
     >

@@ -12,8 +12,9 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, gradients, radius, shadows, spacing } from '../theme';
+import { colors, radius, shadows, spacing } from '../theme';
 import Appear from './Appear';
+import { GlossFace, GlossPressable, glossShadow } from './Glossy';
 import { GradientFill } from './Gradient';
 
 export function Screen({
@@ -66,8 +67,14 @@ export function Segmented<T extends string>({ value, options, onChange }: { valu
       {options.map((o) => {
         const active = o.key === value;
         return (
-          <Pressable key={o.key} onPress={() => onChange(o.key)} style={[styles.segmentItem, active && styles.segmentActive]} accessibilityRole="tab" accessibilityState={{ selected: active }}>
-            {active ? <GradientFill colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} /> : null}
+          <Pressable
+            key={o.key}
+            onPress={() => onChange(o.key)}
+            style={({ pressed }) => [styles.segmentItem, active && { boxShadow: glossShadow('primary', pressed, 3), borderColor: 'rgba(255,255,255,0.55)' }, pressed && { transform: [{ translateY: active ? 2 : 1 }] }]}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: active }}
+          >
+            {active ? <GlossFace tone="primary" /> : null}
             <Text style={[styles.segmentText, active && { color: '#FFFFFF' }]} numberOfLines={1}>
               {o.label}
             </Text>
@@ -110,40 +117,35 @@ export function Button({
   style?: StyleProp<ViewStyle>;
 }) {
   const isDisabled = disabled || loading;
-  const variantStyle = {
-    primary: { backgroundColor: colors.primary, boxShadow: shadows.button, overflow: 'hidden' as const },
-    secondary: { backgroundColor: colors.primarySoft, boxShadow: shadows.soft },
-    ghost: { backgroundColor: 'transparent' },
-    danger: { backgroundColor: 'transparent' },
-  }[variant];
-  const textColor = {
-    primary: '#fff',
-    secondary: colors.primary,
-    ghost: colors.muted,
-    danger: colors.danger,
-  }[variant];
+  const textColor = { primary: '#fff', secondary: colors.primary, ghost: colors.muted, danger: colors.danger }[variant];
+  const content = loading ? (
+    <ActivityIndicator color={textColor} />
+  ) : (
+    <Text style={[styles.buttonText, { color: textColor }, variant === 'primary' && styles.buttonTextOnColor]}>{title}</Text>
+  );
 
+  if (variant === 'ghost') {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        onPress={onPress}
+        disabled={isDisabled}
+        style={({ pressed }) => [styles.button, { opacity: isDisabled ? 0.5 : pressed ? 0.6 : 1 }, style]}
+      >
+        {content}
+      </Pressable>
+    );
+  }
   return (
-    <Pressable
+    <GlossPressable
       accessibilityRole="button"
       onPress={onPress}
       disabled={isDisabled}
-      style={({ pressed }) => [
-        styles.button,
-        variantStyle,
-        { opacity: isDisabled ? 0.5 : 1, transform: [{ scale: pressed && !isDisabled ? 0.97 : 1 }] },
-        style,
-      ]}
+      tone={variant === 'primary' ? 'primary' : variant === 'danger' ? 'danger' : 'light'}
+      style={[styles.button, { opacity: isDisabled ? 0.55 : 1 }, style]}
     >
-      {variant === 'primary' ? (
-        <GradientFill colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 0.4, y: 1 }} />
-      ) : null}
-      {loading ? (
-        <ActivityIndicator color={textColor} />
-      ) : (
-        <Text style={[styles.buttonText, { color: textColor }]}>{title}</Text>
-      )}
-    </Pressable>
+      {content}
+    </GlossPressable>
   );
 }
 
@@ -161,12 +163,9 @@ export function Chip({
   onPress?: () => void;
 }) {
   return (
-    <Pressable
-      onPress={onPress}
-      style={[styles.chip, selected && { backgroundColor: colors.primary, borderColor: colors.primary }]}
-    >
-      <Text style={[styles.chipText, selected && { color: '#fff' }]}>{label}</Text>
-    </Pressable>
+    <GlossPressable onPress={onPress} tone={selected ? 'primary' : 'light'} depth={3} style={styles.chip}>
+      <Text style={[styles.chipText, selected && { color: '#fff', fontWeight: '700' }]}>{label}</Text>
+    </GlossPressable>
   );
 }
 
@@ -197,18 +196,17 @@ export const styles = StyleSheet.create({
     backgroundColor: '#FFF4F7',
     boxShadow: 'inset 0px -4px 8px rgba(201, 61, 104, 0.12), inset 0px 3px 0px rgba(255,255,255,1), 0px 8px 16px rgba(122, 46, 72, 0.12)',
   },
+  // «желобок», в котором лежит выпуклая выбранная кнопка
   segment: {
     flexDirection: 'row',
-    padding: 4,
+    padding: 5,
+    paddingBottom: 8,
     gap: 4,
     borderRadius: radius.pill,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.95)',
-    boxShadow: shadows.soft,
+    backgroundColor: '#F7E4EB',
+    boxShadow: 'inset 0px 2px 5px rgba(122, 46, 72, 0.14), inset 0px -1px 0px rgba(255,255,255,0.9), 0px 1px 0px rgba(255,255,255,0.9)',
   },
-  segmentItem: { flex: 1, paddingVertical: 10, borderRadius: radius.pill, alignItems: 'center', overflow: 'hidden' },
-  segmentActive: { boxShadow: shadows.button },
+  segmentItem: { flex: 1, paddingVertical: 10, borderRadius: radius.pill, alignItems: 'center', overflow: 'hidden', borderWidth: 1, borderColor: 'transparent' },
   segmentText: { fontSize: 14, fontWeight: '700', color: colors.muted },
   subtitle: { fontSize: 15, color: colors.muted, marginTop: spacing.xs },
   card: {
@@ -237,7 +235,8 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  buttonText: { fontSize: 16, fontWeight: '600' },
+  buttonText: { fontSize: 16, fontWeight: '700' },
+  buttonTextOnColor: { textShadowColor: 'rgba(140, 30, 70, 0.35)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
   input: {
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -252,11 +251,6 @@ export const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.9)',
-    backgroundColor: colors.surface,
-    boxShadow: shadows.soft,
   },
   chipText: { color: colors.text, fontSize: 14 },
   error: { color: colors.danger, fontSize: 14 },

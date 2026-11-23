@@ -3,6 +3,7 @@ import { router, useFocusEffect, type Href } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Avatar, { AVATAR_TINTS } from '../../components/Avatar';
+import { GlossFace, GlossPressable, glossShadow } from '../../components/Glossy';
 import { GradientFill } from '../../components/Gradient';
 import InviteCard from '../../components/InviteCard';
 import PushCard from '../../components/PushCard';
@@ -165,9 +166,9 @@ export default function Home() {
             {daysTogether !== null && daysTogether >= 0 ? `${daysTogether} ${pluralDays(daysTogether)} вместе 💞` : 'Наше пространство'}
           </Text>
         </View>
-        <Pressable onPress={() => router.push('/settings')} hitSlop={10} accessibilityLabel="Настройки" style={s.iconButton}>
+        <GlossPressable onPress={() => router.push('/settings')} hitSlop={10} accessibilityLabel="Настройки" style={s.iconButton}>
           <Text style={{ fontSize: 20 }}>⚙️</Text>
-        </Pressable>
+        </GlossPressable>
       </View>
 
       {/* Комнатка питомца */}
@@ -247,7 +248,7 @@ export default function Home() {
           { emoji: '💌', title: 'Капсула', sub: 'В будущее', href: '/capsules' as const },
           { emoji: '🎯', title: 'Игра', sub: 'Кто лучше знает', href: '/game' as const },
         ].map((t) => (
-          <Pressable key={t.href} onPress={() => router.push(t.href)} style={({ pressed }) => [s.feature, pressed && { transform: [{ scale: 0.96 }] }]}>
+          <GlossPressable key={t.href} onPress={() => router.push(t.href)} radius={radius.md} style={s.feature}>
             <View style={s.featureIcon}>
               <Text style={{ fontSize: 26 }}>{t.emoji}</Text>
             </View>
@@ -255,13 +256,13 @@ export default function Home() {
             <Text style={s.featureSub} numberOfLines={1}>
               {t.sub}
             </Text>
-          </Pressable>
+          </GlossPressable>
         ))}
       </View>
 
       {/* Плитки */}
       <View style={{ flexDirection: 'row', gap: spacing.md }}>
-        <Pressable style={[s.tile, { flex: 1 }]} onPress={() => router.push('/settings')}>
+        <GlossPressable radius={radius.md} style={[s.tileButton, { flex: 1 }]} onPress={() => router.push('/settings')}>
           <Text style={{ fontSize: 24 }}>💞</Text>
           {daysTogether !== null && daysTogether >= 0 ? (
             <>
@@ -274,8 +275,8 @@ export default function Home() {
               <Text style={ui.muted}>Укажите дату</Text>
             </>
           )}
-        </Pressable>
-        <Pressable style={[s.tile, { flex: 1 }]} onPress={() => router.push('/dates')}>
+        </GlossPressable>
+        <GlossPressable radius={radius.md} style={[s.tileButton, { flex: 1 }]} onPress={() => router.push('/dates')}>
           <Text style={{ fontSize: 24 }}>{nextEvent?.event.emoji ?? '📅'}</Text>
           {nextEvent ? (
             <>
@@ -292,7 +293,7 @@ export default function Home() {
               <Text style={ui.muted}>Добавьте важный день</Text>
             </>
           )}
-        </Pressable>
+        </GlossPressable>
       </View>
 
       {/* Настроения рядом */}
@@ -339,15 +340,26 @@ export default function Home() {
                 onPress={() => setMood(m.emoji)}
                 accessibilityRole="button"
                 accessibilityState={{ selected }}
-                style={({ pressed }) => [s.moodCell, pressed && { transform: [{ scale: 0.94 }] }]}
+                style={s.moodCell}
               >
-                <View style={[s.moodButton, selected && s.moodButtonSelected]}>
-                  {selected ? <GradientFill colors={['#FFE1EA', '#F9B9CC']} /> : null}
-                  <Text style={{ fontSize: 26 }}>{m.emoji}</Text>
-                </View>
-                <Text style={[s.moodCaption, selected && { color: colors.primaryDeep, fontWeight: '700' }]} numberOfLines={1}>
-                  {m.label}
-                </Text>
+                {({ pressed }) => (
+                  <>
+                    <View
+                      style={[
+                        s.moodButton,
+                        { boxShadow: glossShadow(selected ? 'rose' : 'light', pressed, 4) },
+                        selected && s.moodButtonSelected,
+                        pressed && { transform: [{ translateY: 3 }] },
+                      ]}
+                    >
+                      <GlossFace tone={selected ? 'rose' : 'light'} />
+                      <Text style={{ fontSize: 26 }}>{m.emoji}</Text>
+                    </View>
+                    <Text style={[s.moodCaption, selected && { color: colors.primaryDeep, fontWeight: '700' }]} numberOfLines={1}>
+                      {m.label}
+                    </Text>
+                  </>
+                )}
               </Pressable>
             );
           })}
@@ -364,9 +376,18 @@ export default function Home() {
       </View>
 
       {/* Вопрос дня */}
-      <Pressable onPress={() => router.push('/questions')} style={({ pressed }) => [s.cta, pressed && { transform: [{ scale: 0.98 }] }]}>
-        <GradientFill colors={gradients.question} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
-        <GradientFill colors={['rgba(255,255,255,0.35)', 'rgba(255,255,255,0)']} radial center={{ x: 0.15, y: 0.1 }} />
+      <Pressable
+        onPress={() => router.push('/questions')}
+        style={({ pressed }) => [
+          s.cta,
+          { boxShadow: `0px ${pressed ? 1 : 5}px 0px #8E2148, 0px ${pressed ? 3 : 12}px ${pressed ? 6 : 20}px rgba(184, 50, 92, 0.35)` },
+          pressed && { transform: [{ translateY: 4 }] },
+        ]}
+      >
+        <GradientFill colors={gradients.question} start={{ x: 0, y: 0 }} end={{ x: 0.3, y: 1 }} />
+        <View pointerEvents="none" style={s.ctaGloss}>
+          <GradientFill colors={['rgba(255,255,255,0.5)', 'rgba(255,255,255,0.04)']} />
+        </View>
         <Text style={{ fontSize: 32 }}>💬</Text>
         <View style={{ flex: 1 }}>
           <Text style={{ color: '#fff', fontWeight: '800', fontSize: 17 }}>Вопрос дня</Text>
@@ -381,15 +402,7 @@ export default function Home() {
 
 const s = StyleSheet.create({
   hello: { fontSize: 20, fontWeight: '800', color: colors.text, letterSpacing: -0.3 },
-  iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: shadows.soft,
-  },
+  iconButton: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
   stage: {
     borderRadius: radius.lg,
     overflow: 'hidden',
@@ -406,11 +419,6 @@ const s = StyleSheet.create({
     gap: 4,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xs,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.9)',
-    boxShadow: shadows.card,
   },
   featureIcon: {
     width: 52,
@@ -512,6 +520,7 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.9)',
   },
+  tileButton: { padding: spacing.lg, gap: 4 },
   tileNumber: { fontSize: 30, fontWeight: '800', color: colors.primaryDeep, letterSpacing: -0.5, fontVariant: ['tabular-nums'] },
   moodWho: { fontSize: 12, fontWeight: '700', color: colors.muted, textTransform: 'uppercase', letterSpacing: 0.6 },
   moodOrb: {
@@ -533,15 +542,11 @@ const s = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFF7F9',
-    boxShadow: '0px 6px 12px rgba(122, 46, 72, 0.12), inset 0px -3px 6px rgba(201, 61, 104, 0.08), inset 0px 2px 0px rgba(255,255,255,1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.6)',
+    marginBottom: 4,
   },
-  moodButtonSelected: {
-    borderWidth: 2,
-    borderColor: colors.primary,
-    boxShadow: '0px 8px 18px rgba(232, 87, 126, 0.35), inset 0px 2px 0px rgba(255,255,255,0.8)',
-    transform: [{ translateY: -2 }],
-  },
+  moodButtonSelected: { borderWidth: 2, borderColor: colors.primary },
   moodCaption: { fontSize: 11, color: colors.muted, textAlign: 'center' },
   cta: {
     flexDirection: 'row',
@@ -550,6 +555,7 @@ const s = StyleSheet.create({
     padding: spacing.lg,
     borderRadius: radius.md,
     overflow: 'hidden',
-    boxShadow: shadows.button,
+    marginBottom: 5,
   },
+  ctaGloss: { position: 'absolute', left: 4, right: 4, top: 3, height: '48%', borderRadius: radius.md, overflow: 'hidden' },
 });

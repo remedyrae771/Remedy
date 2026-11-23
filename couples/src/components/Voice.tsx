@@ -11,8 +11,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { formatDuration, webVoiceMimeType } from '../lib/media';
 import type { Message } from '../lib/types';
-import { colors, gradients, shadows, spacing } from '../theme';
-import { GradientFill } from './Gradient';
+import { colors, shadows, spacing } from '../theme';
+import { GlossPressable } from './Glossy';
 import { useMediaUrl } from './Media';
 
 const BARS = 28;
@@ -182,10 +182,9 @@ export function VoiceRecorder({ onSend, onCancel, onError }: { onSend: (uri: str
       <Text style={s.hint} numberOfLines={1}>
         Идёт запись
       </Text>
-      <Pressable onPress={() => finish(true)} disabled={!ready} style={[s.send, !ready && { opacity: 0.5 }]} accessibilityLabel="Отправить голосовое">
-        <GradientFill colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+      <GlossPressable tone="primary" depth={3} onPress={() => finish(true)} disabled={!ready} style={[s.send, !ready && { opacity: 0.5 }]} accessibilityLabel="Отправить голосовое">
         <Text style={{ color: '#fff', fontSize: 18, fontWeight: '800', marginLeft: 2 }}>➤</Text>
-      </Pressable>
+      </GlossPressable>
     </View>
   );
 }
@@ -216,5 +215,5 @@ const s = StyleSheet.create({
   dot: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#E5484D' },
   timer: { fontSize: 17, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
   hint: { flex: 1, color: colors.muted, fontSize: 14 },
-  send: { width: 44, height: 44, borderRadius: 22, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', boxShadow: shadows.button },
+  send: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });

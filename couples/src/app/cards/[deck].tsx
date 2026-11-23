@@ -2,11 +2,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, PanResponder, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Easing, PanResponder, Platform, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { GlossPressable } from '../../components/Glossy';
 import { GradientFill } from '../../components/Gradient';
 import { buildOrder, DECKS, MIX_ID, splitChoice, type PlayCard } from '../../lib/games';
-import { colors, gradients, radius, shadows, spacing } from '../../theme';
+import { colors, radius, shadows, spacing } from '../../theme';
 
 const STORAGE = (deck: string) => `remedy.cards.${deck}`;
 const SWIPE = 90;
@@ -183,22 +184,20 @@ export default function CardsScreen() {
       </View>
 
       <View style={s.controls}>
-        <Pressable onPress={back} disabled={index === 0 || finished} style={({ pressed }) => [s.round, (index === 0 || finished) && { opacity: 0.35 }, pressed && { transform: [{ scale: 0.92 }] }]} accessibilityLabel="Предыдущая">
+        <GlossPressable onPress={back} disabled={index === 0 || finished} style={[s.round, (index === 0 || finished) && { opacity: 0.4 }]} accessibilityLabel="Предыдущая">
           <Text style={s.roundText}>‹</Text>
-        </Pressable>
-        <Pressable onPress={reshuffle} style={({ pressed }) => [s.round, pressed && { transform: [{ scale: 0.92 }] }]} accessibilityLabel="Перемешать">
+        </GlossPressable>
+        <GlossPressable onPress={reshuffle} style={s.round} accessibilityLabel="Перемешать">
           <Text style={{ fontSize: 22 }}>🔀</Text>
-        </Pressable>
+        </GlossPressable>
         {finished ? (
-          <Pressable onPress={() => router.back()} style={({ pressed }) => [s.main, pressed && { transform: [{ scale: 0.96 }] }]}>
-            <GradientFill colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+          <GlossPressable tone="primary" onPress={() => router.back()} style={s.main}>
             <Text style={s.mainText}>Другая колода</Text>
-          </Pressable>
+          </GlossPressable>
         ) : (
-          <Pressable onPress={next} style={({ pressed }) => [s.main, pressed && { transform: [{ scale: 0.96 }] }]} accessibilityLabel="Следующая карточка">
-            <GradientFill colors={deck.colors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+          <GlossPressable tone="primary" onPress={next} style={s.main} accessibilityLabel="Следующая карточка">
             <Text style={s.mainText}>Дальше ›</Text>
-          </Pressable>
+          </GlossPressable>
         )}
       </View>
     </SafeAreaView>
@@ -232,8 +231,8 @@ const s = StyleSheet.create({
   or: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', boxShadow: '0px 6px 14px rgba(0,0,0,0.18)' },
   orText: { color: colors.primaryDeep, fontWeight: '900', fontSize: 15 },
   controls: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingBottom: spacing.lg },
-  round: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', boxShadow: shadows.card },
+  round: { width: 56, height: 56, alignItems: 'center', justifyContent: 'center' },
   roundText: { fontSize: 30, fontWeight: '700', color: colors.text, marginTop: -3 },
-  main: { flex: 1, height: 56, borderRadius: 28, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', boxShadow: shadows.button },
-  mainText: { color: '#FFFFFF', fontSize: 18, fontWeight: '800' },
+  main: { flex: 1, height: 56, alignItems: 'center', justifyContent: 'center' },
+  mainText: { color: '#FFFFFF', fontSize: 18, fontWeight: '800', textShadowColor: 'rgba(140, 30, 70, 0.35)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 },
 });
