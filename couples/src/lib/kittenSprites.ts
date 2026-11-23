@@ -1,13 +1,13 @@
 // Создано скриптом сборки спрайтов 3D-котика. Не редактировать вручную.
 import type { ImageSourcePropType } from 'react-native';
 
-export type KittenClip = 'idle' | 'walk' | 'run' | 'jump' | 'sit' | 'sleep' | 'call';
+export type KittenClip = 'walk' | 'run' | 'jump' | 'idleF' | 'sitF' | 'sleepF' | 'callF' | 'turn';
 
 export type ClipInfo = { frames: number; fps: number; cols: number; rows: number; src: ImageSourcePropType };
 
 export const KITTEN_SPRITES = {
   cellW: 507,
-  cellH: 532,
+  cellH: 535,
   /** пикселей листа на метр мира (для скорости шагов без «скольжения») */
   pxPerM: 581.528,
   /** где в ячейке центр тела по x и линия пола по y */
@@ -17,13 +17,14 @@ export const KITTEN_SPRITES = {
   catH: 340,
   /** на листе котик смотрит влево */
   clips: {
-    idle: { frames: 20, fps: 10, cols: 8, rows: 3, src: require('../../assets/kitten/idle.webp') },
     walk: { frames: 24, fps: 30, cols: 8, rows: 3, src: require('../../assets/kitten/walk.webp') },
     run: { frames: 16, fps: 30, cols: 8, rows: 2, src: require('../../assets/kitten/run.webp') },
     jump: { frames: 40, fps: 30, cols: 8, rows: 5, src: require('../../assets/kitten/jump.webp') },
-    sit: { frames: 24, fps: 12, cols: 8, rows: 3, src: require('../../assets/kitten/sit.webp') },
-    sleep: { frames: 20, fps: 6.667, cols: 8, rows: 3, src: require('../../assets/kitten/sleep.webp') },
-    call: { frames: 24, fps: 15, cols: 8, rows: 3, src: require('../../assets/kitten/call.webp') },
+    idleF: { frames: 20, fps: 10, cols: 8, rows: 3, src: require('../../assets/kitten/idleF.webp') },
+    sitF: { frames: 24, fps: 12, cols: 8, rows: 3, src: require('../../assets/kitten/sitF.webp') },
+    sleepF: { frames: 20, fps: 6.667, cols: 8, rows: 3, src: require('../../assets/kitten/sleepF.webp') },
+    callF: { frames: 24, fps: 15, cols: 8, rows: 3, src: require('../../assets/kitten/callF.webp') },
+    turn: { frames: 8, fps: 24, cols: 8, rows: 1, src: require('../../assets/kitten/turn.webp') },
   } as Record<KittenClip, ClipInfo>,
 };
 
