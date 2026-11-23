@@ -2,11 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Image, Platform, Pressable, View, type LayoutChangeEvent } from 'react-native';
 import Svg, { Defs, Ellipse, RadialGradient, Stop } from 'react-native-svg';
 import { KittenSim, type KittenMood, type KittenSnap } from '../lib/kittenSim';
-import { KITTEN_SPRITES as SP } from '../lib/kittenSprites';
+import { KITTEN_SPRITES as SP, KITTEN_STILL, KITTEN_STILL_RATIO, type KittenClip } from '../lib/kittenSprites';
 import { useSvgId } from './Gradient';
 
 const useNative = Platform.OS !== 'web';
-const CLIPS = Object.values(SP.clips);
+const CLIPS = Object.entries(SP.clips) as [KittenClip, (typeof SP.clips)[KittenClip]][];
 
 function Shadow({ width, opacity }: { width: number; opacity: number }) {
   const id = useSvgId('k3shadow');
@@ -48,6 +48,7 @@ export default function Kitten3D({
   const [width, setWidth] = useState(0);
   const [hearts, setHearts] = useState<Heart[]>([]);
   const [zzz] = useState(() => new Animated.Value(0));
+  const [loaded, setLoaded] = useState<Partial<Record<KittenClip, boolean>>>({});
   const nextId = useRef(0);
 
   // высота котика на экране и масштаб листа
@@ -107,30 +108,48 @@ export default function Kitten3D({
   const left = snap.x - anchor * d;
   const top = floor - SP.floorY * d;
   const shadowW = cw * 0.42 * (1 - snap.air * 0.35);
+  const stillH = SP.catH * d * 1.08;
 
   return (
     <View onLayout={onLayout} style={{ alignSelf: 'stretch', height }}>
       {/* заранее грузим все листы, чтобы смена движения не мигала */}
-      {CLIPS.map((c, i) => (
-        <Image key={i} source={c.src} style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }} />
+      {CLIPS.map(([name, c]) => (
+        <Image
+          key={name}
+          source={c.src}
+          onLoad={() => setLoaded((l) => (l[name] ? l : { ...l, [name]: true }))}
+          style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }}
+        />
       ))}
       {width ? (
         <>
           <View pointerEvents="none" style={{ position: 'absolute', left: snap.x - shadowW / 2, top: floor - shadowW * 0.11 }}>
             <Shadow width={shadowW} opacity={1 - snap.air * 0.5} />
           </View>
-          <Pressable
-            onPress={pat}
-            accessibilityRole="button"
-            accessibilityLabel="Погладить котика"
-            style={{ position: 'absolute', left, top, width: cw, height: ch, overflow: 'hidden', transform: snap.dir === 1 ? [{ scaleX: -1 }] : [] }}
-          >
-            <Image
-              source={info.src}
-              resizeMode="stretch"
-              style={{ position: 'absolute', width: info.cols * cw, height: info.rows * ch, left: -col * cw, top: -row * ch }}
-            />
-          </Pressable>
+          {loaded[snap.clip] ? (
+            <Pressable
+              onPress={pat}
+              accessibilityRole="button"
+              accessibilityLabel="Погладить котика"
+              style={{ position: 'absolute', left, top, width: cw, height: ch, overflow: 'hidden', transform: snap.dir === 1 ? [{ scaleX: -1 }] : [] }}
+            >
+              <Image
+                source={info.src}
+                resizeMode="stretch"
+                style={{ position: 'absolute', width: info.cols * cw, height: info.rows * ch, left: -col * cw, top: -row * ch }}
+              />
+            </Pressable>
+          ) : (
+            // пока грузится анимация — лёгкий стоп-кадр, чтобы место не пустовало
+            <Pressable
+              onPress={pat}
+              accessibilityRole="button"
+              accessibilityLabel="Погладить котика"
+              style={{ position: 'absolute', left: snap.x - (stillH * KITTEN_STILL_RATIO) / 2, top: floor - stillH, width: stillH * KITTEN_STILL_RATIO, height: stillH }}
+            >
+              <Image source={KITTEN_STILL} resizeMode="contain" style={{ width: '100%', height: '100%' }} />
+            </Pressable>
+          )}
         </>
       ) : null}
 
