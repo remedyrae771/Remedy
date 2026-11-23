@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Avatar, { AVATAR_TINTS } from '../../components/Avatar';
+import { GlossPressable } from '../../components/Glossy';
 import { GradientFill } from '../../components/Gradient';
 import Appear from '../../components/Appear';
 import { MediaBubble, MediaViewer } from '../../components/Media';
@@ -595,23 +596,23 @@ export default function Chat() {
               }}
             />
             {text.trim() ? (
-              <Pressable onPress={() => send()} accessibilityLabel="Отправить" style={({ pressed }) => [s.send, pressed && { transform: [{ scale: 0.92 }] }]}>
-                <GradientFill colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
+              <GlossPressable tone="primary" depth={3} onPress={() => send()} accessibilityLabel="Отправить" style={s.send}>
                 <Text style={{ color: '#fff', fontSize: 18, fontWeight: '800', marginLeft: 2 }}>➤</Text>
-              </Pressable>
+              </GlossPressable>
             ) : (
-              <Pressable
+              <GlossPressable
                 onPress={() => {
                   setMediaError(null);
                   setEmojiOpen(false);
                   setRecording(true);
                 }}
                 accessibilityLabel="Записать голосовое"
-                style={({ pressed }) => [s.send, pressed && { transform: [{ scale: 0.92 }] }]}
+                tone="primary"
+                depth={3}
+                style={s.send}
               >
-                <GradientFill colors={gradients.primary} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} />
                 <Text style={{ fontSize: 20 }}>🎤</Text>
-              </Pressable>
+              </GlossPressable>
             )}
           </View>
           )}
@@ -762,13 +763,5 @@ const s = StyleSheet.create({
   emojiToggle: { width: 36, height: 44, alignItems: 'center', justifyContent: 'center' },
   mediaError: { color: colors.danger, fontSize: 13, textAlign: 'center', marginHorizontal: spacing.lg },
   input: { flex: 1, fontSize: 16, lineHeight: 20, color: colors.text, minHeight: 40, maxHeight: 120, paddingVertical: 10, paddingHorizontal: 4 },
-  send: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    overflow: 'hidden',
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: shadows.button,
-  },
+  send: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
 });

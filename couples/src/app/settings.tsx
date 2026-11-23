@@ -4,7 +4,7 @@ import InviteCard from '../components/InviteCard';
 import NotifyPrefs from '../components/NotifyPrefs';
 import PushCard from '../components/PushCard';
 import { PET_KINDS, PetArt } from '../components/Pet';
-import { Button, Card, ErrorText, Input, Muted, Screen, SectionLabel, styles } from '../components/ui';
+import { Button, Card, Chip, ErrorText, Input, Muted, Screen, SectionLabel, styles } from '../components/ui';
 import { formatUserDate, parseUserDate } from '../lib/dates';
 import { confirmAction } from '../lib/platform';
 import { errorText, supabase } from '../lib/supabase';
@@ -146,9 +146,7 @@ export default function Settings() {
           </Muted>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
             {['Зайка', 'Солнце', 'Любимая', 'Любимый', 'Котик', 'Жаным'].map((n) => (
-              <Pressable key={n} onPress={() => { setNickname(n); setNickSaved(false); }} style={[styles.chip, nickname === n && { backgroundColor: colors.primary, borderColor: colors.primary }]}>
-                <Text style={[styles.chipText, nickname === n && { color: '#fff' }]}>{n}</Text>
-              </Pressable>
+              <Chip key={n} label={n} selected={nickname === n} onPress={() => { setNickname(n); setNickSaved(false); }} />
             ))}
           </View>
           {nickSaved ? <Muted>Сохранено ✓</Muted> : null}

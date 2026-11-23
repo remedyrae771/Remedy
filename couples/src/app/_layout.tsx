@@ -53,6 +53,7 @@ function RootNavigator() {
         <Stack.Screen name="album" options={{ headerShown: true, title: 'Наши моменты' }} />
         <Stack.Screen name="capsules" options={{ headerShown: true, title: 'Капсула времени' }} />
         <Stack.Screen name="game" options={{ headerShown: true, title: 'Кто лучше знает' }} />
+        <Stack.Screen name="cards/[deck]" options={{ headerShown: true, title: 'Карточки' }} />
       </Stack.Protected>
     </Stack>
   );

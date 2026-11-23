@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Platform, Pressable, View } from 'react-native';
+import { Animated, Easing, Image, Platform, Pressable, View } from 'react-native';
 import Svg, { Circle, Defs, Ellipse, G, LinearGradient, Path, RadialGradient, Stop } from 'react-native-svg';
 import type { PetKind } from '../lib/types';
 import { useSvgId } from './Gradient';
-import { KittenArt, KittenTail } from './Kitten';
+import { KITTEN_STILL, KITTEN_STILL_RATIO } from '../lib/kittenSprites';
+import Kitten3D from './Kitten3D';
 
 function GroundShadow() {
   const id = useSvgId('shadow');
@@ -154,7 +155,15 @@ function Face({ mood, blink, p, g }: { mood: PetMood; blink: boolean; p: Palette
 
 /** Статичный рисунок питомца с объёмом (градиенты, блики, мягкая тень). */
 export function PetArt({ kind, mood, size = 160, blink = false }: { kind: PetKind; mood: PetMood; size?: number; blink?: boolean }) {
-  if (kind === 'cat') return <KittenArt mood={mood} size={size} blink={blink} />;
+  if (kind === 'cat') {
+    // стоп-кадр пушистого 3D-котика, вписанный в квадрат
+    const w = KITTEN_STILL_RATIO >= 1 ? size : size * KITTEN_STILL_RATIO;
+    return (
+      <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'flex-end' }}>
+        <Image source={KITTEN_STILL} style={{ width: w, height: w / KITTEN_STILL_RATIO }} resizeMode="contain" />
+      </View>
+    );
+  }
   return <GenericPetArt kind={kind} mood={mood} size={size} blink={blink} />;
 }
 
@@ -229,7 +238,6 @@ function GenericPetArt({ kind, mood, size, blink }: { kind: PetKind; mood: PetMo
 
 /** Хвост рисуется отдельным слоем, чтобы им можно было вилять вокруг основания. */
 function Tail({ kind }: { kind: PetKind }) {
-  if (kind === 'cat') return <KittenTail />;
   return <GenericTail kind={kind} />;
 }
 
@@ -315,18 +323,7 @@ function Accessories({ stage }: { stage: number }) {
 
 type Heart = { id: number; x: number; anim: Animated.Value };
 
-/**
- * Живой питомец: дышит, моргает, виляет хвостом, сплющивается и подпрыгивает от касания,
- * во сне над ним всплывают «Z».
- */
-export default function Pet({
-  kind,
-  mood,
-  size = 160,
-  onPat,
-  stage = 0,
-  scale = 1,
-}: {
+type PetProps = {
   kind: PetKind;
   mood: PetMood;
   size?: number;
@@ -335,7 +332,26 @@ export default function Pet({
   stage?: number;
   /** Размер по стадии роста */
   scale?: number;
-}) {
+};
+
+/** Котик — пушистый 3D, который сам гуляет по комнатке; остальные питомцы — рисованные. */
+export default function Pet(props: PetProps) {
+  if (props.kind === 'cat') return <Kitten3D mood={props.mood} onPat={props.onPat} height={props.size} scale={props.scale} />;
+  return <ClassicPet {...props} />;
+}
+
+/**
+ * Рисованный питомец: дышит, моргает, виляет хвостом, сплющивается и подпрыгивает от касания,
+ * во сне над ним всплывают «Z».
+ */
+function ClassicPet({
+  kind,
+  mood,
+  size = 160,
+  onPat,
+  stage = 0,
+  scale = 1,
+}: PetProps) {
   const [breathe] = useState(() => new Animated.Value(0));
   const [jump] = useState(() => new Animated.Value(0));
   const [squish] = useState(() => new Animated.Value(0));
@@ -449,7 +465,7 @@ export default function Pet({
   const tailRotate = wag.interpolate({ inputRange: [0, 1], outputRange: ['-10deg', '14deg'] });
 
   // Хвост крепится к правому боку тела (у котёнка тело ниже и уже).
-  const anchor = kind === 'cat' ? { x: 110, y: 140 } : { x: 112, y: 128 };
+  const anchor = { x: 112, y: 128 };
   const tailSide = 100 * k;
   const tailLeft = (anchor.x - VB_X) * k - tailSide / 2;
   const tailTop = (anchor.y - VB_Y) * k - tailSide / 2;
