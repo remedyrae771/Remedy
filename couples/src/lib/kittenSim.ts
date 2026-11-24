@@ -16,18 +16,29 @@ export type KittenSnap = {
 
 type ClipTiming = Record<KittenClip, { frames: number; fps: number }>;
 
+
+/** Базовые действия; у сидячих есть вариант «лицом к экрану» (clip + 'F'). */
+type BaseClip = 'idle' | 'walk' | 'run' | 'jump' | 'sit' | 'sleep' | 'call' | 'turn';
+const FRONT: ReadonlySet<BaseClip> = new Set(['idle', 'sit', 'sleep', 'call']);
+/** Какой лист показывать: стоя, сидя, во сне и мяукая котик всегда смотрит на нас. */
+const shown = (c: BaseClip): KittenClip => (FRONT.has(c) ? (`${c}F` as KittenClip) : (c as KittenClip));
+
 type Act = {
-  clip: KittenClip;
+  clip: BaseClip;
   /** Сколько длится зацикленное действие, с */
   dur?: number;
   /** Один проход клипа и дальше по плану */
   once?: boolean;
   /** Цель по x для ходьбы и бега */
   target?: number;
+  /** Для поворота: разворот обратно боком (кадры в обратном порядке) */
+  back?: boolean;
+  /** Что делать после поворота */
+  then?: Act;
 };
 
 /** Скорость лап из анимации, м/с: с этой скоростью котик не «скользит» по полу. */
-const SPEED: Partial<Record<KittenClip, number>> = { walk: 0.159, run: 0.281 };
+const SPEED: Partial<Record<BaseClip, number>> = { walk: 0.159, run: 0.281 };
 /** Прыжок переносит котика вперёд на 0,3 м между кадрами отрыва и приземления. */
 const JUMP = { dist: 0.3, from: 10, to: 28 };
 /** Сколько касаний подряд нужно, чтобы котик подпрыгнул от радости. */
@@ -54,6 +65,8 @@ export class KittenSim {
   private ready = false;
   private mood: KittenMood = 'ok';
   private act: Act = { clip: 'idle', dur: 2 };
+  /** Котик смотрит на нас (front) или идёт боком (side) */
+  private facing: 'front' | 'side' = 'front';
   private t = 0;
   private taps: number[] = [];
 
@@ -78,24 +91,25 @@ export class KittenSim {
     if (mood === this.mood) return;
     const wasSleepy = this.mood === 'sleepy';
     this.mood = mood;
-    if (mood === 'sleepy') this.start({ clip: 'sleep', dur: Infinity });
-    else if (wasSleepy) this.start({ clip: 'idle', dur: 2 });
+    if (mood === 'sleepy') this.go({ clip: 'sleep', dur: Infinity });
+    else if (wasSleepy) this.go({ clip: 'idle', dur: 2 });
   }
 
   /** Касание. Возвращает, что сделал котик. */
   pat(nowMs: number): 'wake' | 'meow' | 'jump' {
     if (this.act.clip === 'sleep') {
       this.taps = [];
-      this.start({ clip: 'idle', dur: 2.5 });
+      this.go({ clip: 'idle', dur: 2.5 });
       return 'wake';
     }
     this.taps = [...this.taps.filter((t) => nowMs - t < 1500), nowMs];
-    if (this.taps.length >= TAPS_FOR_JUMP && this.act.clip !== 'jump' && this.roomFor(JUMP.dist)) {
+    const busy = (c: BaseClip) => this.act.clip === c || this.act.then?.clip === c;
+    if (this.taps.length >= TAPS_FOR_JUMP && !busy('jump') && this.roomFor(JUMP.dist)) {
       this.taps = [];
-      this.start({ clip: 'jump', once: true });
+      this.go({ clip: 'jump', once: true });
       return 'jump';
     }
-    if (this.act.clip !== 'call') this.start({ clip: 'call', once: true });
+    if (!busy('call')) this.go({ clip: 'call', once: true });
     return 'meow';
   }
 
@@ -103,11 +117,16 @@ export class KittenSim {
     const dtc = Math.min(dt, 0.1);
     this.t += dtc;
     const { clip } = this.act;
-    const tm = this.timing[clip];
+    const tm = this.timing[shown(clip)];
     const length = tm.frames / tm.fps;
+    if (clip === 'turn' && this.t >= length) {
+      this.facing = this.act.back ? 'side' : 'front';
+      this.start(this.act.then ?? { clip: 'idle', dur: 2 });
+      return this.snapshot();
+    }
 
     const speed = SPEED[clip];
-    if (speed !== undefined && this.act.target !== undefined) {
+    if (speed !== undefined && this.act.target !== undefined && clip !== 'turn') {
       const to = this.act.target;
       this.dir = to >= this.x ? 1 : -1;
       const stepPx = speed * this.pxPerM * dtc;
@@ -129,18 +148,28 @@ export class KittenSim {
   }
 
   snapshot(): KittenSnap {
-    const { clip } = this.act;
+    const base = this.act.clip;
+    const clip = shown(base);
     const tm = this.timing[clip];
     const raw = Math.floor(this.t * tm.fps);
-    const frame = this.act.once ? Math.min(tm.frames - 1, raw) : raw % tm.frames;
+    let frame = this.act.once || base === 'turn' ? Math.min(tm.frames - 1, raw) : raw % tm.frames;
+    if (base === 'turn' && this.act.back) frame = tm.frames - 1 - frame;
     let air = 0;
-    if (clip === 'jump' && frame >= JUMP.from && frame < JUMP.to) air = Math.sin((Math.PI * (frame - JUMP.from)) / (JUMP.to - JUMP.from));
+    if (base === 'jump' && frame >= JUMP.from && frame < JUMP.to) air = Math.sin((Math.PI * (frame - JUMP.from)) / (JUMP.to - JUMP.from));
     return { clip, frame, x: this.x, dir: this.dir, air };
   }
 
   private start(act: Act) {
     this.act = act;
     this.t = 0;
+  }
+
+  /** Начать действие, при необходимости сначала повернувшись к экрану или боком. */
+  private go(act: Act) {
+    const wantFront = FRONT.has(act.clip);
+    if (wantFront && this.facing === 'side') this.start({ clip: 'turn', back: false, then: act });
+    else if (!wantFront && this.facing === 'front') this.start({ clip: 'turn', back: true, then: act });
+    else this.start(act);
   }
 
   private roomFor(meters: number) {
@@ -166,7 +195,7 @@ export class KittenSim {
 
   private next() {
     if (this.mood === 'sleepy') {
-      this.start({ clip: 'sleep', dur: Infinity });
+      this.go({ clip: 'sleep', dur: Infinity });
       return;
     }
     const w = PLAN[this.mood];
@@ -188,19 +217,19 @@ export class KittenSim {
     if (choice === 'jump' && !this.roomFor(JUMP.dist)) choice = 'walk';
     switch (choice) {
       case 'walk':
-        this.start({ clip: 'walk', target: this.pickTarget(this.mood === 'sad' ? 0.1 : 0.25) });
+        this.go({ clip: 'walk', target: this.pickTarget(this.mood === 'sad' ? 0.1 : 0.25) });
         break;
       case 'run':
-        this.start({ clip: 'run', target: this.pickTarget(0.45) });
+        this.go({ clip: 'run', target: this.pickTarget(0.45) });
         break;
       case 'jump':
-        this.start({ clip: 'jump', once: true });
+        this.go({ clip: 'jump', once: true });
         break;
       case 'sit':
-        this.start({ clip: 'sit', dur: 4 + this.rand() * 5 });
+        this.go({ clip: 'sit', dur: 4 + this.rand() * 5 });
         break;
       default:
-        this.start({ clip: 'idle', dur: 2 + this.rand() * 2 });
+        this.go({ clip: 'idle', dur: 2 + this.rand() * 2 });
     }
   }
 }

@@ -78,7 +78,7 @@ export default function Kitten3D({
     return () => clearInterval(id);
   }, [sim, width]);
 
-  const sleeping = snap.clip === 'sleep';
+  const sleeping = snap.clip === 'sleepF';
   useEffect(() => {
     if (!sleeping) return;
     const loop = Animated.loop(Animated.timing(zzz, { toValue: 1, duration: 2400, easing: Easing.linear, useNativeDriver: useNative }));
